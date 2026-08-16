@@ -1,0 +1,71 @@
+{
+  "generated_at": "2026-08-17T02:21:06",
+  "trades": [],
+  "signals": [
+    {
+      "timestamp": 46249.06553240741,
+      "symbol": "XAUUSDc",
+      "signal": "NONE",
+      "direction": "DOWN",
+      "confidence": "",
+      "d1Trend": "DOWN",
+      "h1Trend": "DOWN",
+      "rsi": 28.6,
+      "atr": 94.73,
+      "entryZone": "",
+      "sl": "",
+      "tp": "",
+      "status": "ANALYZED",
+      "notes": "D1/H1 downtrend, RSI too low (29)"
+    },
+    {
+      "timestamp": 46249.33440972222,
+      "symbol": "BTCUSDm",
+      "signal": "SELL",
+      "direction": "SELL",
+      "confidence": "LOW",
+      "d1Trend": "DOWN",
+      "h1Trend": "DOWN",
+      "rsi": 65.1,
+      "atr": 1054.82,
+      "entryZone": 62941.32,
+      "sl": 64523.55,
+      "tp": 60093.31,
+      "status": "ANALYZED",
+      "notes": "D1 downtrend, H1 aligned, bounce to M15 EMA zone (62895.2-62896.8)"
+    },
+    {
+      "timestamp": 46249.335011574076,
+      "symbol": "BTCUSDm",
+      "signal": "SELL",
+      "direction": "SELL",
+      "confidence": "LOW",
+      "d1Trend": "DOWN",
+      "h1Trend": "DOWN",
+      "rsi": 64.6,
+      "atr": 1054.82,
+      "entryZone": 62938.22,
+      "sl": 64520.45,
+      "tp": 60090.21,
+      "status": "ANALYZED",
+      "notes": "D1 downtrend, H1 aligned, bounce to M15 EMA zone (62895.1-62896.5)"
+    },
+    {
+      "timestamp": 46249.33650462963,
+      "symbol": "BTCUSDm",
+      "signal": "SELL",
+      "direction": "SELL",
+      "confidence": "LOW",
+      "d1Trend": "DOWN",
+      "h1Trend": "DOWN",
+      "rsi": 64.3,
+      "atr": 1054.82,
+      "entryZone": 62936.07,
+      "sl": 64518.3,
+      "tp": 60088.06,
+      "status": "ANALYZED",
+      "notes": "D1 downtrend, H1 aligned, bounce to M15 EMA zone (62895.0-62896.3)"
+    }
+  ],
+  "perf": []
+}

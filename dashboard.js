@@ -2,10 +2,15 @@
  * EDIT THESE with your real published-CSV URLs (see header comment in index.html)
  * Each CSV = Google Sheet tab published as CSV.
  *   Google Sheets -> File -> Share -> Publish to web -> pick tab -> CSV -> copy link
- * Empty string = fall back to embedded sample data below. */
+ * Empty string = fall back to embedded sample data / data.json below. */
 const TRADES_CSV_URL  = "";  // Trades tab  (Timestamp,Type,Symbol,Direction,...)
 const SIGNALS_CSV_URL = "";  // Signals tab (Timestamp,Symbol,Signal,Direction,...)
 const PERF_CSV_URL    = "";  // Performance tab (Date,Total Trades,Wins,Losses,...)
+
+/* ── Auto-generated data source (real Google Sheet data, pushed by generate_data.py).
+   When data.json exists, the dashboard reads live data from it (preferred). 
+   If any *_CSV_URL above is set, those override data.json for that section. */
+const DATA_JSON_URL = "data.json";
 
 /* ── Embeded fallback data (until real public CSV links are pasted in).
    Mirrors the actual schema of the Trading Bot Log sheet. */
@@ -143,26 +148,46 @@ function renderSignals(signals){
 
 async function main(){
   try{
-    const hasLive = TRADES_CSV_URL || SIGNALS_CSV_URL || PERF_CSV_URL;
     let trades=[], signals=[], perf=[];
+    const hasCSV = TRADES_CSV_URL || SIGNALS_CSV_URL || PERF_CSV_URL;
+    let loadedJson = false;
 
-    if(!hasLive){
-      // fallback: embedded sample (mirrors real schema) until user pastes published URLs
+    // 1) Primary source: auto-generated data.json (real sheet data pushed by cron)
+    try{
+      const res = await fetch(DATA_JSON_URL + '?t=' + Date.now(), {cache:'no-store'});
+      if(res.ok){
+        const j = await res.json();
+        if(j && Array.isArray(j.trades)){
+          trades = j.trades || [];
+          signals = j.signals || [];
+          perf = j.perf || [];
+          loadedJson = true;
+        }
+      }
+    }catch(e){ /* data.json optional */ }
+
+    // 2) CSV URL overrides (per-section)
+    if(TRADES_CSV_URL){ try{ const r=await fetchCSV(TRADES_CSV_URL); if(r&&r.length>1){ const L=buildLookup(r); trades=r.slice(1).map(x=>({timestamp:x[L['Timestamp']],type:x[L['Type']],symbol:x[L['Symbol']],direction:x[L['Direction']],volume:x[L['Volume']],entry:x[L['Entry']],sl:x[L['SL']],tp:x[L['TP']],exit:x[L['Exit']],profit:x[L['Profit']],swap:x[L['Swap']],commission:x[L['Commission']],netPnl:x[L['Net P&L']],status:x[L['Status']],signalReason:x[L['Signal Reason']],strategy:x[L['Strategy']],risk:x[L['Risk %']],balance:x[L['Account Balance']],notes:x[L['Notes']]})); } } catch(e){ showErr('Trades: '+e.message); } }
+    if(SIGNALS_CSV_URL){ try{ const r=await fetchCSV(SIGNALS_CSV_URL); if(r&&r.length>1){ const L=buildLookup(r); signals=r.slice(1).map(x=>({timestamp:x[L['Timestamp']],symbol:x[L['Symbol']],signal:x[L['Signal']],direction:x[L['Direction']],confidence:x[L['Confidence']],d1Trend:x[L['D1 Trend']],h1Trend:x[L['H1 Trend']],rsi:x[L['RSI']],atr:x[L['ATR']],entryZone:x[L['Entry Zone']],sl:x[L['SL']],tp:x[L['TP']],status:x[L['Status']],notes:x[L['Notes']]})); } } catch(e){ showErr('Signals: '+e.message); } }
+    if(PERF_CSV_URL){ try{ const r=await fetchCSV(PERF_CSV_URL); if(r&&r.length>1){ const L=buildLookup(r); perf=r.slice(1).map(x=>({date:x[L['Date']],totalTrades:x[L['Total Trades']],wins:x[L['Wins']],losses:x[L['Losses']],winrate:x[L['Winrate %']],netPnl:x[L['Net P&L']],maxDrawdown:x[L['Max Drawdown']],avgRr:x[L['Avg RR']],balance:x[L['Balance']],equityPeak:x[L['Equity Peak']],equityLow:x[L['Equity Low']]})); } } catch(e){ showErr('Performance: '+e.message); } }
+
+    // 3) Fallback: embedded sample (only if nothing loaded from JSON/CSV)
+    if(!loadedJson && !hasCSV){
       trades=(FALLBACK.trades||[]).map(r=>({timestamp:r[0],type:r[1],symbol:r[2],direction:r[3],volume:r[4],entry:r[5],sl:r[6],tp:r[7],exit:r[8],profit:r[9],swap:r[10],commission:r[11],netPnl:r[12],status:r[13],signalReason:r[14],strategy:r[15],risk:r[16],balance:r[17],notes:r[18]}));
       signals=(FALLBACK.signals||[]).map(r=>({timestamp:r[0],symbol:r[1],signal:r[2],direction:r[3],confidence:r[4],d1Trend:r[5],h1Trend:r[6],rsi:r[7],atr:r[8],entryZone:r[9],sl:r[10],tp:r[11],status:r[12],notes:r[13]}));
       perf=(FALLBACK.perf||[]).map(r=>({date:r[0],totalTrades:r[1],wins:r[2],losses:r[3],winrate:r[4],netPnl:r[5],maxDrawdown:r[6],avgRr:r[7],balance:r[8],equityPeak:r[9],equityLow:r[10]}));
-      liveBadge(false, 'sample data');
-      $('sourceInfo').innerHTML='<b>โหมด demo</b> · ยังไม่ได้ใส่ published-CSV URL → โชว์ข้อมูลตัวอย่าง.<br>ขั้นตอน: Google Sheet → File → Share → Publish to web → เลือก tab → CSV → คัดลอก link → วางลงใน <code>dashboard.js</code> (ตัวแปร <code>TRADES_CSV_URL / SIGNALS_CSV_URL / PERF_CSV_URL</code>)';
-      // keep FALLBACK sample, but upgrade to live signals if URL provided
-      if(SIGNALS_CSV_URL){
-        try{ const srv=await fetchCSV(SIGNALS_CSV_URL); if(srv&&srv.length>1){const L=buildLookup(srv); signals=srv.slice(1).map(r=>({timestamp:r[L['Timestamp']],symbol:r[L['Symbol']],signal:r[L['Signal']],direction:r[L['Direction']],confidence:r[L['Confidence']],d1Trend:r[L['D1 Trend']],h1Trend:r[L['H1 Trend']],rsi:r[L['RSI']],atr:r[L['ATR']],entryZone:r[L['Entry Zone']],sl:r[L['SL']],tp:r[L['TP']],status:r[L['Status']],notes:r[L['Notes']]})); } }catch(e){}
-      }
-    } else {
-      try{ if(TRADES_CSV_URL){ const r=await fetchCSV(TRADES_CSV_URL); if(r){const L=buildLookup(r); trades=r.slice(1).map(x=>({timestamp:x[L['Timestamp']],type:x[L['Type']],symbol:x[L['Symbol']],direction:x[L['Direction']],volume:x[L['Volume']],entry:x[L['Entry']],sl:x[L['SL']],tp:x[L['TP']],exit:x[L['Exit']],profit:x[L['Profit']],swap:x[L['Swap']],commission:x[L['Commission']],netPnl:x[L['Net P&L']],status:x[L['Status']],signalReason:x[L['Signal Reason']],strategy:x[L['Strategy']],risk:x[L['Risk %']],balance:x[L['Account Balance']],notes:x[L['Notes']]}));}} }catch(e){ showErr('Trades: '+e.message); }
-      try{ if(SIGNALS_CSV_URL){ const r=await fetchCSV(SIGNALS_CSV_URL); if(r){const L=buildLookup(r); signals=r.slice(1).map(x=>({timestamp:x[L['Timestamp']],symbol:x[L['Symbol']],signal:x[L['Signal']],direction:x[L['Direction']],confidence:x[L['Confidence']],d1Trend:x[L['D1 Trend']],h1Trend:x[L['H1 Trend']],rsi:x[L['RSI']],atr:x[L['ATR']],entryZone:x[L['Entry Zone']],sl:x[L['SL']],tp:x[L['TP']],status:x[L['Status']],notes:x[L['Notes']]}));}} }catch(e){ showErr('Signals: '+e.message); }
-      try{ if(PERF_CSV_URL){ const r=await fetchCSV(PERF_CSV_URL); if(r){const L=buildLookup(r); perf=r.slice(1).map(x=>({date:x[L['Date']],totalTrades:x[L['Total Trades']],wins:x[L['Wins']],losses:x[L['Losses']],winrate:x[L['Winrate %']],netPnl:x[L['Net P&L']],maxDrawdown:x[L['Max Drawdown']],avgRr:x[L['Avg RR']],balance:x[L['Balance']],equityPeak:x[L['Equity Peak']],equityLow:x[L['Equity Low']]}));}} }catch(e){ showErr('Performance: '+e.message); }
+    }
+
+    // Status badge / source info
+    if(loadedJson){
+      liveBadge(true, 'Google Sheets (auto)');
+      $('sourceInfo').textContent='แหล่งข้อมูล: Google Sheets (Trading Bot Log) · auto-sync (data.json)';
+    } else if(hasCSV){
       liveBadge(true, 'Google Sheets CSV');
       $('sourceInfo').textContent='แหล่งข้อมูล: Google Sheets (Trading Bot Log) · เผยแพร่เป็น CSV';
+    } else {
+      liveBadge(false, 'sample data');
+      $('sourceInfo').innerHTML='<b>โหมด demo</b> · ยังไม่ได้เชื่อม data.json/CSV → โชว์ข้อมูลตัวอย่าง.<br>ขั้นตอน: ใส่ URL ใน <code>dashboard.js</code> หรือวาง <code>data.json</code>';
     }
 
     renderKpis(trades, perf, signals);
