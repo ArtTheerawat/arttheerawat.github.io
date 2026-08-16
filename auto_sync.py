@@ -16,7 +16,19 @@ GEN  = BASE / "generate_data.py"
 DATA = BASE / "data.json"
 
 def sha(p: Path) -> str:
-    return hashlib.sha256(p.read_bytes()).hexdigest() if p.exists() else ""
+    """Hash data.json ignoring the volatile generated_at timestamp so we only
+    commit+push when actual trade/signal/perf data changed, not on every regen."""
+    if not p.exists():
+        return ""
+    raw = p.read_bytes()
+    try:
+        import json
+        d = json.loads(raw)
+        d.pop("generated_at", None)
+        raw = json.dumps(d, sort_keys=True, ensure_ascii=False).encode("utf-8")
+    except Exception:
+        pass  # not JSON -> use raw bytes
+    return hashlib.sha256(raw).hexdigest()
 
 def run(*args, **kw):
     return subprocess.run(
