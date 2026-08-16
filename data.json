@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-17T02:25:47",
+  "generated_at": "2026-08-17T02:40:34",
   "trades": [],
   "signals": [
     {
@@ -65,6 +65,38 @@
       "tp": 60088.06,
       "status": "ANALYZED",
       "notes": "D1 downtrend, H1 aligned, bounce to M15 EMA zone (62895.0-62896.3)"
+    },
+    {
+      "timestamp": 46251.10456018519,
+      "symbol": "BTCUSDm",
+      "signal": "SELL",
+      "direction": "SELL",
+      "confidence": "MEDIUM",
+      "d1Trend": "DOWN",
+      "h1Trend": "DOWN",
+      "rsi": 50.8,
+      "atr": 1037.45,
+      "entryZone": 63139.15,
+      "sl": 64695.32,
+      "tp": 60338.04,
+      "status": "ANALYZED",
+      "notes": "D1/H1 downtrend, bounce at EMA50, RSI falling"
+    },
+    {
+      "timestamp": 46251.10803240741,
+      "symbol": "BTCUSDm",
+      "signal": "SELL",
+      "direction": "SELL",
+      "confidence": "MEDIUM",
+      "d1Trend": "DOWN",
+      "h1Trend": "DOWN",
+      "rsi": 50.5,
+      "atr": 1037.45,
+      "entryZone": 63136.16,
+      "sl": 64692.33,
+      "tp": 60335.05,
+      "status": "ANALYZED",
+      "notes": "D1/H1 downtrend, bounce at EMA50, RSI falling"
     }
   ],
   "perf": []
