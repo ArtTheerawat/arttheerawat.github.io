@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🗓️ ตารางเรียน</title>
+<link rel="stylesheet" href="school.css">
+<style>
+  .grid{display:grid; grid-template-columns:64px repeat(5,1fr); gap:6px; min-width:860px}
+  .grid .hdn, .grid .dayhd{font-size:12px; color:var(--muted); text-align:center; padding:8px 0; font-weight:600}
+  .col{position:relative; background:var(--card); border:1px solid var(--border); border-radius:10px; min-height:520px}
+  .dayhd.today{color:#fff; background:var(--accent); border-radius:8px}
+  .block{position:absolute; left:5px; right:5px; border-radius:8px; padding:7px 8px; font-size:11px;
+    background:var(--card2); border-left:4px solid var(--accent2); cursor:pointer; overflow:hidden;
+    box-shadow:0 2px 8px rgba(0,0,0,.35); transition:.12s}
+  .block:hover{filter:brightness(1.15); transform:scale(1.02)}
+  .block .cn{font-weight:700; font-size:11.5px}
+  .block .rm{color:var(--muted); margin-top:3px; font-size:10px}
+  .block .tm{color:var(--accent2); margin-top:2px; font-size:10px}
+  .block.overlay{background:rgba(217,70,239,.12); border-left-color:#d946ef; font-style:italic}
+  .timelabel{position:relative; font-size:10px; color:var(--muted); text-align:center; height:48px}
+  .timelabel b{position:absolute; top:-6px; left:50%; transform:translateX(-50%); white-space:nowrap}
+  .tlcol{position:relative; height:520px}
+  .tlcol a, .col a{position:absolute; left:0; right:0; height:1px; background:rgba(139,152,179,.15); pointer-events:none}
+  .tlcol a span{position:absolute; right:0; top:-7px; font-size:9px; color:var(--muted)}
+  #detail{position:fixed; inset:0; background:rgba(4,8,16,.78); display:none; align-items:center; justify-content:center; z-index:50; padding:20px}
+  #detail.open{display:flex}
+  .sheet{background:var(--card); border:1px solid var(--border); border-radius:16px; max-width:560px; width:100%; max-height:84vh; overflow:auto; padding:22px}
+  .sheet .hh{display:flex; align-items:flex-start; justify-content:space-between; gap:10px}
+  .sheet .hh h2{font-size:17px; margin:0 0 4px}
+  .sheet .close{background:none; border:none; color:var(--muted); font-size:22px; cursor:pointer; line-height:1}
+  .assign{background:var(--card2); border:1px solid var(--border); border-radius:10px; padding:12px; margin-top:10px}
+  .assign .ttl{font-size:13px; font-weight:600}
+  .assign .meta{font-size:11px; color:var(--muted); margin-top:6px}
+  .assign .meta b{color:var(--txt); font-weight:600}
+  .empty{color:var(--muted); font-size:12px; padding:16px 0 4px}
+  .legend{display:flex; gap:16px; flex-wrap:wrap; font-size:11px; color:var(--muted); margin-bottom:14px}
+  .legend .sw{display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:5px; vertical-align:-1px}
+  .scrollx{overflow-x:auto}
+  @media(max-width:900px){.grid{min-width:860px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="nav">
+    <span style="color:var(--muted);font-size:13px;padding:7px 0"><a href="index.html">← My Hub</a></span>
+    <a href="today.html">📚 เช็คงานวันนี้</a>
+    <a href="schedule.html" class="on">🗓️ ตารางเรียน</a>
+    <a href="trading.html">📊 Trading</a>
+  </div>
+  <header>
+    <div>
+      <h1>ตาราง<span class="dot">เรียน</span></h1>
+      <div class="sub" id="sub">กำลังโหลด…</div>
+    </div>
+    <div class="live" id="live" style="font-size:12px;color:var(--muted)"></div>
+  </header>
+  <div class="err" id="errbox"></div>
+  <div class="legend">
+    <span><span class="sw" style="background:var(--accent2)"></span>คาบประจำ</span>
+    <span><span class="sw" style="background:#d946ef"></span>วิชาชดเชย / สอบ (จาก Calendar)</span>
+  </div>
+  <div class="scrollx">
+    <div class="grid" id="grid"></div>
+  </div>
+</div>
+
+<div id="detail"><div class="sheet">
+  <div class="hh">
+    <div id="dtlHead"></div>
+    <button class="close" onclick="closeDetail()">✕</button>
+  </div>
+  <div id="dtlBody"></div>
+</div></div>
+
+<script src="data/schedule.js"></script>
+<script>
+const DAYS=["จันทร์","อังคาร","พุธ","พฤหัสบดี","ศุกร์","เสาร์","อาทิตย์"];
+const HH0=8, HH1=19;               // range 08:00–19:00
+let ASSIGN_JSON={};
+
+function $id(i){return document.getElementById(i);}
+function hToY(h){ return (h-HH0)/(HH1-HH0)*520; }   // px from top
+
+function fmt12(h){const hh=Math.floor(h), mm=Math.round((h-hh)*60); const ap=hh>=12?"PM":"AM"; const hr=((hh+11)%12)+1; return `${hr}:${String(mm).padStart(2,'0')} ${ap}`;}
+
+function renderTimes(){
+  const tl=document.querySelector('.tlcol');
+  for(let t=HH0;t<=HH1;t+=1){
+    const y=hToY(t);
+    const lbl=`<div style="position:absolute;right:6px;top:${y-7}px;font-size:9px;color:var(--muted)">${String(t).padStart(2,'0')}:00</div>`;
+    const div=document.createElement('div'); div.style.cssText=`position:absolute;left:0;right:0;top:${y}px;height:1px;background:rgba(139,152,179,.15)`;
+    tl.appendChild(div); tl.innerHTML+=`<span style="position:absolute;right:6px;top:${y-7}px;font-size:9px;color:var(--muted)">${String(t).padStart(2,'0')}:00</span>`;
+  }
+}
+
+function renderGrid(){
+  const grid=$id('grid');
+  const todayJD=(new Date().getDay()+6)%7+1; // 1=mon
+  let html='<div class="tlcol"></div>';
+  DAYS.forEach((d,i)=>{
+    html+=`<div class="dayhd ${i+1===todayJD?'today':''}">${d}</div>`;
+  });
+  html+='<div class="tlcol"></div>';
+  DAYS.forEach((d,i)=>{ html+=`<div class="col" data-day="${i+1}"></div>`; });
+  grid.innerHTML=html;
+  // grid lines
+  for(let t=HH0;t<=HH1;t++){
+    grid.querySelectorAll('.col').forEach(c=>{
+      const ln=document.createElement('div'); ln.style.cssText=`position:absolute;left:0;right:0;top:${hToY(t)}px;height:1px;background:rgba(139,152,179,.12)`;
+      c.appendChild(ln);
+    });
+  }
+}
+
+function addBlock(colEl, sch, overlay){
+  const top=hToY(sch.start), hgt=hToY(sch.end)-top;
+  const c=(window.COURSES&&window.COURSES[sch.code])||{name:sch.code,color:'#22d3ee'};
+  const b=document.createElement('div');
+  b.className='block'+(overlay?' overlay':'');
+  b.style.cssText=`top:${top}px;height:${Math.max(hgt,22)}px;border-left-color:${overlay?'#d946ef':c.color}`;
+  b.innerHTML=`<div class="cn">${c.name}</div><div class="rm">${sch.room}</div><div class="tm">${fmt12(sch.start)}–${fmt12(sch.end)}</div>`;
+  b.onclick=()=>openDetail(sch.code, overlay?sch.ext:c.name);
+  colEl.appendChild(b);
+}
+
+async function init(){
+  renderTimes(); renderGrid();
+  try{
+    const ev=await fetch('data/schedule.json',{cache:'no-store'});
+    if(ev.ok){
+      const d=await ev.json();
+      if(d.updated){ const dt=new Date(d.updated); $id('live').textContent='ซิงก์เมื่อ '+dt.toLocaleString('th-TH',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})+' (Calendar)'; }
+      // overlay events (makeup / quiz) — attach to matching day
+      (d.events||[]).forEach(e=>{
+        const day=+e.day; if(!day) return;
+        if(e.isRecurring) return; // recurring base handled by SCHEDULE
+        const col=document.querySelector(`.col[data-day="${day}"]`); if(!col) return;
+        addBlock(col,{start:e.start,end:e.end,code:e.code||'events',room:e.summary||'กิจกรรม',ext:(e.alt||{})},true);
+      });
+    }
+  }catch(e){ $id('errbox').style.display='block'; $id('errbox').textContent='⚠ overlay Calendar ใช้ไม่ได้: '+e.message; }
+
+  // render base schedule
+  document.querySelectorAll('.col').forEach(col=>{
+    const day=+col.dataset.day;
+    (window.SCHEDULE||[]).filter(s=>s.day===day).forEach(s=>addBlock(col,s,false));
+  });
+  // load assignments
+  try{
+    const r=await fetch('data/assignments.json',{cache:'no-store'});
+    if(r.ok) ASSIGN_JSON=await r.json();
+  }catch(e){ console.warn('assignments:',e.message); }
+  updateTodayInfo();
+}
+
+function updateTodayInfo(){
+  const jd=(new Date().getDay()+6)%7+1;
+  const sub=$id('sub');
+  const todayCourse=window.SCHEDULE.filter(s=>s.day===jd);
+  if(todayCourse.length){
+    const names=todayCourse.map(s=>(window.COURSES[s.code]||{}).name||s.code);
+    sub.textContent='วันนี้ ('+DAYS[jd-1]+') มี '+todayCourse.length+' คาบ: '+names.join(' · ');
+  } else {
+    sub.textContent='วันนี้ ('+DAYS[jd-1]+') ไม่มีคาบเรียน';
+  }
+}
+
+function courseAssignments(code){
+  const map=ASSIGN_JSON.byCourse||{};
+  return map[code]||null;
+}
+
+function openDetail(code, displayName){
+  const c=(window.COURSES[code])||{name:code,color:'#22d3ee'};
+  const a=courseAssignments(code);
+  const d=$id('detail');
+  $id('dtlHead').innerHTML=`<h2 style="color:${c.color}">${displayName||c.name}</h2>
+    <div class="when">รหัส ${code}</div>`;
+  if(a && a.length){
+    $id('dtlBody').innerHTML=`<div style="font-size:12px;color:var(--muted);margin-bottom:6px">งานที่ต้องส่ง (${a.length} รายการ)</div>`+
+      a.map(x=>{
+        const bd = x.overdue>0 ? 'b-over' : (x.overdue===0?'b-today':'b-soon');
+        const bl = x.overdue>0?'เลยกำหนด '+x.overdue+' วัน' : (x.overdue===0?'ครบวันนี้':'ครบใน '+x.overdue+' วัน');
+        return `<div class="assign"><div class="ttl">${x.title}</div>
+          <div class="meta">ครบ <b>${x.due}</b> · <span class="badge ${bd}">${bl}</span></div></div>`;
+      }).join('');
+  } else {
+    $id('dtlBody').innerHTML=`<div class="empty">ไม่มีงานค้างในวิชานี้ เก่งมาก 👍</div>`;
+  }
+  d.classList.add('open');
+}
+function closeDetail(){ $id('detail').classList.remove('open'); }
+$id('detail').onclick=e=>{ if(e.target.id==='detail') closeDetail(); };
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,49 @@
+{
+  "updated": "2026-08-17T02:45:47+07:00",
+  "todo": [
+    {
+      "title": "ยืนยันการเข้าเรียน",
+      "course": "88622065",
+      "courseName": "88622065 Data Structures and Algorithms",
+      "due": "2026-08-07",
+      "overdue": 10,
+      "workType": "ASSIGNMENT",
+      "points": 1
+    },
+    {
+      "title": "Vector Stack Queue",
+      "course": "88622065",
+      "courseName": "88622065 Data Structures and Algorithms",
+      "due": "2026-08-14",
+      "overdue": 3,
+      "workType": "ASSIGNMENT",
+      "points": null
+    }
+  ],
+  "byCourse": {
+    "88622065": [
+      {
+        "title": "Vector Stack Queue",
+        "course": "88622065",
+        "courseName": "88622065 Data Structures and Algorithms",
+        "due": "2026-08-14",
+        "overdue": 3,
+        "workType": "ASSIGNMENT",
+        "points": null
+      },
+      {
+        "title": "ยืนยันการเข้าเรียน",
+        "course": "88622065",
+        "courseName": "88622065 Data Structures and Algorithms",
+        "due": "2026-08-07",
+        "overdue": 10,
+        "workType": "ASSIGNMENT",
+        "points": 1
+      }
+    ]
+  },
+  "courseNames": {
+    "88622065": "88622065 Data Structures and Algorithms",
+    "89510564": "89510564 การบริหารสุขภาวะทางจิต"
+  }
+}
