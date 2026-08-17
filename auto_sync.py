@@ -23,8 +23,8 @@ DATA = BASE / "public" / "data.json"   # Next.js static export serves /data.json
 
 def sha(p: Path) -> str:
     """Hash data.json ignoring volatile timestamps (generated_at + usage.updated_at)
-    and micro-drifting $ amounts (rounded to cents) so we only commit+push when
-    actual content changed, not on every regen/poll."""
+    and micro-drifting $ amounts (rounded to $0.1) so we only commit+push when
+    actual content changed meaningfully, not on every regen/poll."""
     if not p.exists():
         return ""
     raw = p.read_bytes()
@@ -32,8 +32,6 @@ def sha(p: Path) -> str:
         import json
         d = json.loads(raw)
         d.pop("generated_at", None)
-        # strip volatile usage timestamps + round $ to cents so a pure refresh
-        # (or the usage API's self-reflection drift) doesn't trigger a push
         u = d.get("usage")
         if isinstance(u, dict):
             u.pop("updated_at", None)
@@ -42,10 +40,12 @@ def sha(p: Path) -> str:
                 if isinstance(pu, dict):
                     pu.pop("updated_at", None)
                     if prov == "openrouter":
+                        # round $ amounts so micro-drift from the usage API
+                        # self-reflection doesn't trigger a push every poll
                         for k in ("usage", "remaining", "total_credits",
                                   "usage_daily", "usage_weekly", "usage_monthly"):
                             if isinstance(pu.get(k), (int, float)):
-                                pu[k] = round(pu[k], 2)
+                                pu[k] = round(pu[k], 1)
         raw = json.dumps(d, sort_keys=True, ensure_ascii=False).encode("utf-8")
     except Exception:
         pass  # not JSON -> use raw bytes
@@ -62,6 +62,11 @@ def main():
     if not GEN.exists():
         print("missing generate_data.py; cannot sync")
         return 1
+
+    # guard against a corrupted HOME (env pollution) breaking git
+    default_home = os.path.expanduser("~")
+    if "DOCTYPE" in os.environ.get("HOME", ""):
+        os.environ["HOME"] = default_home
 
     before = sha(DATA)
 
@@ -80,6 +85,9 @@ def main():
 
     after = sha(DATA)
 
+    if os.environ.get("DBG_SHA"):
+        print("DBG before:", before[:16], "after:", after[:16], "->", "SAME" if before == after else "DIFF")
+
     # 2) if content changed, commit + push
     if before == after:
         return 0  # nothing changed -> silent
@@ -87,6 +95,7 @@ def main():
     # verify git repo + origin exist
     status = run("git", "status", "--porcelain")
     if status.returncode != 0 or "public/data.json" not in status.stdout:
+        print("not pushing (data.json not dirty or git err):", status.stdout[:200])
         return 0
 
     commit = run("git", "add", "public/data.json")
