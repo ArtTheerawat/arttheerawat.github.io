@@ -6,10 +6,12 @@
 <title>🗓️ ตารางเรียน</title>
 <link rel="stylesheet" href="school.css">
 <style>
-  .grid{display:grid; grid-template-columns:64px repeat(5,1fr); grid-template-rows:24px 520px; gap:6px; min-width:860px}
-  .grid .hdn, .grid .dayhd{font-size:12px; color:var(--muted); text-align:center; padding:8px 0; font-weight:600}
-  .col{position:relative; background:var(--card); border:1px solid var(--border); border-radius:10px; min-height:520px}
-  .dayhd.today{color:#fff; background:var(--accent); border-radius:8px}
+  .grid{display:grid; grid-template-columns:64px repeat(7,1fr); grid-template-rows:44px 520px; gap:6px; min-width:1100px}
+    .grid .dayhd{font-size:12px; color:var(--muted); text-align:center; padding:6px 2px; font-weight:600; position:relative}
+    .grid .dayhd .d{font-size:10px; opacity:.85; margin-top:2px}
+    .col{position:relative; background:var(--card); border:1px solid var(--border); border-radius:10px; min-height:520px}
+    .dayhd.today{color:#fff; background:var(--accent); border-radius:8px}
+    .col.todaycol{outline:2px solid var(--accent); outline-offset:-1px}
   .block{position:absolute; left:5px; right:5px; border-radius:8px; padding:7px 8px; font-size:11px;
     background:var(--card2); border-left:4px solid var(--accent2); cursor:pointer; overflow:hidden;
     box-shadow:0 2px 8px rgba(0,0,0,.35); transition:.12s}
@@ -18,9 +20,7 @@
   .block .rm{color:var(--muted); margin-top:3px; font-size:10px}
   .block .tm{color:var(--accent2); margin-top:2px; font-size:10px}
   .block.overlay{background:rgba(217,70,239,.12); border-left-color:#d946ef; font-style:italic}
-  .timelabel{position:relative; font-size:10px; color:var(--muted); text-align:center; height:48px}
-    .timelabel b{position:absolute; top:-6px; left:50%; transform:translateX(-50%); white-space:nowrap}
-        .tlcol{position:relative; height:100%}
+    .tlcol{position:relative; height:100%}
   .tlcol a, .col a{position:absolute; left:0; right:0; height:1px; background:rgba(139,152,179,.15); pointer-events:none}
   .tlcol a span{position:absolute; right:0; top:-7px; font-size:9px; color:var(--muted)}
   #detail{position:fixed; inset:0; background:rgba(4,8,16,.78); display:none; align-items:center; justify-content:center; z-index:50; padding:20px}
@@ -38,27 +38,14 @@
   .legend .sw{display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:5px; vertical-align:-1px}
   .scrollx{overflow-x:auto}
     @media(max-width:900px){.grid{min-width:860px}}
-    /* ── มุมมองตารางแบบมหาลัย (grid วัน x คาบ) ── */
-    .tabs{display:flex; gap:8px; margin-bottom:16px}
-    .tabbtn{background:var(--card2); border:1px solid var(--border); color:var(--muted);
-      border-radius:9px; padding:7px 14px; font-size:12.5px; font-weight:600; cursor:pointer; transition:.12s}
-    .tabbtn:hover{filter:brightness(1.12); color:var(--txt)}
-    .tabbtn.on{background:var(--accent); color:#fff; border-color:var(--accent)}
-    #mtable{display:none; width:100%; border-collapse:collapse; min-width:860px; margin-top:4px}
-    #mtable thead th{background:var(--card2); color:var(--txt); font-size:12px; font-weight:700;
-      padding:10px 6px; border:1px solid var(--border); position:sticky; top:0}
-    #mtable .daycell{background:var(--card2); color:var(--muted); font-size:12.5px; font-weight:700;
-      padding:10px 8px; border:1px solid var(--border); text-align:center; width:96px; white-space:nowrap}
-    #mtable .daycell.today{background:var(--accent); color:#fff}
-    #mtable td.hour{background:var(--card); border:1px solid var(--border); padding:6px}
-    #mtable .cl{background:var(--card2); border-left:4px solid var(--accent2); border-radius:7px;
-      padding:7px 9px; font-size:11px}
-    #mtable .cl .nm{font-weight:700; font-size:12px}
-    #mtable .cl .rm{color:var(--muted); margin-top:3px; font-size:10px}
-    #mtable .cl .tm{color:var(--accent2); margin-top:2px; font-size:10px}
-    #mtable .cl.click{cursor:pointer}
-    #mtable .cl.click:hover{filter:brightness(1.2)}
-    #mtable td.empty{background:transparent; border:none}
+    /* ── แถบสัปดาห์ + weekly grid 7 วัน ── */
+        .weekbar{display:flex; align-items:center; gap:10px; margin-bottom:16px; flex-wrap:wrap}
+        .weekbar .wbtn{background:var(--card2); border:1px solid var(--border); color:var(--txt);
+          border-radius:9px; padding:7px 14px; font-size:14px; font-weight:700; cursor:pointer; transition:.12s}
+        .weekbar .wbtn:hover{filter:brightness(1.15)}
+        .weekbar .wbtn.wnow{font-size:12px; font-weight:600; padding:7px 12px}
+        .weekbar .wlabel{background:var(--card); border:1px solid var(--border); border-radius:9px;
+          padding:8px 16px; font-size:14px; font-weight:600; color:var(--txt); white-space:nowrap}
 </style>
 </head>
 <body>
@@ -78,20 +65,19 @@
   </header>
   <div class="err" id="errbox"></div>
   <div class="legend">
-      <span><span class="sw" style="background:var(--accent2)"></span>คาบประจำ</span>
-      <span><span class="sw" style="background:#d946ef"></span>วิชาชดเชย / สอบ (จาก Calendar)</span>
+        <span><span class="sw" style="background:var(--accent2)"></span>คาบประจำ</span>
+        <span><span class="sw" style="background:#d946ef"></span>วิชาชดเชย / สอบ (จาก Calendar)</span>
+      </div>
+      <div class="weekbar">
+        <button class="wbtn" onclick="shiftWeek(-1)" title="สัปดาห์ก่อนหน้า">◀</button>
+        <div class="wlabel" id="weekLabel">กำลังโหลด…</div>
+        <button class="wbtn" onclick="shiftWeek(1)" title="สัปดาห์ถัดไป">▶</button>
+        <button class="wbtn wnow" onclick="weekNow()" title="กลับสัปดาห์นี้">สัปดาห์นี้</button>
+      </div>
+      <div class="scrollx">
+        <div class="grid" id="grid"></div>
+      </div>
     </div>
-    <div class="tabs">
-      <button class="tabbtn on" id="tabTimeline" onclick="switchView('timeline')">⏱️ Timeline</button>
-      <button class="tabbtn" id="tabTable" onclick="switchView('table')">🗓️ ตารางมหาลัย</button>
-    </div>
-    <div class="scrollx" id="timelineWrap">
-      <div class="grid" id="grid"></div>
-    </div>
-    <div class="scrollx" id="tableWrap">
-      <table id="mtable"><thead id="mthead"></thead><tbody id="mbody"></tbody></table>
-    </div>
-  </div>
 
 <div id="detail"><div class="sheet">
   <div class="hh">
@@ -112,82 +98,71 @@ function hToY(h){ return (h-HH0)/(HH1-HH0)*520; }   // px from top
 
 function fmt12(h){const hh=Math.floor(h), mm=Math.round((h-hh)*60); const ap=hh>=12?"PM":"AM"; const hr=((hh+11)%12)+1; return `${hr}:${String(mm).padStart(2,'0')} ${ap}`;}
 
-function renderTimes(){
-  const tl=document.querySelectorAll('.tlcol')[1] || document.querySelector('.tlcol');  // ใช้ col ตัวแถวบล็อก (row2)
-  for(let t=HH0;t<=HH1;t+=1){
-    const y=hToY(t);
-    const lbl=`<div style="position:absolute;right:6px;top:${y-7}px;font-size:9px;color:var(--muted)">${String(t).padStart(2,'0')}:00</div>`;
-    const div=document.createElement('div'); div.style.cssText=`position:absolute;left:0;right:0;top:${y}px;height:1px;background:rgba(139,152,179,.15)`;
-    tl.appendChild(div); tl.innerHTML+=`<span style="position:absolute;right:6px;top:${y-7}px;font-size:9px;color:var(--muted)">${String(t).padStart(2,'0')}:00</span>`;
-  }
+// ── Weekly grid 7 วัน (จันทร์–อาทิตย์) ──
+let weekStart = new Date(); weekStart.setDate(weekStart.getDate() - ((weekStart.getDay()+6)%7)); // Monday ของสัปดาห์นี้
+
+function thDate(d){ // คืน {d, m, y} เป็นตัวเลขไทย? ใช้เลขอารบิก + พ.ศ.
+  return { d: d.getDate(), m: d.getMonth()+1, y: d.getFullYear()+543 };
 }
-
-// ── สลับมุมมอง Timeline ⇄ ตารางมหาลัย ──
-function switchView(v){
-  $id('tabTimeline').classList.toggle('on', v==='timeline');
-  $id('tabTable').classList.toggle('on', v==='table');
-  $id('timelineWrap').style.display = v==='timeline'?'block':'none';
-  $id('tableWrap').style.display    = v==='table'?'block':'none';
-  $id('mtable').style.display       = v==='table'?'table':'none';   /* เปิดตารางเองด้วย */
-  if(v==='table') renderGridTable();
+function fmtWeekRange(){
+  const a = weekStart, b = new Date(a); b.setDate(a.getDate()+6);
+  const da=thDate(a), db=thDate(b);
+  // ถ้าเดือนเดียว: 17/8/2569 - 23/8/2569 ; ต่างเดือน: 30/8-5/9/2569
+  if(da.m===db.m) return `${da.d}/${da.m}/${da.y} - ${db.d}/${db.m}/${db.y}`;
+  return `${da.d}/${da.m} - ${db.d}/${db.m}/${db.y}`;
 }
-
-  // วาดตารางแบบมหาลัย: แถว = วัน, หลัก = คาบ(8:00–19:00 ต่อชั่วโมง)
-  // รวมหลายคาบที่ติดกันเป็นช่วงเดียวด้วย rowspan/merge ด้วยการใช้เวลา
-  function renderGridTable(){
-    const thead=$id('mthead'), tbody=$id('mbody');
-    const jd=(new Date().getDay()+6)%7+1;
-    // หัวตาราง: คาบเวลา
-    let hh=`<tr><th style="min-width:96px">Day/Time</th>`;
-    for(let t=HH0;t<HH1;t++) hh+=`<th>${String(t).padStart(2,'0')}:00–${String(t+1).padStart(2,'0')}:00</th>`;
-    hh+=`</tr>`;
-    thead.innerHTML=hh;
-    const days=["จันทร์","อังคาร","พุธ","พฤหัสบดี","ศุกร์"];
-    let body='';
-    days.forEach((dn,i)=>{
-      const day=i+1;
-      let row=`<tr><td class="daycell ${day===jd?'today':''}">${dn}</td>`;
-      const tod=(window.SCHEDULE||[]).filter(s=>s.day===day).sort((a,b)=>a.start-b.start);
-      for(let h=HH0;h<HH1;h++){
-        // ชั่วโมงแรกของช่วงที่คาบเริ่ม -> วาด block + colSpan ครอบช่วง
-        const cur=tod.find(s=>Math.abs(s.start-h)<=0.1); // ชั่วโมงเริ่ม
-        if(cur){
-          // span = จำนวนชั่วโมงที่ช่วงครอบ (ปัดขึ้น เผื่อครึ่งชั่วโมง)
-          const span=Math.max(1, Math.round(cur.end-cur.start));
-          const nmc=(window.COURSES[cur.code])||{name:cur.code,color:'#22d3ee'};
-          row+=`<td colspan="${span}" class="hour"><div class="cl click" style="border-left-color:${nmc.color}" onclick="openDetail('${cur.code}','${nmc.name}')">
-            <div class="nm">${nmc.name}</div><div class="rm">${cur.room}</div><div class="tm">${fmt12(cur.start)}–${fmt12(cur.end)}</div></div></td>`;
-          h += span-1; // ข้ามชั่วโมงที่ถูกครอบ
-        } else {
-          row+=`<td class="empty"></td>`;
-        }
-      }
-      row+=`</tr>`;
-      body+=row;
-    });
-    tbody.innerHTML=body;
-  }
-
-function renderGrid(){
+function weekdayDates(){ // คืน [Date x7] ของสัปดาห์ที่ดู
+  const out=[];
+  for(let i=0;i<7;i++){ const d=new Date(weekStart); d.setDate(weekStart.getDate()+i); out.push(d); }
+  return out;
+}
+function renderWeek(){
   const grid=$id('grid');
-  const todayJD=(new Date().getDay()+6)%7+1; // 1=mon
-  // แถวที่ 1: หัวเวลา + หัววัน (เฉพาะ จ-ศ 5 วัน)
+  const now=new Date();
+  const todayStr=now.toDateString();
+  const dates=weekdayDates();
   let html='<div class="tlcol"></div>';
-  DAYS.slice(0,5).forEach((d,i)=>{
-    html+=`<div class="dayhd ${i+1===todayJD?'today':''}">${d}</div>`;
+  dates.forEach((d,i)=>{
+    const td=(d.toDateString()===todayStr ? ' today':'');
+    const x=thDate(d);
+    html+=`<div class="dayhd${td}">${DAYS[i]}<div class="d">${x.d}/${x.m}</div></div>`;
   });
-  // แถวที่ 2: คอลัมน์เวลา + คอลัมน์แต่ละวัน
   html+='<div class="tlcol"></div>';
-  DAYS.slice(0,5).forEach((d,i)=>{ html+=`<div class="col" data-day="${i+1}"></div>`; });
+  dates.forEach((d,i)=>{
+    const td=(d.toDateString()===todayStr ? ' todaycol':'');
+    html+=`<div class="col${td}" data-day="${i+1}" data-ds="${d.toDateString()}"></div>`;
+  });
   grid.innerHTML=html;
-  // grid lines
-  for(let t=HH0;t<=HH1;t++){
-    grid.querySelectorAll('.col').forEach(c=>{
-      const ln=document.createElement('div'); ln.style.cssText=`position:absolute;left:0;right:0;top:${hToY(t)}px;height:1px;background:rgba(139,152,179,.12)`;
-      c.appendChild(ln);
-    });
-  }
+  $id('weekLabel').textContent=fmtWeekRange();
+  // grid lines + time labels (ใน .tlcol แถว body = ตัวที่ 2)
+    for(let t=HH0;t<=HH1;t++){
+      grid.querySelectorAll('.col').forEach(c=>{
+        const ln=document.createElement('div'); ln.style.cssText=`position:absolute;left:0;right:0;top:${hToY(t)}px;height:1px;background:rgba(139,152,179,.12)`;
+        c.appendChild(ln);
+      });
+    }
+    const tlBody=grid.querySelectorAll('.tlcol')[1] || grid.querySelector('.tlcol');
+    for(let t=HH0;t<=HH1;t++){
+      const y=hToY(t);
+      const span=document.createElement('span'); span.style.cssText=`position:absolute;right:4px;top:${y-7}px;font-size:9px;color:var(--muted)`;
+      span.textContent=t+':00';
+      tlBody.appendChild(span);
+    }
+  // base schedule (recurring) — attach ตามวัน
+  document.querySelectorAll('.col').forEach(col=>{
+    const day=+col.dataset.day;
+    (window.SCHEDULE||[]).filter(s=>s.day===day).forEach(s=>addBlock(col,s,false));
+  });
+  // overlay events ที่ตรงกับวันที่จริงของสัปดาห์นี้
+  (ASSIGN_EVENTS||[]).forEach(e=>{
+    const ds=weekdayDates()[e.day-1];
+    if(!ds || ds.toDateString()!==e.dateString) return;
+    const col=document.querySelector('.col[data-day="'+e.day+'"]'); if(!col) return;
+    addBlock(col,{start:e.start,end:e.end,code:e.code||'events',room:e.summary||'กิจกรรม',ext:{}},true);
+  });
 }
+function shiftWeek(dir){ weekStart.setDate(weekStart.getDate()+dir*7); renderWeek(); }
+function weekNow(){ weekStart=new Date(); weekStart.setDate(weekStart.getDate()-((weekStart.getDay()+6)%7)); renderWeek(); }
 
 function addBlock(colEl, sch, overlay){
   const top=hToY(sch.start), hgt=hToY(sch.end)-top;
@@ -201,32 +176,20 @@ function addBlock(colEl, sch, overlay){
 }
 
 async function init(){
-  renderGrid(); renderTimes();
+  renderWeek();
   try{
     const ev=await fetch('data/schedule.json',{cache:'no-store'});
     if(ev.ok){
       const d=await ev.json();
       if(d.updated){ const dt=new Date(d.updated); $id('live').textContent='ซิงก์เมื่อ '+dt.toLocaleString('th-TH',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})+' (Calendar)'; }
-      // overlay events (makeup / quiz) — attach to matching day
-      (d.events||[]).forEach(e=>{
-        const day=+e.day; if(!day) return;
-        if(e.isRecurring) return; // recurring base handled by SCHEDULE
-        const col=document.querySelector(`.col[data-day="${day}"]`); if(!col) return;
-        addBlock(col,{start:e.start,end:e.end,code:e.code||'events',room:e.summary||'กิจกรรม',ext:(e.alt||{})},true);
+      // สร้าง ASSIGN_EVENTS ที่มี dateString ต่อวันจริง แล้ว re-render
+      window.ASSIGN_EVENTS=(d.events||[]).map(e=>{
+        const ds=(e.date||d.updated||new Date().toISOString()).slice(0,10);
+        return Object.assign({},e,{dateString:new Date(ds+'T00:00:00').toDateString()});
       });
+      renderWeek();
     }
   }catch(e){ $id('errbox').style.display='block'; $id('errbox').textContent='⚠ overlay Calendar ใช้ไม่ได้: '+e.message; }
-
-  // render base schedule
-  document.querySelectorAll('.col').forEach(col=>{
-    const day=+col.dataset.day;
-    (window.SCHEDULE||[]).filter(s=>s.day===day).forEach(s=>addBlock(col,s,false));
-  });
-  // load assignments
-  try{
-    const r=await fetch('data/assignments.json',{cache:'no-store'});
-    if(r.ok) ASSIGN_JSON=await r.json();
-  }catch(e){ console.warn('assignments:',e.message); }
   updateTodayInfo();
 }
 
