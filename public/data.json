@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-17T16:10:21",
+  "generated_at": "2026-08-17T16:12:32",
   "trades": [],
   "signals": [
     {
@@ -2689,26 +2689,42 @@
       "tp": "",
       "status": "ANALYZED",
       "notes": "Trends misaligned (D1=DOWN, H1=UP)"
+    },
+    {
+      "timestamp": 46251.67383101852,
+      "symbol": "BTCUSDm",
+      "signal": "NONE",
+      "direction": "?",
+      "confidence": "",
+      "d1Trend": "DOWN",
+      "h1Trend": "UP",
+      "rsi": 43.5,
+      "atr": 1054.29,
+      "entryZone": "",
+      "sl": "",
+      "tp": "",
+      "status": "ANALYZED",
+      "notes": "Trends misaligned (D1=DOWN, H1=UP)"
     }
   ],
   "perf": [],
   "usage": {
     "openrouter": {
       "status": "ok",
-      "usage": 9.6173,
-      "usage_monthly": 9.6173,
-      "usage_weekly": 0.3604,
-      "usage_daily": 0.3604,
+      "usage": 9.6247,
+      "usage_monthly": 9.6247,
+      "usage_weekly": 0.3678,
+      "usage_daily": 0.3678,
       "total_credits": 15,
       "is_free_tier": false,
-      "updated_at": "2026-08-17T16:10:22",
-      "remaining": 5.2372
+      "updated_at": "2026-08-17T16:12:33",
+      "remaining": 5.2298
     },
     "9arm": {
       "status": "empty",
       "tokens_total": 0,
       "calls": 0
     },
-    "updated_at": "2026-08-17T16:10:22"
+    "updated_at": "2026-08-17T16:12:33"
   }
 }
