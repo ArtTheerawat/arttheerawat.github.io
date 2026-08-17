@@ -152,3 +152,55 @@ table.sched td.cl.overlay{background:rgba(217,70,239,.14); border-left-color:#d9
 .u-stats{display:flex; gap:14px; flex-wrap:wrap; font-size:11px; color:var(--muted); margin-top:14px}
 .u-note{font-size:11px; color:var(--muted); margin-top:10px; line-height:1.5; padding-top:10px; border-top:1px dashed var(--border)}
 .u-empty{color:var(--muted); font-size:13px; padding:12px 0}
+
+/* ── Home: Personal Command Center (Today/Next-action) ── */
+.today-strip{background:linear-gradient(180deg,var(--card),var(--card2)); border:1px solid var(--border); border-left:4px solid var(--accent); border-radius:14px; padding:20px; margin-bottom:16px}
+.today-greet{margin-bottom:14px}
+.today-who{font-size:20px; font-weight:700; letter-spacing:.3px}
+.today-date{font-size:12px; color:var(--muted); margin-top:3px}
+.today-stats{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px}
+.ts{background:var(--bg); border:1px solid var(--border); border-radius:10px; padding:12px 14px; color:var(--txt); display:flex; flex-direction:column; transition:.15s}
+.ts:hover{border-color:var(--accent)}
+.ts b{font-size:26px; font-weight:700; line-height:1.1}
+.ts span{font-size:11px; color:var(--muted); margin-top:2px}
+.ts-red b{color:var(--down)}
+.ts-warn b{color:#fbbf24}
+.ts-blue b{color:#a5b4fc}
+.ts-cyan b{color:var(--accent2)}
+.ts.live{border-color:var(--accent)}
+
+.next-card{display:flex; gap:16px; align-items:flex-start; border:1px solid var(--border); border-left:6px solid var(--accent2); border-radius:14px; padding:20px; margin-bottom:16px; background:linear-gradient(180deg,var(--card),var(--card2))}
+.next-card.is-over{border-left-color:var(--down)}
+.next-card.is-today{border-left-color:var(--warn)}
+.next-card.is-soon{border-left-color:var(--accent)}
+.next-card.empty{border-left-color:var(--up)}
+.next-badge{flex-shrink:0; background:var(--accent2); color:#082032; font-size:11px; font-weight:800; padding:4px 11px; border-radius:999px; letter-spacing:.3px; margin-top:2px}
+.next-card.is-over .next-badge{background:var(--down); color:#fff}
+.next-card.is-today .next-badge{background:var(--warn); color:#1a1000}
+.next-card.is-soon .next-badge{background:var(--accent); color:#fff}
+.next-card.empty .next-badge{background:var(--up); color:#061e0e}
+.next-body{flex:1; min-width:0}
+.next-subj{font-size:12px; font-weight:700; color:var(--accent2); letter-spacing:.4px; text-transform:uppercase}
+.next-ttl{font-size:18px; font-weight:700; margin-top:4px}
+.next-meta{display:flex; align-items:center; gap:14px; margin-top:8px; font-size:12px; color:var(--muted); flex-wrap:wrap}
+.next-go{margin-left:auto; font-weight:700}
+.next-go a{color:var(--accent2)}
+.next-go a:hover{text-decoration:underline}
+
+.sec-title{font-size:15px; font-weight:700; margin:4px 0 12px; display:flex; align-items:center; gap:8px}
+.sec-title .cnt{font-size:11px; color:var(--muted); font-weight:400}
+.sec-title.quick{margin-top:6px}
+
+.today-classes{background:var(--card); border:1px solid var(--border); border-radius:12px; padding:18px; margin-bottom:18px}
+.cls-list{display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:10px}
+.cls{background:var(--card2); border:1px solid var(--border); border-left:4px solid var(--accent2); border-radius:10px; padding:12px 14px; display:flex; align-items:center; gap:12px}
+.cls-time{font-size:11px; font-weight:700; color:var(--accent2); white-space:nowrap}
+.cls-info{min-width:0}
+.cls-name{font-size:13px; font-weight:600}
+.cls-room{font-size:11px; color:var(--muted); margin-top:2px}
+
+@media(max-width:560px){
+  .today-stats{grid-template-columns:repeat(2,1fr)}
+  .cls-list{grid-template-columns:1fr}
+  .next-card{flex-direction:column}
+}
