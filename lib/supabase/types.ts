@@ -10,7 +10,7 @@ export interface Database {
       hidden_tasks: {
         Row: {
           id: string;
-          user_id: string;
+          user_id: string | null;
           task_key: string;
           course: string;
           title: string;
@@ -21,7 +21,7 @@ export interface Database {
         };
         Insert: {
           id?: string;
-          user_id: string;
+          user_id?: string | null;
           task_key: string;
           course: string;
           title: string;
@@ -32,7 +32,7 @@ export interface Database {
         };
         Update: {
           id?: string;
-          user_id?: string;
+          user_id?: string | null;
           task_key?: string;
           course?: string;
           title?: string;

@@ -61,7 +61,7 @@ export default function TodayPage() {
     const [toast, setToast] = useState<string | null>(null);
         const [toastError, setToastError] = useState(false);
         const toastTimer = useRef<number | null>(null);
-        const { user, hiddenList, hide, unhide, clearAll, signInWithGoogle } = useHiddenTasks();
+        const { hiddenList, hide, unhide, clearAll, canEdit } = useHiddenTasks();
 
       const showToast = (msg: string, isError = false) => {
         setToast(msg);
@@ -165,8 +165,7 @@ export default function TodayPage() {
           <span style={{ minWidth: 0 }}>{a.title}</span>
           <HideButton
           assignment={a}
-          signedIn={!!user}
-          onLogin={signInWithGoogle}
+          canEdit={canEdit}
           onHide={(r, c) => handleHide(a, r, c)}
         />
         </div>
@@ -286,8 +285,7 @@ export default function TodayPage() {
                       <span style={{ minWidth: 0 }}>{a.title}</span>
                       <HideButton
                         assignment={a}
-                        signedIn={!!user}
-                        onLogin={signInWithGoogle}
+                        canEdit={canEdit}
                         onHide={(r, c) => handleHide(a, r, c)}
                       />
                     </div>
@@ -323,8 +321,7 @@ export default function TodayPage() {
                       <span style={{ minWidth: 0 }}>{a.title}</span>
                       <HideButton
           assignment={a}
-          signedIn={!!user}
-          onLogin={signInWithGoogle}
+          canEdit={canEdit}
           onHide={(r, c) => handleHide(a, r, c)}
         />
                     </div>

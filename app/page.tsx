@@ -108,7 +108,7 @@ export default function HomePage() {
   const [assign, setAssign] = useState<Assignment[]>([]);
     const [toast, setToast] = useState<string | null>(null);
     const toastTimer = useRef<number | null>(null);
-    const { user, hiddenList, hide, signInWithGoogle } = useHiddenTasks();
+    const { hiddenList, hide, canEdit } = useHiddenTasks();
 
   const showToast = (msg: string) => {
     setToast(msg);
@@ -279,11 +279,10 @@ export default function HomePage() {
                         <div className="next-ttl" style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
                           <span style={{ minWidth: 0 }}>{stats.next.title || "งาน"}</span>
                           <HideButton
-                                                      compact
-                                                      signedIn={!!user}
-                                                      onLogin={signInWithGoogle}
-                                                      assignment={stats.next}
-                                                      onHide={async (r, c) => {
+                                                                              compact
+                                                                              canEdit={canEdit}
+                                                                              assignment={stats.next}
+                                                                              onHide={async (r, c) => {
                                                                                     const ok = await hide(stats.next, r, c);
                                                                                     if (ok) showToast(`ซ่อน "${stats.next.title}" แล้ว 🙈`);
                                                                                   }}

@@ -80,7 +80,7 @@ export default function SchedulePage() {
     const detailModalRef = useRef<HTMLDivElement | null>(null);
     const detailTrapKeyDown = useModalFocusTrap(detailModalRef);
   const [toast, setToast] = useState<string | null>(null);
-    const { user, hiddenList, hide, signInWithGoogle } = useHiddenTasks();
+    const { hiddenList, hide, canEdit } = useHiddenTasks();
 
   const showToast = (msg: string) => {
     setToast(msg);
@@ -416,8 +416,7 @@ export default function SchedulePage() {
                       <div style={{ marginTop: 8 }}>
                         <HideButton
                                                   assignment={a}
-                                                  signedIn={!!user}
-                                                  onLogin={signInWithGoogle}
+                                                  canEdit={canEdit}
                                                   onHide={async (r, c) => {
                                                                                                       const ok = await hide(a, r, c);
                                                                                                       if (ok) showToast(`ซ่อน "${a.title}" แล้ว 🙈`);

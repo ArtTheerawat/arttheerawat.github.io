@@ -1,10 +1,12 @@
-// Hidden-task data layer for the hub — now backed by Supabase (cloud) instead
-// of localStorage so the hidden set stays in sync across devices (computer +
-// phone) for the same signed-in user.
+// Hidden-task data layer for the hub — backed by Supabase (cloud) so the
+// hidden set stays in sync across devices. Hides are GLOBAL: the set is a
+// single shared list that everyone who opens the site (signed in or not) sees,
+// like "editing the website". Only the approved owner(s) can mutate it, per
+// the RLS policies in the 0002 migration.
 //
 // Google-Classroom-synced source data (public/data/assignments.json) is NEVER
-// touched: hiding is strictly a per-user preference stored in the
-// `hidden_tasks` table (RLS-scoped to the owning user).
+// touched: hiding lives entirely in the `hidden_tasks` table (RLS-scoped to
+// its global read/write model).
 //
 // Stable task key = course + title + due. Because `due` is part of the key, if
 // a professor CHANGES the due date the key changes too, so the task re-appears
@@ -56,7 +58,7 @@ export function reasonLabel(id: string): string {
  * ────────────────────────────────────────────────────────────────────────── */
 interface HiddenTaskRow {
   id: string;
-  user_id: string;
+  user_id: string | null; // nullable now — kept for back-compat with pre-global rows
   task_key: string;
   course: string;
   title: string;
@@ -83,15 +85,11 @@ function rowToHiddenTask(r: HiddenTaskRow): HiddenTask {
  * by the tables when an explicit imperative call is needed.
  * ────────────────────────────────────────────────────────────────────────── */
 
-/** Load this user's hidden tasks from the cloud. Returns [] when not signed
- *  in or when Supabase isn't configured. */
+/** Load the GLOBAL hidden-task set. Everyone (signed in or not) can read it,
+ *  so no auth check is required here. Returns [] when Supabase isn't set up. */
 export async function loadHiddenTasks(): Promise<HiddenTask[]> {
   const sb = getSupabaseBrowserClient();
   if (!sb) return [];
-  const {
-    data: { user },
-  } = await sb.auth.getUser();
-  if (!user) return [];
   const { data, error } = await sb
     .from("hidden_tasks")
     .select("*")
@@ -103,7 +101,7 @@ export async function loadHiddenTasks(): Promise<HiddenTask[]> {
   return (data as HiddenTaskRow[]).map(rowToHiddenTask);
 }
 
-/** Hide an assignment in the cloud. Returns true on success. */
+/** Hide an assignment globally. RLS enforces owner-only writes server-side. */
 export async function hideTask(
   a: Hiddenable,
   reason: string,
@@ -111,13 +109,8 @@ export async function hideTask(
 ): Promise<boolean> {
   const sb = getSupabaseBrowserClient();
   if (!sb) return false;
-  const {
-    data: { user },
-  } = await sb.auth.getUser();
-  if (!user) return false;
   const key = taskKey(a);
   const payload = {
-    user_id: user.id,
     task_key: key,
     course: (a.course || "").trim(),
     title: (a.title || "").trim(),
@@ -125,8 +118,8 @@ export async function hideTask(
     reason,
     custom_reason: reason === "other" ? (custom || "").trim() : null,
   };
-  // Upsert keyed on (user_id, task_key) — idempotent re-hide.
-  const { error } = await sb.from("hidden_tasks").upsert(payload, { onConflict: "user_id,task_key" });
+  // Upsert keyed on task_key — idempotent re-hide (global, so unique).
+  const { error } = await sb.from("hidden_tasks").upsert(payload, { onConflict: "task_key" });
   if (error) {
     console.warn("hideTask:", error.message);
     return false;
@@ -134,15 +127,11 @@ export async function hideTask(
   return true;
 }
 
-/** Un-hide (restore) an assignment in the cloud. Returns true on success. */
+/** Un-hide (restore) an assignment globally. Owner-only via RLS. */
 export async function unhideTask(key: string): Promise<boolean> {
   const sb = getSupabaseBrowserClient();
   if (!sb) return false;
-  const {
-    data: { user },
-  } = await sb.auth.getUser();
-  if (!user) return false;
-  const { error } = await sb.from("hidden_tasks").delete().eq("user_id", user.id).eq("task_key", key);
+  const { error } = await sb.from("hidden_tasks").delete().eq("task_key", key);
   if (error) {
     console.warn("unhideTask:", error.message);
     return false;
@@ -150,15 +139,11 @@ export async function unhideTask(key: string): Promise<boolean> {
   return true;
 }
 
-/** Remove every hidden entry for this user. Returns true on success. */
+/** Remove every hidden entry (global). Owner-only via RLS. */
 export async function clearHiddenTasks(): Promise<boolean> {
   const sb = getSupabaseBrowserClient();
   if (!sb) return false;
-  const {
-    data: { user },
-  } = await sb.auth.getUser();
-  if (!user) return false;
-  const { error } = await sb.from("hidden_tasks").delete().eq("user_id", user.id);
+  const { error } = await sb.from("hidden_tasks").delete();
   if (error) {
     console.warn("clearHiddenTasks:", error.message);
     return false;
@@ -181,30 +166,48 @@ export function canonicalAssignment(a: Hiddenable, list: HiddenTask[]): {
 }
 
 /* ──────────────────────────────────────────────────────────────────────────
- * useHiddenTasks — the hook every page uses.
+ * useHiddenTasks — the hook every page uses (GLOBAL model).
  *
- * Returns { user, loading, hiddenList, isHidden, hide, unhide, clearAll,
- *           refresh, signInWithGoogle }.
+ * Returns { user, status, hiddenList, canEdit, isHidden, hide, unhide,
+ *           clearAll, refresh, signInWithGoogle }.
  *
- *  - Loads on mount and whenever the auth user changes.
- *  - Subscribes to Supabase realtime on hidden_tasks for this user, so a hide
- *    on the phone updates the open tab on the computer immediately, and
- *    multiple tabs on the same device stay in sync (cross-tab).
- *  - A browser `storage`/visibility fallback also re-fetches when the tab gets
- *    focus, as an extra cross-tab safety net.
+ *  - The hidden set is GLOBAL: it loads immediately for everyone (signed in
+ *    or not) and is the same on every device. Reads need no auth.
+ *  - Writes (hide/unhide/clear) are OWNER-ONLY, enforced by RLS server-side.
+ *    `canEdit` tells the UI whether the current signed-in user is the owner.
+ *  - Subscribes to Supabase realtime on hidden_tasks (all rows), so a hide on
+ *    the phone updates the open tab on the computer immediately, and multiple
+ *    tabs on the same device stay in sync (cross-tab).
  *  - Every mutation returns a Promise<boolean> so callers can show feedback
  *    only on real success.
  * ────────────────────────────────────────────────────────────────────────── */
+
+/** Owner emails for mutating the hidden set (client-safe, matches RLS allow-list).
+ *  Comma-separated; falls back to 'any logged-in user writes' if unset. */
+const OWNER_EMAILS =
+  (process.env.NEXT_PUBLIC_HIDDEN_ALLOWED_EMAILS || "")
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+
+function isOwnerEmail(email?: string): boolean {
+  if (!email) return false;
+  if (OWNER_EMAILS.length === 0) return true; // unset → any signed-in user may write
+  return OWNER_EMAILS.includes(email.toLowerCase());
+}
+
 export function useHiddenTasks() {
   const [user, setUser] = useState<{ id: string; email?: string; name?: string } | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
   const [hiddenList, setHiddenList] = useState<HiddenTask[]>([]);
   const channelRef = useRef<RealtimeChannel | null>(null);
 
+  const canEdit = !!user && isOwnerEmail(user.email);
+
   // (Re)build the sorted list from rows whenever payloads tick in.
-  const applyRows = useCallback((rows: HiddenTaskRow[]) => {
+  const applyRows = useCallback((rows: HiddenTaskRow[] | null) => {
     setHiddenList(
-      rows
+      (rows || [])
         .map(rowToHiddenTask)
         .sort((a, b) => (a.hiddenAt < b.hiddenAt ? 1 : -1))
     );
@@ -222,29 +225,39 @@ export function useHiddenTasks() {
       const {
         data: { user: u },
       } = await sb.auth.getUser();
-      if (!u) {
-        setUser(null);
-        setHiddenList([]);
-        setStatus("ready");
-        return;
+      // Track the signed-in user (for owner detection + login UI), but the
+      // hidden list itself is global and loads regardless.
+      setUser(u ? { id: u.id, email: u.email ?? undefined, name: u.user_metadata?.full_name ?? undefined } : null);
+      if (u) {
+        // Signed in — full read via authed client.
+        const { data, error } = await sb
+          .from("hidden_tasks")
+          .select("*")
+          .order("hidden_at", { ascending: false });
+        if (error) {
+          setStatus("error");
+          return;
+        }
+        applyRows((data as HiddenTaskRow[]) || []);
+      } else {
+        // Guest — still read the global set (SELECT is open to anon).
+        const { data, error } = await sb
+          .from("hidden_tasks")
+          .select("*")
+          .order("hidden_at", { ascending: false });
+        if (error) {
+          setStatus("error");
+          return;
+        }
+        applyRows((data as HiddenTaskRow[]) || []);
       }
-      setUser({ id: u.id, email: u.email ?? undefined, name: u.user_metadata?.full_name ?? undefined });
-      const { data, error } = await sb
-        .from("hidden_tasks")
-        .select("*")
-        .order("hidden_at", { ascending: false });
-      if (error) {
-        setStatus("error");
-        return;
-      }
-      applyRows((data as HiddenTaskRow[]) || []);
       setStatus("ready");
     } catch (e) {
       setStatus("error");
     }
   }, [applyRows]);
 
-  // Auth state change → reload + manage realtime channel.
+  // Realtime + auth-change wiring (no per-user filter — global set).
   useEffect(() => {
     const sb = getSupabaseBrowserClient();
     if (!sb) {
@@ -260,10 +273,6 @@ export function useHiddenTasks() {
         await sb.removeChannel(channelRef.current);
         channelRef.current = null;
       }
-      const {
-        data: { user: u },
-      } = await sb.auth.getUser();
-      if (!u) return;
       channelRef.current = sb
         .channel("hidden-tasks-realtime")
         .on(
@@ -272,7 +281,6 @@ export function useHiddenTasks() {
             event: "*",
             schema: "public",
             table: "hidden_tasks",
-            filter: `user_id=eq.${u.id}`,
           },
           async () => {
             // Refetch the full list on any change (simplest correct sync).
@@ -344,6 +352,7 @@ export function useHiddenTasks() {
     user,
     status,
     hiddenList,
+    canEdit,
     isHidden: (a: Hiddenable) => isTaskHidden(a, hiddenList),
     hide,
     unhide,
