@@ -112,10 +112,12 @@ create policy "hidden_tasks_delete_owner" on public.hidden_tasks
 do $$
 begin
   if not exists (
-    select 1 from pg_publication_rel pr
+    select 1
+    from pg_publication_rel pr
+    join pg_publication p on p.oid = pr.prpubid
     join pg_class c on c.oid = pr.prrelid
     join pg_namespace n on n.oid = c.relnamespace
-    where pr.pubname = 'supabase_realtime'
+    where p.pubname = 'supabase_realtime'
       and n.nspname = 'public'
       and c.relname = 'hidden_tasks'
   ) then
