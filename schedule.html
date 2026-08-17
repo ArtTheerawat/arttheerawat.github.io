@@ -107,7 +107,13 @@ function fmtWeekRange(){
   if(da.m===db.m) return `${da.d}/${da.m}/${da.y} - ${db.d}/${db.m}/${db.y}`;
   return `${da.d}/${da.m} - ${db.d}/${db.m}/${db.y}`;
 }
-function isThisWeek(d){ const t=new Date(); const m=new Date(t); m.setDate(t.getDate()-((t.getDay()+6)%7)); const ms=new Date(m); ms.setDate(m.getDate()+6); return d>=m && d<=ms; }
+function isThisWeek(d){
+  const t=new Date();
+  const m=new Date(t.getFullYear(), t.getMonth(), t.getDate() - ((t.getDay()+6)%7)); // Monday midnight
+  const ms=new Date(m); ms.setDate(m.getDate()+6);
+  const dn=new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  return dn>=m && dn<=ms;
+}
 
 // ── ตารางมหาลัย: เวลา=คอลัมน์(ครึ่งชั่วโมง) 8:00–19:00, วัน=แถว 7 วัน ──
 function halfIndex(h){ return Math.round((h-HH0)*2); }
