@@ -36,11 +36,16 @@ create index if not exists hidden_tasks_task_key_idx on public.hidden_tasks (tas
 alter table public.hidden_tasks disable row level security;
 alter table public.hidden_tasks enable row level security;
 
--- Re-create policies from scratch (drop the old per-user ones first).
+-- Re-create policies from scratch (drop old per-user AND any prior owner ones
+-- so THIS file is idempotent — safe to re-run if a partial run errored).
 drop policy if exists "hidden_tasks_select_own" on public.hidden_tasks;
 drop policy if exists "hidden_tasks_insert_own" on public.hidden_tasks;
 drop policy if exists "hidden_tasks_update_own" on public.hidden_tasks;
 drop policy if exists "hidden_tasks_delete_own" on public.hidden_tasks;
+drop policy if exists "hidden_tasks_select_public" on public.hidden_tasks;
+drop policy if exists "hidden_tasks_insert_owner" on public.hidden_tasks;
+drop policy if exists "hidden_tasks_update_owner" on public.hidden_tasks;
+drop policy if exists "hidden_tasks_delete_owner" on public.hidden_tasks;
 
 -- READ: everyone (anonymous included) can see the hidden set.
 create policy "hidden_tasks_select_public" on public.hidden_tasks
