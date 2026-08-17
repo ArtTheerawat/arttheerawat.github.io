@@ -114,22 +114,22 @@ function fmt12(h){const hh=Math.floor(h), mm=Math.round((h-hh)*60); const ap=hh>
 
 function renderTimes(){
   const tl=document.querySelector('.tlcol');
-    for(let t=HH0;t<=HH1;t+=1){
-      const y=hToY(t);
-      const lbl=`<div style="position:absolute;right:6px;top:${y-7}px;font-size:9px;color:var(--muted)">${String(t).padStart(2,'0')}:00</div>`;
-      const div=document.createElement('div'); div.style.cssText=`position:absolute;left:0;right:0;top:${y}px;height:1px;background:rgba(139,152,179,.15)`;
-      tl.appendChild(div); tl.innerHTML+=`<span style="position:absolute;right:6px;top:${y-7}px;font-size:9px;color:var(--muted)">${String(t).padStart(2,'0')}:00</span>`;
-    }
+  for(let t=HH0;t<=HH1;t+=1){
+    const y=hToY(t);
+    const lbl=`<div style="position:absolute;right:6px;top:${y-7}px;font-size:9px;color:var(--muted)">${String(t).padStart(2,'0')}:00</div>`;
+    const div=document.createElement('div'); div.style.cssText=`position:absolute;left:0;right:0;top:${y}px;height:1px;background:rgba(139,152,179,.15)`;
+    tl.appendChild(div); tl.innerHTML+=`<span style="position:absolute;right:6px;top:${y-7}px;font-size:9px;color:var(--muted)">${String(t).padStart(2,'0')}:00</span>`;
   }
+}
 
-  // ── สลับมุมมอง Timeline ⇄ ตารางมหาลัย ──
-  function switchView(v){
-    $id('tabTimeline').classList.toggle('on', v==='timeline');
-    $id('tabTable').classList.toggle('on', v==='table');
-    $id('timelineWrap').style.display = v==='timeline'?'block':'none';
-    $id('tableWrap').style.display    = v==='table'?'block':'none';
-    if(v==='table') renderGridTable();
-  }
+// ── สลับมุมมอง Timeline ⇄ ตารางมหาลัย ──
+function switchView(v){
+  $id('tabTimeline').classList.toggle('on', v==='timeline');
+  $id('tabTable').classList.toggle('on', v==='table');
+  $id('timelineWrap').style.display = v==='timeline'?'block':'none';
+  $id('tableWrap').style.display    = v==='table'?'block':'none';
+  if(v==='table') renderGridTable();
+}
 
   // วาดตารางแบบมหาลัย: แถว = วัน, หลัก = คาบ(8:00–19:00 ต่อชั่วโมง)
   // รวมหลายคาบที่ติดกันเป็นช่วงเดียวด้วย rowspan/merge ด้วยการใช้เวลา
