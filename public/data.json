@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-17T15:53:18",
+  "generated_at": "2026-08-17T16:08:45",
   "trades": [],
   "signals": [
     {
@@ -2641,7 +2641,78 @@
       "tp": "",
       "status": "ANALYZED",
       "notes": "Trends misaligned (D1=DOWN, H1=UP)"
+    },
+    {
+      "timestamp": 46251.663402777776,
+      "symbol": "BTCUSDm",
+      "signal": "NONE",
+      "direction": "?",
+      "confidence": "",
+      "d1Trend": "DOWN",
+      "h1Trend": "UP",
+      "rsi": 38,
+      "atr": 1054.29,
+      "entryZone": "",
+      "sl": "",
+      "tp": "",
+      "status": "ANALYZED",
+      "notes": "Trends misaligned (D1=DOWN, H1=UP)"
+    },
+    {
+      "timestamp": 46251.66688657407,
+      "symbol": "BTCUSDm",
+      "signal": "NONE",
+      "direction": "?",
+      "confidence": "",
+      "d1Trend": "DOWN",
+      "h1Trend": "UP",
+      "rsi": 40.8,
+      "atr": 1054.29,
+      "entryZone": "",
+      "sl": "",
+      "tp": "",
+      "status": "ANALYZED",
+      "notes": "Trends misaligned (D1=DOWN, H1=UP)"
+    },
+    {
+      "timestamp": 46251.6703587963,
+      "symbol": "BTCUSDm",
+      "signal": "NONE",
+      "direction": "?",
+      "confidence": "",
+      "d1Trend": "DOWN",
+      "h1Trend": "UP",
+      "rsi": 42.6,
+      "atr": 1054.29,
+      "entryZone": "",
+      "sl": "",
+      "tp": "",
+      "status": "ANALYZED",
+      "notes": "Trends misaligned (D1=DOWN, H1=UP)"
     }
   ],
-  "perf": []
+  "perf": [],
+  "usage": {
+    "openrouter": {
+      "status": "ok",
+      "usage": 9.6173,
+      "usage_monthly": 9.6173,
+      "usage_weekly": 0.3604,
+      "usage_daily": 0.3604,
+      "total_credits": 15,
+      "is_free_tier": false,
+      "updated_at": "2026-08-17T16:08:46",
+      "remaining": 5.2372
+    },
+    "9arm": {
+      "status": "ok",
+      "tokens_in": 152000,
+      "tokens_out": 34000,
+      "tokens_total": 186000,
+      "calls": 42,
+      "last_model": "qwen3.8-27b-fp8",
+      "updated_at": "2026-08-17T16:00:00"
+    },
+    "updated_at": "2026-08-17T16:08:46"
+  }
 }
