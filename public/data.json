@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-17T13:52:10",
+  "generated_at": "2026-08-17T14:04:55",
   "trades": [],
   "signals": [
     {
@@ -2251,6 +2251,38 @@
       "d1Trend": "DOWN",
       "h1Trend": "UP",
       "rsi": 81.8,
+      "atr": 1054.29,
+      "entryZone": "",
+      "sl": "",
+      "tp": "",
+      "status": "ANALYZED",
+      "notes": "Trends misaligned (D1=DOWN, H1=UP)"
+    },
+    {
+      "timestamp": 46251.58001157407,
+      "symbol": "BTCUSDm",
+      "signal": "NONE",
+      "direction": "?",
+      "confidence": "",
+      "d1Trend": "DOWN",
+      "h1Trend": "UP",
+      "rsi": 80.7,
+      "atr": 1054.29,
+      "entryZone": "",
+      "sl": "",
+      "tp": "",
+      "status": "ANALYZED",
+      "notes": "Trends misaligned (D1=DOWN, H1=UP)"
+    },
+    {
+      "timestamp": 46251.5834837963,
+      "symbol": "BTCUSDm",
+      "signal": "NONE",
+      "direction": "?",
+      "confidence": "",
+      "d1Trend": "DOWN",
+      "h1Trend": "UP",
+      "rsi": 79.7,
       "atr": 1054.29,
       "entryZone": "",
       "sl": "",
