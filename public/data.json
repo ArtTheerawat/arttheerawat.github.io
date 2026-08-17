@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-17T16:31:46",
+  "generated_at": "2026-08-17T16:39:46",
   "trades": [],
   "signals": [
     {
@@ -2769,6 +2769,22 @@
       "tp": "",
       "status": "ANALYZED",
       "notes": "Trends misaligned (D1=DOWN, H1=UP)"
+    },
+    {
+      "timestamp": 46251.69121527778,
+      "symbol": "BTCUSDm",
+      "signal": "NONE",
+      "direction": "?",
+      "confidence": "",
+      "d1Trend": "DOWN",
+      "h1Trend": "UP",
+      "rsi": 26.5,
+      "atr": 1054.29,
+      "entryZone": "",
+      "sl": "",
+      "tp": "",
+      "status": "ANALYZED",
+      "notes": "Trends misaligned (D1=DOWN, H1=UP)"
     }
   ],
   "perf": [],
@@ -2778,6 +2794,6 @@
       "tokens_total": 0,
       "calls": 0
     },
-    "updated_at": "2026-08-17T16:31:47"
+    "updated_at": "2026-08-17T16:39:47"
   }
 }
