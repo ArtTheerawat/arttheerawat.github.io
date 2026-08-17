@@ -1,12 +1,12 @@
 {
-  "updated": "2026-08-17T17:37:38+07:00",
+  "updated": "2026-08-18T03:34:34+07:00",
   "todo": [
     {
       "title": "ยืนยันการเข้าเรียน",
       "course": "88622065",
       "courseName": "88622065 Data Structures and Algorithms",
       "due": "2026-08-07",
-      "overdue": 10,
+      "overdue": 11,
       "workType": "ASSIGNMENT",
       "points": 1
     },
@@ -15,7 +15,7 @@
       "course": "88634065",
       "courseName": "Softdev2026 G2",
       "due": "2026-08-12",
-      "overdue": 5,
+      "overdue": 6,
       "workType": "ASSIGNMENT",
       "points": 100
     },
@@ -24,18 +24,9 @@
       "course": "88622065",
       "courseName": "88622065 Data Structures and Algorithms",
       "due": "2026-08-14",
-      "overdue": 3,
+      "overdue": 4,
       "workType": "ASSIGNMENT",
       "points": null
-    },
-    {
-      "title": "Week5",
-      "course": "88634065",
-      "courseName": "Softdev2026 G2",
-      "due": "2026-08-17",
-      "overdue": 0,
-      "workType": "ASSIGNMENT",
-      "points": 100
     },
     {
       "title": "Week 6: File",
@@ -50,15 +41,6 @@
   "byCourse": {
     "88634065": [
       {
-        "title": "Week5",
-        "course": "88634065",
-        "courseName": "Softdev2026 G2",
-        "due": "2026-08-17",
-        "overdue": 0,
-        "workType": "ASSIGNMENT",
-        "points": 100
-      },
-      {
         "title": "Week 6: File",
         "course": "88634065",
         "courseName": "Softdev2026 G2",
@@ -72,7 +54,7 @@
         "course": "88634065",
         "courseName": "Softdev2026 G2",
         "due": "2026-08-12",
-        "overdue": 5,
+        "overdue": 6,
         "workType": "ASSIGNMENT",
         "points": 100
       }
@@ -83,7 +65,7 @@
         "course": "88622065",
         "courseName": "88622065 Data Structures and Algorithms",
         "due": "2026-08-14",
-        "overdue": 3,
+        "overdue": 4,
         "workType": "ASSIGNMENT",
         "points": null
       },
@@ -92,7 +74,7 @@
         "course": "88622065",
         "courseName": "88622065 Data Structures and Algorithms",
         "due": "2026-08-07",
-        "overdue": 10,
+        "overdue": 11,
         "workType": "ASSIGNMENT",
         "points": 1
       }
