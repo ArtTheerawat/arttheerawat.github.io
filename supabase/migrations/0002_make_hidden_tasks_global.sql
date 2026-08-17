@@ -55,7 +55,7 @@ returns boolean language sql stable security definer as $$
     select 1 from auth.users
     where id = auth.uid()
       and lower(email) in (
-        lower('PLEASE-REPLACE@example.com')
+        lower('theerawat.numtang@gmail.com')
       )
   );
 $$;
