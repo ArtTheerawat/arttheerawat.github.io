@@ -113,7 +113,7 @@ do $$
 begin
   if not exists (
     select 1 from pg_publication_rel pr
-    join pg_class c on c.oid = pr.relid
+    join pg_class c on c.oid = pr.prrelid
     join pg_namespace n on n.oid = c.relnamespace
     where pr.pubname = 'supabase_realtime'
       and n.nspname = 'public'
