@@ -107,8 +107,21 @@ create policy "hidden_tasks_delete_owner" on public.hidden_tasks
 
 -- ──────────────────────────────────────────────────────────────────────────
 -- 5) Realtime stays so hides propagate live across devices/tabs.
--- ──────────────────────────────────────────────────────────────────────────
-alter publication supabase_realtime add table public.hidden_tasks;
+--    IDEMPOTENT: only add to the publication if NOT already a member (a plain
+--    `ADD TABLE` on an already-member table is a 42710 error).
+do $$
+begin
+  if not exists (
+    select 1 from pg_publication_rel pr
+    join pg_class c on c.oid = pr.relid
+    join pg_namespace n on n.oid = c.relnamespace
+    where pr.pubname = 'supabase_realtime'
+      and n.nspname = 'public'
+      and c.relname = 'hidden_tasks'
+  ) then
+    alter publication supabase_realtime add table public.hidden_tasks;
+  end if;
+end $$;
 
 -- ──────────────────────────────────────────────────────────────────────────
 -- 6) Cleanup of any optional per-user trigger (harmless if absent).
