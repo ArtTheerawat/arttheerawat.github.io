@@ -99,10 +99,21 @@ export default function HomePage() {
   const load = useCallback(async () => {
     setErr(null);
     try {
-      const res = await fetch(dataUrl("/data.json"), { cache: "no-store" });
-      if (res.ok) {
-        const j = await res.json();
-        if (j && j.usage) setUsage(j.usage as UsageData);
+      // OpenRouter usage: live from the serverless proxy (key stays server-side).
+      // 9arm usage: read from the synced data.json (no public API exists).
+      const [orRes, hubRes] = await Promise.all([
+        fetch("/api/usage", { cache: "no-store" }),
+        fetch(dataUrl("/data.json"), { cache: "no-store" }),
+      ]);
+      const orJson = orRes.ok ? await orRes.json() : null;
+      const hubJson = hubRes.ok ? await hubRes.json() : null;
+      const n9 = hubJson?.usage?.["9arm"] ?? null;
+      if (orJson || n9) {
+        setUsage({
+          openrouter: orJson ?? undefined,
+          "9arm": n9 ?? undefined,
+          updated_at: new Date().toISOString(),
+        });
       }
     } catch (e) {
       setErr("โหลดข้อมูล usage ล้มเหลว: " + (e instanceof Error ? e.message : String(e)));

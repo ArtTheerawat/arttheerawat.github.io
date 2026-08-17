@@ -22,9 +22,9 @@ DATA = BASE / "public" / "data.json"   # Next.js static export serves /data.json
 
 
 def sha(p: Path) -> str:
-    """Hash data.json ignoring volatile timestamps (generated_at + usage.updated_at)
-    and micro-drifting $ amounts (rounded to $0.1) so we only commit+push when
-    actual content changed meaningfully, not on every regen/poll."""
+    """Hash data.json ignoring volatile `generated_at` + `usage.updated_at`
+    timestamps so we only commit+push when actual content changed, not on the
+    per-run timestamp refresh."""
     if not p.exists():
         return ""
     raw = p.read_bytes()
@@ -35,17 +35,10 @@ def sha(p: Path) -> str:
         u = d.get("usage")
         if isinstance(u, dict):
             u.pop("updated_at", None)
-            for prov in ("openrouter", "9arm"):
+            for prov in ("9arm", "openrouter"):
                 pu = u.get(prov)
                 if isinstance(pu, dict):
                     pu.pop("updated_at", None)
-                    if prov == "openrouter":
-                        # round $ amounts so micro-drift from the usage API
-                        # self-reflection doesn't trigger a push every poll
-                        for k in ("usage", "remaining", "total_credits",
-                                  "usage_daily", "usage_weekly", "usage_monthly"):
-                            if isinstance(pu.get(k), (int, float)):
-                                pu[k] = round(pu[k], 1)
         raw = json.dumps(d, sort_keys=True, ensure_ascii=False).encode("utf-8")
     except Exception:
         pass  # not JSON -> use raw bytes
