@@ -2838,10 +2838,14 @@
   "perf": [],
   "usage": {
     "9arm": {
-      "status": "empty",
-      "tokens_total": 0,
-      "calls": 0
+      "status": "ok",
+      "tokens_in": 63,
+      "tokens_out": 94,
+      "tokens_total": 157,
+      "calls": 1,
+      "last_model": "qwen3.8-27b-fp8",
+      "updated_at": "2026-08-17T17:03:00"
     },
-    "updated_at": "2026-08-17T16:55:22"
+    "updated_at": "2026-08-17T17:03:19"
   }
 }
