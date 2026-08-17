@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-17T16:55:21",
+  "generated_at": "2026-08-17T17:10:47",
   "trades": [],
   "signals": [
     {
@@ -2833,6 +2833,70 @@
       "tp": "",
       "status": "ANALYZED",
       "notes": "Trends misaligned (D1=DOWN, H1=UP)"
+    },
+    {
+      "timestamp": 46251.70511574074,
+      "symbol": "BTCUSDm",
+      "signal": "NONE",
+      "direction": "?",
+      "confidence": "",
+      "d1Trend": "DOWN",
+      "h1Trend": "UP",
+      "rsi": 26.1,
+      "atr": 1054.29,
+      "entryZone": "",
+      "sl": "",
+      "tp": "",
+      "status": "ANALYZED",
+      "notes": "Trends misaligned (D1=DOWN, H1=UP)"
+    },
+    {
+      "timestamp": 46251.70858796296,
+      "symbol": "BTCUSDm",
+      "signal": "NONE",
+      "direction": "?",
+      "confidence": "",
+      "d1Trend": "DOWN",
+      "h1Trend": "UP",
+      "rsi": 23.6,
+      "atr": 1054.29,
+      "entryZone": "",
+      "sl": "",
+      "tp": "",
+      "status": "ANALYZED",
+      "notes": "Trends misaligned (D1=DOWN, H1=UP)"
+    },
+    {
+      "timestamp": 46251.712060185186,
+      "symbol": "BTCUSDm",
+      "signal": "NONE",
+      "direction": "?",
+      "confidence": "",
+      "d1Trend": "DOWN",
+      "h1Trend": "UP",
+      "rsi": 24.4,
+      "atr": 1054.29,
+      "entryZone": "",
+      "sl": "",
+      "tp": "",
+      "status": "ANALYZED",
+      "notes": "Trends misaligned (D1=DOWN, H1=UP)"
+    },
+    {
+      "timestamp": 46251.715532407405,
+      "symbol": "BTCUSDm",
+      "signal": "NONE",
+      "direction": "?",
+      "confidence": "",
+      "d1Trend": "DOWN",
+      "h1Trend": "UP",
+      "rsi": 23.1,
+      "atr": 1054.29,
+      "entryZone": "",
+      "sl": "",
+      "tp": "",
+      "status": "ANALYZED",
+      "notes": "Trends misaligned (D1=DOWN, H1=UP)"
     }
   ],
   "perf": [],
@@ -2844,8 +2908,9 @@
       "tokens_total": 157,
       "calls": 1,
       "last_model": "qwen3.8-27b-fp8",
+      "by_model": {},
       "updated_at": "2026-08-17T17:03:00"
     },
-    "updated_at": "2026-08-17T17:03:19"
+    "updated_at": "2026-08-17T17:10:47"
   }
 }
