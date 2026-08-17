@@ -115,22 +115,22 @@ function isThisWeek(d){
   return dn>=m && dn<=ms;
 }
 
-// ── ตารางมหาลัย: เวลา=คอลัมน์(ครึ่งชั่วโมง) 8:00–19:00, วัน=แถว 7 วัน ──
-function halfIndex(h){ return Math.round((h-HH0)*2); }
-function hmLabel(h){ const hh=Math.floor(h); return `${String(hh).padStart(2,'0')}:00`; }
+// ── ตารางมหาลัย: เวลา=คอลัมน์(ชั่วโมงเต็ม) 8:00–19:00, วัน=แถว 7 วัน ──
+function halfIndex(h){ return h-HH0; }                       // ชั่วโมงเต็ม: 8:00->0, 9:00->1
+function spanHours(start,end){ return Math.max(1, Math.round(end-start)); } // 4 ชม ครบ
 
 function renderTable(){
   const head=$id('schedHead'), body=$id('schedBody');
   const jd=(new Date().getDay()+6)%7+1;             // 1=จันทร์ .. 7=อาทิตย์
   const showNow = isThisWeek(weekStart);
-  // ── หัวตาราง: Day/Time + ครึ่งชั่วโมงทุกช่อง (label ชั่วโมงเต็ม) ──
-  let hh=`<tr><th class="dayh">Day/Time</th>`;
-  for(let h=HH0; h<HH1; h++){
-    hh+=`<th class="hh">${hmLabel(h)}</th><th class="hh2">:30</th>`;   // 2 ช่อง/ชั่วโมง (ครึ่งชั่วโมง)
-  }
-  hh+=`</tr>`;
-  head.innerHTML=hh;
-  const totalHalf=(HH1-HH0)*2;
+  // ── หัวตาราง: Day/Time + 11 ชั่วโมงเต็ม 8:00–19:00 (แบบมหาลัย) ──
+    let hh=`<tr><th class="dayh">Day/Time</th>`;
+    for(let h=HH0; h<HH1; h++){
+      hh+=`<th class="hh">${String(h).padStart(2,'0')}:00-${String(h+1).padStart(2,'0')}:00</th>`;
+    }
+    hh+=`</tr>`;
+    head.innerHTML=hh;
+    const totalHalf=(HH1-HH0);  // 11 ชั่วโมง
   // ── แถววัน 7 วัน (จันทร์–อาทิตย์) ──
   let trs='';
   DAYS.forEach((dn,i)=>{
@@ -139,7 +139,7 @@ function renderTable(){
     let row=`<tr><td class="dname ${isToday?'today':''}">${dn}</td>`;
     const cells=new Array(totalHalf).fill(null);
     (window.SCHEDULE||[]).filter(s=>s.day===day).sort((a,b)=>a.start-b.start).forEach(s=>{
-      const startH=halfIndex(s.start), span=Math.max(1, halfIndex(s.end)-startH);
+      const startH=halfIndex(s.start), span=spanHours(s.start,s.end);
       cells[startH]={startH,span,s};
     });
     let segs=[];
