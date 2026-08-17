@@ -1,5 +1,5 @@
 {
-  "updated": "2026-08-17T11:42:45+07:00",
+  "updated": "2026-08-17T11:44:22+07:00",
   "todo": [
     {
       "title": "ยืนยันการเข้าเรียน",
@@ -99,6 +99,7 @@
     ]
   },
   "courseNames": {
+    "88624165": "G2 User Interface Design and Development",
     "88634065": "Softdev2026 G2",
     "88622065": "88622065 Data Structures and Algorithms",
     "89510564": "89510564 การบริหารสุขภาวะทางจิต"
