@@ -182,8 +182,11 @@ export function canonicalAssignment(a: Hiddenable, list: HiddenTask[]): {
  *    only on real success.
  * ────────────────────────────────────────────────────────────────────────── */
 
-/** Owner emails for mutating the hidden set (client-safe, matches RLS allow-list).
- *  Comma-separated; falls back to 'any logged-in user writes' if unset. */
+/** Owner emails for mutating the hidden set (client-safe, matches RLS allow-list in
+ *  migrations 0002/0003). Must be set via NEXT_PUBLIC_HIDDEN_ALLOWED_EMAILS so the
+ *  client gate agrees with Supabase RLS. If it is unset we deliberately LOCK writes
+ *  (button hidden) rather than fall back to "any signed-in user" — falling back is
+ *  exactly the bug that let a non-owner see the hide button but get rejected by RLS. */
 const OWNER_EMAILS =
   (process.env.NEXT_PUBLIC_HIDDEN_ALLOWED_EMAILS || "")
     .split(",")
@@ -192,7 +195,8 @@ const OWNER_EMAILS =
 
 function isOwnerEmail(email?: string): boolean {
   if (!email) return false;
-  if (OWNER_EMAILS.length === 0) return true; // unset → any signed-in user may write
+  // No configured owner list → nobody can write (fail-closed).
+  if (OWNER_EMAILS.length === 0) return false;
   return OWNER_EMAILS.includes(email.toLowerCase());
 }
 

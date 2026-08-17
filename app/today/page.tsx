@@ -134,21 +134,21 @@ export default function TodayPage() {
   const handleHide = (a: Assignment, reason: string, custom?: string) => {
       hide(a, reason, custom).then((ok) => {
         if (ok) showToast(`ซ่อน "${a.title}" แล้ว 🙈`);
-        else showToast("ซ่อนงานไม่สำเร็จ — ล็อกอินอยู่ไหม? ลองอีกครั้ง", true);
+        else showToast("ซ่อนงานไม่สำเร็จ — บัญชีนี้ยังไม่มีสิทธิ์ซ่อน (ต้องการบัญชีเจ้าของ theerawat.numtang@gmail.com)", true);
       });
       };
 
       const handleRestore = (key: string, title?: string) => {
         unhide(key).then((ok) => {
           if (ok) showToast(`นำ "${title}" กลับมาแล้ว`);
-          else showToast("นำงานกลับมาไม่สำเร็จ — ลองอีกครั้ง", true);
+          else showToast("นำงานกลับมาไม่สำเร็จ — ยังไม่มีสิทธิ์แก้ (ต้องการบัญชีเจ้าของ)", true);
         });
       };
 
       const handleClear = () => {
         clearAll().then((ok) => {
           if (ok) showToast("ล้างงานที่ซ่อนทั้งหมดแล้ว");
-          else showToast("ล้างงานที่ซ่อนไม่สำเร็จ — ลองอีกครั้ง", true);
+          else showToast("ล้างงานที่ซ่อนไม่สำเร็จ — ยังไม่มีสิทธิ์แก้ (ต้องการบัญชีเจ้าของ)", true);
         });
         setConfirmClear(false);
       };
