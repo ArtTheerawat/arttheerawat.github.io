@@ -6,7 +6,7 @@
 <title>🗓️ ตารางเรียน</title>
 <link rel="stylesheet" href="school.css">
 <style>
-  .grid{display:grid; grid-template-columns:64px repeat(5,1fr); grid-template-rows:auto 520px; gap:6px; min-width:860px}
+  .grid{display:grid; grid-template-columns:64px repeat(5,1fr); grid-template-rows:24px 520px; gap:6px; min-width:860px}
   .grid .hdn, .grid .dayhd{font-size:12px; color:var(--muted); text-align:center; padding:8px 0; font-weight:600}
   .col{position:relative; background:var(--card); border:1px solid var(--border); border-radius:10px; min-height:520px}
   .dayhd.today{color:#fff; background:var(--accent); border-radius:8px}
@@ -19,8 +19,8 @@
   .block .tm{color:var(--accent2); margin-top:2px; font-size:10px}
   .block.overlay{background:rgba(217,70,239,.12); border-left-color:#d946ef; font-style:italic}
   .timelabel{position:relative; font-size:10px; color:var(--muted); text-align:center; height:48px}
-  .timelabel b{position:absolute; top:-6px; left:50%; transform:translateX(-50%); white-space:nowrap}
-  .tlcol{position:relative; height:520px}
+    .timelabel b{position:absolute; top:-6px; left:50%; transform:translateX(-50%); white-space:nowrap}
+        .tlcol{position:relative; height:100%}
   .tlcol a, .col a{position:absolute; left:0; right:0; height:1px; background:rgba(139,152,179,.15); pointer-events:none}
   .tlcol a span{position:absolute; right:0; top:-7px; font-size:9px; color:var(--muted)}
   #detail{position:fixed; inset:0; background:rgba(4,8,16,.78); display:none; align-items:center; justify-content:center; z-index:50; padding:20px}
