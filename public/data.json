@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-17T16:15:27",
+  "generated_at": "2026-08-17T16:15:34",
   "trades": [],
   "signals": [
     {
@@ -2727,20 +2727,20 @@
   "usage": {
     "openrouter": {
       "status": "ok",
-      "usage": 9.6449,
-      "usage_monthly": 9.6449,
-      "usage_weekly": 0.388,
-      "usage_daily": 0.388,
+      "usage": 9.6496,
+      "usage_monthly": 9.6496,
+      "usage_weekly": 0.3927,
+      "usage_daily": 0.3927,
       "total_credits": 15,
       "is_free_tier": false,
-      "updated_at": "2026-08-17T16:15:28",
-      "remaining": 5.2096
+      "updated_at": "2026-08-17T16:15:35",
+      "remaining": 5.2049
     },
     "9arm": {
       "status": "empty",
       "tokens_total": 0,
       "calls": 0
     },
-    "updated_at": "2026-08-17T16:15:28"
+    "updated_at": "2026-08-17T16:15:35"
   }
 }
