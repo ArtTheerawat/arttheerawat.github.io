@@ -1,0 +1,30 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+
+const LINKS = [
+  { href: "/", label: "🏠 Hub" },
+  { href: "/today", label: "📚 งานวันนี้" },
+  { href: "/schedule", label: "🗓️ ตาราง" },
+  { href: "/trading", label: "📊 เทรด" },
+  { href: "/dictation", label: "🔊 ฝึกฟัง" },
+];
+
+export default function Nav() {
+  const pathname = usePathname();
+  return (
+    <nav className="app-nav">
+      <div className="app-nav-inner">
+        {LINKS.map((l) => {
+          const active = l.href === "/" ? pathname === "/" : pathname.startsWith(l.href);
+          return (
+            <Link key={l.href} href={l.href} className={active ? "on" : ""}>
+              {l.label}
+            </Link>
+          );
+        })}
+      </div>
+    </nav>
+  );
+}

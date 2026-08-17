@@ -7,6 +7,9 @@ nothing changed, which keeps the cron watchdog quiet.
 
 Usage: python auto_sync.py
 Requires: generate_data.py + git repo (origin=GitHub Pages root site)
+
+NOTE (Next.js): writes to public/data.json so the static export can serve it at
+/api-less /data.json. Pushes to branch 'main' explicitly.
 """
 import hashlib, os, subprocess, sys
 from pathlib import Path
@@ -15,7 +18,8 @@ from pathlib import Path
 # origin = ArtTheerawat/arttheerawat.github.io, served at arttheerawat.github.io/)
 BASE = Path(__file__).resolve().parent
 GEN  = BASE / "generate_data.py"
-DATA = BASE / "data.json"
+DATA = BASE / "public" / "data.json"   # Next.js static export serves /data.json from public/
+
 
 def sha(p: Path) -> str:
     """Hash data.json ignoring the volatile generated_at timestamp so we only
@@ -32,10 +36,12 @@ def sha(p: Path) -> str:
         pass  # not JSON -> use raw bytes
     return hashlib.sha256(raw).hexdigest()
 
+
 def run(*args, **kw):
     return subprocess.run(
         list(args), cwd=str(BASE), capture_output=True, text=True, **kw
     )
+
 
 def main():
     if not GEN.exists():
@@ -58,20 +64,21 @@ def main():
 
     # verify git repo + origin exist
     status = run("git", "status", "--porcelain")
-    if status.returncode != 0 or " data.json" not in status.stdout:
+    if status.returncode != 0 or "public/data.json" not in status.stdout:
         return 0
 
-    commit = run("git", "add", "data.json")
+    commit = run("git", "add", "public/data.json")
     if commit.returncode != 0:
         print("git add failed:", commit.stderr[-300:]); return 1
     c = run("git", "commit", "-m", "[auto] sync dashboard data from Google Sheets")
     if c.returncode != 0 and "nothing to commit" not in c.stdout + c.stderr:
         print("git commit failed:", c.stderr[-300:]); return 1
-    p = run("git", "push")
+    p = run("git", "push", "origin", "main")
     if p.returncode != 0:
         print("git push failed:", p.stderr[-300:]); return 1
-    print("synced + pushed dashboard data.json")
+    print("synced + pushed dashboard public/data.json")
     return 0
+
 
 if __name__ == "__main__":
     sys.exit(main())

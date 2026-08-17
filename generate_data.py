@@ -13,7 +13,7 @@ TOK = HERMES / "google_token.json"
 if not TOK.exists():
     TOK = HERMES / "private" / "google_token.json"
 SHEET_ID = "1ijYK8wJ2XEn2e0_nelVG1qyGSKZtJz499KhWZihmDpY"
-OUT = Path(__file__).resolve().parent / "data.json"
+OUT = Path(__file__).resolve().parent / "public" / "data.json"  # Next.js static export serves /data.json from public/
 
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
