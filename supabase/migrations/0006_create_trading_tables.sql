@@ -157,6 +157,14 @@ alter table public.heartbeat enable row level security;
 -- system_logs: operational, NOT exposed to anon.
 alter table public.system_logs enable row level security;
 
+-- service_role bypasses RLS (server-side writes). Explicit grants so the
+-- Python sync script / side tooling are guaranteed read+write access even if
+-- the project's default privileges for service_role differ.
+grant select, insert, update
+  on public.trades, public.signals, public.trading_daily,
+     public.sync_state, public.heartbeat, public.system_logs
+  to service_role;
+
 -- ============================================================================
 -- Verification queries (paste into SQL Editor to confirm):
 --   select table_name from information_schema.tables where table_schema='public' order by table_name;
