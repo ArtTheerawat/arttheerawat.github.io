@@ -132,26 +132,26 @@ export default function TodayPage() {
   const dayLabel = DAYS[(now.getDay() + 6) % 7];
 
   const handleHide = (a: Assignment, reason: string, custom?: string) => {
-      hide(a, reason, custom).then((ok) => {
-        if (ok) showToast(`ซ่อน "${a.title}" แล้ว 🙈`);
-        else showToast("ซ่อนงานไม่สำเร็จ — บัญชีนี้ยังไม่มีสิทธิ์ซ่อน (ต้องการบัญชีเจ้าของ theerawat.numtang@gmail.com)", true);
-      });
-      };
-
-      const handleRestore = (key: string, title?: string) => {
-        unhide(key).then((ok) => {
-          if (ok) showToast(`นำ "${title}" กลับมาแล้ว`);
-          else showToast("นำงานกลับมาไม่สำเร็จ — ยังไม่มีสิทธิ์แก้ (ต้องการบัญชีเจ้าของ)", true);
+        hide(a, reason, custom).then((res) => {
+          if (res.ok) showToast(`ซ่อน "${a.title}" แล้ว 🙈`);
+          else showToast(`ซ่อนงานไม่สำเร็จ — ${res.error || "ยังไม่มีสิทธิ์ซ่อน (ต้องการบัญชีเจ้าของ theerawat.numtang@gmail.com)"}`, true);
         });
-      };
+        };
 
-      const handleClear = () => {
-        clearAll().then((ok) => {
-          if (ok) showToast("ล้างงานที่ซ่อนทั้งหมดแล้ว");
-          else showToast("ล้างงานที่ซ่อนไม่สำเร็จ — ยังไม่มีสิทธิ์แก้ (ต้องการบัญชีเจ้าของ)", true);
-        });
-        setConfirmClear(false);
-      };
+        const handleRestore = (key: string, title?: string) => {
+          unhide(key).then((res) => {
+            if (res.ok) showToast(`นำ "${title}" กลับมาแล้ว`);
+            else showToast(`นำงานกลับมาไม่สำเร็จ — ${res.error || "ยังไม่มีสิทธิ์แก้ (ต้องการบัญชีเจ้าของ)"}`, true);
+          });
+        };
+
+        const handleClear = () => {
+          clearAll().then((res) => {
+            if (res.ok) showToast("ล้างงานที่ซ่อนทั้งหมดแล้ว");
+            else showToast(`ล้างงานที่ซ่อนไม่สำเร็จ — ${res.error || "ยังไม่มีสิทธิ์แก้ (ต้องการบัญชีเจ้าของ)"}`, true);
+          });
+          setConfirmClear(false);
+        };
 
   const Item = ({ a, overCl }: { a: Assignment; overCl?: boolean }) => {
     const b = dueLabel(a);

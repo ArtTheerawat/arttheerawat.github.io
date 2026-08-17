@@ -101,14 +101,16 @@ export async function loadHiddenTasks(): Promise<HiddenTask[]> {
   return (data as HiddenTaskRow[]).map(rowToHiddenTask);
 }
 
-/** Hide an assignment globally. RLS enforces owner-only writes server-side. */
+/** Hide an assignment globally. RLS enforces owner-only writes server-side.
+ *  Returns the real Supabase error message on failure so the UI can show the
+ *  exact reason (RLS, missing grant, or conflict) instead of a generic toast. */
 export async function hideTask(
   a: Hiddenable,
   reason: string,
   custom?: string
-): Promise<boolean> {
+): Promise<{ ok: boolean; error?: string }> {
   const sb = getSupabaseBrowserClient();
-  if (!sb) return false;
+  if (!sb) return { ok: false, error: "Supabase ยังไม่ได้ติดตั้ง (ไม่พบ env)" };
   const key = taskKey(a);
   const payload = {
     task_key: key,
@@ -122,33 +124,33 @@ export async function hideTask(
   const { error } = await sb.from("hidden_tasks").upsert(payload, { onConflict: "task_key" });
   if (error) {
     console.warn("hideTask:", error.message);
-    return false;
+    return { ok: false, error: error.message };
   }
-  return true;
+  return { ok: true };
 }
 
 /** Un-hide (restore) an assignment globally. Owner-only via RLS. */
-export async function unhideTask(key: string): Promise<boolean> {
+export async function unhideTask(key: string): Promise<{ ok: boolean; error?: string }> {
   const sb = getSupabaseBrowserClient();
-  if (!sb) return false;
+  if (!sb) return { ok: false, error: "Supabase ยังไม่ได้ติดตั้ง (ไม่พบ env)" };
   const { error } = await sb.from("hidden_tasks").delete().eq("task_key", key);
   if (error) {
     console.warn("unhideTask:", error.message);
-    return false;
+    return { ok: false, error: error.message };
   }
-  return true;
+  return { ok: true };
 }
 
 /** Remove every hidden entry (global). Owner-only via RLS. */
-export async function clearHiddenTasks(): Promise<boolean> {
+export async function clearHiddenTasks(): Promise<{ ok: boolean; error?: string }> {
   const sb = getSupabaseBrowserClient();
-  if (!sb) return false;
+  if (!sb) return { ok: false, error: "Supabase ยังไม่ได้ติดตั้ง (ไม่พบ env)" };
   const { error } = await sb.from("hidden_tasks").delete();
   if (error) {
     console.warn("clearHiddenTasks:", error.message);
-    return false;
+    return { ok: false, error: error.message };
   }
-  return true;
+  return { ok: true };
 }
 
 /** Is the given assignment currently hidden? (pure — call with the live list) */
@@ -317,28 +319,31 @@ export function useHiddenTasks() {
   }, [refresh]);
 
   const hide = useCallback(
-    async (a: Hiddenable, reason: string, custom?: string): Promise<boolean> => {
-      const ok = await hideTask(a, reason, custom);
-      if (ok) await refresh();
-      return ok;
+    async (a: Hiddenable, reason: string, custom?: string): Promise<{ ok: boolean; error?: string }> => {
+      const res = await hideTask(a, reason, custom);
+      if (res.ok) await refresh();
+      return res;
     },
     [refresh]
   );
 
   const unhide = useCallback(
-    async (key: string): Promise<boolean> => {
-      const ok = await unhideTask(key);
-      if (ok) await refresh();
-      return ok;
+    async (key: string): Promise<{ ok: boolean; error?: string }> => {
+      const res = await unhideTask(key);
+      if (res.ok) await refresh();
+      return res;
     },
     [refresh]
   );
 
-  const clearAll = useCallback(async (): Promise<boolean> => {
-    const ok = await clearHiddenTasks();
-    if (ok) await refresh();
-    return ok;
-  }, [refresh]);
+  const clearAll = useCallback(
+    async (): Promise<{ ok: boolean; error?: string }> => {
+      const res = await clearHiddenTasks();
+      if (res.ok) await refresh();
+      return res;
+    },
+    [refresh]
+  );
 
   const signInWithGoogle = useCallback(async () => {
     const sb = getSupabaseBrowserClient();
