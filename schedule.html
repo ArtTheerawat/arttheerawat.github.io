@@ -128,6 +128,7 @@ function switchView(v){
   $id('tabTable').classList.toggle('on', v==='table');
   $id('timelineWrap').style.display = v==='timeline'?'block':'none';
   $id('tableWrap').style.display    = v==='table'?'block':'none';
+  $id('mtable').style.display       = v==='table'?'table':'none';   /* เปิดตารางเองด้วย */
   if(v==='table') renderGridTable();
 }
 
