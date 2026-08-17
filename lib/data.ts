@@ -69,6 +69,87 @@ export function todayStr(): string {
   return `${d.getFullYear()}-${m}-${day}`;
 }
 
+/**
+ * Whole-day date difference (due - today) in days, computed in LOCAL time.
+ * Negative = overdue, 0 = today, positive = days remaining.
+ * Parses "YYYY-MM-DD" dates only. Returns null when due is missing/invalid.
+ */
+export function dueDiffDays(due?: string | null): number | null {
+  if (!due) return null;
+  const p = due.split("-");
+  if (p.length < 3 || p.some((s) => isNaN(+s))) return null;
+  const t = new Date(+p[0], +p[1] - 1, +p[2]).getTime(); // local midnight
+  const now = new Date();
+  const todayMid = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  return Math.round((t - todayMid) / 86400000);
+}
+
+export type Bucket = "over" | "today" | "soon" | "later";
+
+/**
+ * Classify an assignment (fire-and-forget: also writes bucket/daysAway/overdue
+ * back onto the object) into a deadline bucket, computed fresh in LOCAL time.
+ *  - over  : overdue -> overdue = days late
+ *  - today : due today
+ *  - soon  : 1..5 days away -> daysAway = days remaining
+ *  - later : >5 days away -> daysAway = days remaining
+ * Missing due → "soon" with 999 days (matches existing behaviour).
+ */
+export function classifyAssignment(a: {
+  due?: string | null;
+  bucket?: Bucket;
+  overdue?: number;
+  daysAway?: number;
+}): Bucket {
+  const diff = dueDiffDays(a.due);
+  if (diff === null) {
+    a.bucket = "soon";
+    a.overdue = 0;
+    a.daysAway = 999;
+    return "soon";
+  }
+  if (diff < 0) {
+    a.bucket = "over";
+    a.overdue = -diff;
+    a.daysAway = 0;
+    return "over";
+  }
+  if (diff === 0) {
+    a.bucket = "today";
+    a.overdue = 0;
+    a.daysAway = 0;
+    return "today";
+  }
+  if (diff <= 5) {
+    a.bucket = "soon";
+    a.overdue = 0;
+    a.daysAway = diff;
+    return "soon";
+  }
+  a.bucket = "later";
+  a.overdue = 0;
+  a.daysAway = diff;
+  return "later";
+}
+
+/** Human "due today"–style label for an assignment, given its computed bucket. */
+export function dueLabel(a: { bucket?: Bucket; overdue?: number; daysAway?: number }): {
+  txt: string;
+  cls: string;
+} {
+  switch (a.bucket) {
+    case "over":
+      return { txt: "เลย " + (a.overdue ?? 0) + " วัน", cls: "b-over" };
+    case "today":
+      return { txt: "ครบวันนี้", cls: "b-today" };
+    case "later":
+    case "soon":
+      return { txt: "ครบใน " + (a.daysAway ?? 0) + " วัน", cls: "b-soon" };
+    default:
+      return { txt: "ครบแล้ว", cls: "b-done" };
+  }
+}
+
 /** Format YYYY-MM-DD -> "15 ม.ค." (Thai month abbrev). */
 export function fmtDate(iso?: string | null): string {
   if (!iso) return "—";

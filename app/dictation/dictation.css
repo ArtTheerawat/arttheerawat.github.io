@@ -200,6 +200,16 @@
   border-color: var(--primary);
   box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.12);
 }
+.text-input.err {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.12);
+}
+.input-hint {
+  margin-top: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #ef4444;
+}
 .btn {
   display: inline-flex;
   align-items: center;
@@ -274,3 +284,37 @@
   font-weight: 700;
   color: var(--primary);
 }
+
+/* ── Dark theme alignment (matches the rest of the site) ── */
+.dict-container {
+  --primary: #6366f1;
+  --primary-hover: #4f46e5;
+  --primary-light: rgba(99, 102, 241, 0.18);
+  --accent: #f59e0b;
+  --success: #22c55e;
+  --border: #273349;
+  --text: #e6ebf5;
+  --text-muted: #8b98b3;
+  --bg: #171f2e;
+  background: var(--card);
+  border: 1px solid var(--border);
+}
+.dict-container h1 { color: #e6ebf5; }
+.dict-container .topic-desc,
+.dict-container .progress-info { color: var(--text-muted); }
+.mode-select { background: var(--card2); }
+.mode-select label { color: var(--txt); }
+.topic-btn { background: var(--card2); color: var(--txt); }
+.topic-btn .topic-title { color: var(--txt); }
+.sentence-display { background: var(--card2); color: var(--txt); border-left-color: var(--primary); }
+.input-group label { color: var(--txt); }
+.text-input { background: var(--bg); color: var(--txt); }
+.audio-control-box { background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%); }
+.play-btn { background: #eef2ff; }
+.btn-secondary { background: var(--card2); color: var(--txt); }
+.btn-secondary:hover { background: var(--card); }
+.feedback-area.correct { background: rgba(34, 197, 94, 0.14); border-color: var(--success); }
+.feedback-area.incorrect { background: rgba(239, 68, 68, 0.14); }
+.fb-title { color: var(--txt); }
+.review-item { background: var(--card2); }
+.review-item .topic-title { color: var(--txt); }

@@ -1,15 +1,16 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { DAYS, dataUrl, fmtDate, thDayIdx } from "@/lib/data";
+import { DAYS, classifyAssignment, dataUrl, dueLabel, fmtDate, todayStr, type Bucket } from "@/lib/data";
 
 interface Assignment {
   title?: string;
   course?: string;
   courseName?: string;
   due?: string;
-  bucket?: string;
+  bucket?: Bucket;
   overdue?: number;
+  daysAway?: number;
 }
 
 interface Quiz {
@@ -28,34 +29,7 @@ interface SchedData {
   updated?: string;
 }
 
-function classify(x: Assignment) {
-  if (!x.due) {
-    x.bucket = "soon";
-    x.overdue = 999;
-    return;
-  }
-  const t = new Date(x.due + "T00:00:00");
-  const today = new Date(new Date().toISOString().slice(0, 10) + "T00:00:00");
-  const diff = Math.round((t.getTime() - today.getTime()) / 86400000);
-  x.overdue = diff < 0 ? -diff : 0;
-  if (diff < 0) x.bucket = "over";
-  else if (diff === 0) x.bucket = "today";
-  else if (diff <= 5) x.bucket = "soon";
-  else x.bucket = "later";
-}
-
-function badgeTxt(a: Assignment): { txt: string; cls: string } {
-  switch (a.bucket) {
-    case "over":
-      return { txt: "เลย " + a.overdue + " วัน", cls: "b-over" };
-    case "today":
-      return { txt: "ครบวันนี้", cls: "b-today" };
-    case "soon":
-      return { txt: "ครบใน " + a.overdue + " วัน", cls: "b-soon" };
-    default:
-      return { txt: "ครบแล้ว", cls: "b-done" };
-  }
-}
+// (classify + badge logic live in lib/data so every page agrees.)
 
 function fmtSync(iso?: string): string {
   if (!iso) return "";
@@ -82,8 +56,8 @@ export default function TodayPage() {
         if (!r.ok) throw new Error("HTTP " + r.status);
         const j: AssignData = await r.json();
         const todo = (j.todo || []).map((a) => ({ ...a }));
-        todo.forEach(classify);
-        setAll(todo);
+                todo.forEach(classifyAssignment);
+                setAll(todo);
         setSynced(j.updated || "");
         try {
           const q = await fetch(dataUrl("/data/schedule.json"), { cache: "no-store" });
@@ -110,22 +84,22 @@ export default function TodayPage() {
   }, [all]);
 
   const now = new Date();
-  const today = new Date().toISOString().slice(0, 10);
-  const dayLabel = DAYS[(now.getDay() + 6) % 7];
+    const today = todayStr();
+    const dayLabel = DAYS[(now.getDay() + 6) % 7];
 
-  const Item = ({ a, overCl }: { a: Assignment; overCl?: boolean }) => {
-    const b = badgeTxt(a);
-    return (
-      <div className={"item" + (overCl ? " over" : "")}>
-        <div className="pd">
-          <span className={"badge " + b.cls}>{b.txt}</span>
-          <span>⏰ {fmtDate(a.due)}</span>
+    const Item = ({ a, overCl }: { a: Assignment; overCl?: boolean }) => {
+      const b = dueLabel(a);
+      return (
+        <div className={"item" + (overCl ? " over" : "")}>
+          <div className="pd">
+            <span className={"badge " + b.cls}>{b.txt}</span>
+            <span>⏰ {fmtDate(a.due)}</span>
+          </div>
+          <div className="ttl">{a.title}</div>
+          <div className="subj">{a.courseName || a.course || ""}</div>
         </div>
-        <div className="ttl">{a.title}</div>
-        <div className="subj">{a.courseName || a.course || ""}</div>
-      </div>
-    );
-  };
+      );
+    };
 
   const Section = ({
     label,

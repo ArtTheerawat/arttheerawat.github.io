@@ -56,6 +56,7 @@ export default function DictationPage() {
   const [score, setScore] = useState(0);
   const [listenCount, setListenCount] = useState(0);
   const [input, setInput] = useState("");
+  const [inputErr, setInputErr] = useState(false);
   const [feedback, setFeedback] = useState<null | { ok: boolean; detail: string; tip: string }>(null);
   const [log, setLog] = useState<AnswerLog[]>([]);
   const [started, setStarted] = useState(false);
@@ -126,11 +127,12 @@ export default function DictationPage() {
   );
 
   const submitAnswer = useCallback(() => {
-    if (!q || !input.trim()) {
-      alert("กรุณาพิมพ์คำตอบก่อนส่งครับ");
-      return;
-    }
-    const userInput = input.trim();
+      if (!q || !input.trim()) {
+        setInputErr(true);
+        return;
+      }
+      setInputErr(false);
+      const userInput = input.trim();
     const isExactMatch = q.alt_answers.some((a) => a.toLowerCase() === userInput.toLowerCase());
     let isCorrect = isExactMatch;
     let finalSoundWarning = "";
@@ -177,9 +179,10 @@ export default function DictationPage() {
 
   const nextQuestion = useCallback(() => {
     cancelSpeech();
-    setFeedback(null);
-    setInput("");
-    setListenCount(0);
+        setFeedback(null);
+        setInput("");
+        setInputErr(false);
+        setListenCount(0);
     if (index + 1 < total) {
       setIndex((i) => i + 1);
     } else {
@@ -316,17 +319,27 @@ export default function DictationPage() {
           </div>
 
           <div className="input-group">
-            <label htmlFor="user-input">พิมพ์คำตอบ (เป็นเสียงที่คุณได้ยิน):</label>
-            <input
-              ref={inputRef}
-              id="user-input"
-              className="text-input"
-              value={input}
-              disabled={!!feedback}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="พิมพ์คำตอบที่นี่…"
-            />
-          </div>
+                      <label htmlFor="user-input">พิมพ์คำตอบ (เป็นเสียงที่คุณได้ยิน):</label>
+                      <input
+                        ref={inputRef}
+                        id="user-input"
+                        className={"text-input" + (inputErr ? " err" : "")}
+                        value={input}
+                        disabled={!!feedback}
+                        onChange={(e) => {
+                          setInput(e.target.value);
+                          if (inputErr) setInputErr(false);
+                        }}
+                        placeholder="พิมพ์คำตอบที่นี่…"
+                        aria-invalid={inputErr || undefined}
+                        aria-describedby={inputErr ? "input-hint" : undefined}
+                      />
+                      {inputErr && (
+                        <div id="input-hint" className="input-hint" role="alert">
+                          ⚠️ กรุณาพิมพ์คำตอบก่อนส่งครับ
+                        </div>
+                      )}
+                    </div>
 
           {!feedback ? (
             <button className="btn btn-primary" onClick={submitAnswer}>

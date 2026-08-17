@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { DAYS, dataUrl, fmtMoney } from "@/lib/data";
+import { DAYS, classifyAssignment, dataUrl, fmtDate, fmtMoney, todayStr, type Bucket } from "@/lib/data";
 import { SCHEDULE, COURSES } from "@/lib/schedule-data";
 
 /* ── Quick-access tiles (keep as secondary nav, not the hero) ── */
@@ -55,11 +55,10 @@ interface Assignment {
   course?: string;
   courseName?: string;
   due?: string;
-  bucket?: string;
+  bucket?: Bucket;
   overdue?: number;
+  daysAway?: number;
 }
-
-type Bucket = "over" | "today" | "soon" | "later";
 
 /** 2 fixed 9arm model slots shown on the card (keep even if a model is unused). */
 const NINE_MODELS: { id: string; label: string }[] = [
@@ -67,16 +66,9 @@ const NINE_MODELS: { id: string; label: string }[] = [
   { id: "deepseek-v4-flash-0731", label: "deepseek-v4-flash-0731" },
 ];
 
-/** Classify an assignment into a deadline bucket (same logic as /today). */
+/** Classify an assignment into a deadline bucket (logic lives in lib/data). */
 function classify(a: Assignment): Bucket {
-  if (!a.due) return "soon";
-  const t = new Date(a.due + "T00:00:00");
-  const today = new Date(new Date().toISOString().slice(0, 10) + "T00:00:00");
-  const diff = Math.round((t.getTime() - today.getTime()) / 86400000);
-  if (diff < 0) return "over";
-  if (diff === 0) return "today";
-  if (diff <= 5) return "soon";
-  return "later";
+  return classifyAssignment(a);
 }
 
 function fmt(n: number | undefined): string {
@@ -104,11 +96,7 @@ function timeAgoOr(iso: string | undefined): string {
   return `${Math.floor(mins / 60)} ชม.ที่แล้ว`;
 }
 function fmtDue(iso?: string): string {
-  if (!iso) return "";
-  const p = iso.split("-");
-  const m = +p[1], d = +p[2];
-  const thM = ["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];
-  return `${d} ${thM[m - 1]}`;
+  return fmtDate(iso);
 }
 
 export default function HomePage() {
@@ -118,7 +106,7 @@ export default function HomePage() {
 
   /* Today's date + weekday (local) */
   const now = new Date();
-  const todayIso = new Date().toISOString().slice(0, 10);
+  const todayIso = todayStr();
   const dayIdx = (now.getDay() + 6) % 7 + 1; // 1=Mon..7=Sun
   const dayLabel = DAYS[(now.getDay() + 6) % 7];
 
@@ -173,23 +161,24 @@ export default function HomePage() {
     return () => clearInterval(t);
   }, [load, loadAssign]);
 
-  /* Deadline stats from today's perspective */
-  const stats = useMemo(() => {
-    const over: Assignment[] = [], tod: Assignment[] = [], soon: Assignment[] = [];
-    assign.forEach((a) => {
-      const b = classify(a);
-      if (b === "over") over.push(a);
-      else if (b === "today") tod.push(a);
-      else if (b === "soon") soon.push(a);
-    });
-    // "What to do next": due-today first (beatable deadline), then overdue (longest-overdue first), else nearest.
-        const next =
-                  tod[0] ||
-                  over.slice().sort((p, q) => ((q.due || "") < (p.due || "") ? -1 : 1))[0] ||
-                  soon.slice().sort((p, q) => ((p.due || "") < (q.due || "") ? -1 : 1))[0] ||
-                  ([...over, ...tod, ...soon][0] || null);
-    return { over, tod, soon, next };
-  }, [assign]);
+  /* Deadline stats from today's perspective (classify writes bucket back so
+       the "what's next" card colours/flag correctly). */
+    const stats = useMemo(() => {
+      const over: Assignment[] = [], tod: Assignment[] = [], soon: Assignment[] = [];
+      assign.forEach((a) => {
+        const b = classify(a);
+        if (b === "over") over.push(a);
+        else if (b === "today") tod.push(a);
+        else if (b === "soon") soon.push(a);
+      });
+      // "What to do next": due-today first (beatable deadline), then overdue (longest-overdue first), else nearest.
+      const next =
+        tod[0] ||
+        over.slice().sort((p, q) => ((q.due || "") < (p.due || "") ? -1 : 1))[0] ||
+        soon.slice().sort((p, q) => ((p.due || "") < (q.due || "") ? -1 : 1))[0] ||
+        ([...over, ...tod, ...soon][0] || null);
+      return { over, tod, soon, next };
+    }, [assign]);
 
   const or = usage?.openrouter;
   const n9 = usage?.["9arm"];

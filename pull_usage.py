@@ -34,6 +34,7 @@ def fetch_9arm():
         "tokens_total": int(st.get("tokens_total", 0)),
         "calls": int(st.get("calls", 0)),
         "last_model": st.get("last_model"),
+        "by_model": st.get("by_model", {}),
         "updated_at": st.get("updated_at"),
     }
 
