@@ -165,6 +165,14 @@ grant select, insert, update
      public.sync_state, public.heartbeat, public.system_logs
   to service_role;
 
+-- Browser anon read for the /trading static dashboard. NOTE: enabling RLS is
+-- NOT enough — the dashboard also needs a table-level GRANT SELECT to anon,
+-- which Postgres does NOT auto-grant for tables created via raw SQL (only the
+-- policy). Without this grant anon gets 42501 even with a using(true) policy.
+grant select on public.trades         to anon;
+grant select on public.signals        to anon;
+grant select on public.trading_daily  to anon;
+
 -- ============================================================================
 -- Verification queries (paste into SQL Editor to confirm):
 --   select table_name from information_schema.tables where table_schema='public' order by table_name;
