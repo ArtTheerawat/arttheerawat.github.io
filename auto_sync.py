@@ -6,12 +6,14 @@ Designed to run on a frequent cron (e.g. every 15 min). Silent (no output) when
 nothing changed, which keeps the cron watchdog quiet.
 
 Usage: python auto_sync.py
-Requires: generate_data.py + git repo at ~/Documents/trading-dashboard (origin=GitHub Pages)
+Requires: generate_data.py + git repo (origin=GitHub Pages root site)
 """
 import hashlib, os, subprocess, sys
 from pathlib import Path
 
-BASE = Path(os.path.expanduser("~/Documents/trading-dashboard"))
+# LIVE repo = the directory this script lives in (trading-dashboard-tmp,
+# origin = ArtTheerawat/arttheerawat.github.io, served at arttheerawat.github.io/)
+BASE = Path(__file__).resolve().parent
 GEN  = BASE / "generate_data.py"
 DATA = BASE / "data.json"
 
