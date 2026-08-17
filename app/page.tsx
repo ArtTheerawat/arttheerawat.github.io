@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { DAYS, classifyAssignment, dataUrl, fmtDate, fmtMoney, todayStr, type Bucket } from "@/lib/data";
 import { SCHEDULE, COURSES } from "@/lib/schedule-data";
+import { isTaskHidden, loadHiddenTasks, hideTask, type HiddenTask } from "@/lib/hidden-tasks";
+import { HideButton } from "@/components/HiddenTasks";
 
 /* ── Quick-access tiles (keep as secondary nav, not the hero) ── */
 const TILES = [
@@ -103,6 +105,18 @@ export default function HomePage() {
   const [usage, setUsage] = useState<UsageData | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [assign, setAssign] = useState<Assignment[]>([]);
+  const [hiddenList, setHiddenList] = useState<HiddenTask[]>([]);
+  const [toast, setToast] = useState<string | null>(null);
+  const toastTimer = useRef<number | null>(null);
+
+  useEffect(() => setHiddenList(loadHiddenTasks()), []);
+
+  const showToast = (msg: string) => {
+    setToast(msg);
+    if (toastTimer.current) window.clearTimeout(toastTimer.current);
+    toastTimer.current = window.setTimeout(() => setToast(null), 2600);
+  };
+  useEffect(() => () => { if (toastTimer.current) window.clearTimeout(toastTimer.current); }, []);
 
   /* Today's date + weekday (local) */
   const now = new Date();
@@ -162,10 +176,13 @@ export default function HomePage() {
   }, [load, loadAssign]);
 
   /* Deadline stats from today's perspective (classify writes bucket back so
-       the "what's next" card colours/flag correctly). */
+         the "what's next" card colours/flag correctly). */
+    /* Hidden assignments are always excluded first — they must not count in
+         the hero numbers or be picked as the next action. */
     const stats = useMemo(() => {
       const over: Assignment[] = [], tod: Assignment[] = [], soon: Assignment[] = [];
       assign.forEach((a) => {
+        if (isTaskHidden(a, hiddenList)) return;
         const b = classify(a);
         if (b === "over") over.push(a);
         else if (b === "today") tod.push(a);
@@ -178,7 +195,7 @@ export default function HomePage() {
         soon.slice().sort((p, q) => ((p.due || "") < (q.due || "") ? -1 : 1))[0] ||
         ([...over, ...tod, ...soon][0] || null);
       return { over, tod, soon, next };
-    }, [assign]);
+    }, [assign, hiddenList]);
 
   const or = usage?.openrouter;
   const n9 = usage?.["9arm"];
@@ -239,15 +256,28 @@ export default function HomePage() {
                         : "ต่อไป"}
           </div>
           <div className="next-body">
-            <div className="next-subj">{stats.next.courseName || stats.next.course || ""}</div>
-            <div className="next-ttl">{stats.next.title || "งาน"}</div>
-            <div className="next-meta">
-              {stats.next.due && <span>⏰ {fmtDue(stats.next.due)}</span>}
-              <span className="next-go">
-                <Link href="/today">ดูรายละเอียด →</Link>
-              </span>
-            </div>
-          </div>
+                        <div className="next-subj">{stats.next.courseName || stats.next.course || ""}</div>
+                        <div className="next-ttl" style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+                          <span style={{ minWidth: 0 }}>{stats.next.title || "งาน"}</span>
+                          <HideButton
+                            compact
+                            assignment={stats.next}
+                            onHide={(r, c) => {
+                              setHiddenList((lst) => {
+                                const next = hideTask(lst, stats.next, r, c);
+                                showToast(`ซ่อน "${stats.next.title}" แล้ว 🙈`);
+                                return next;
+                              });
+                            }}
+                          />
+                        </div>
+                        <div className="next-meta">
+                          {stats.next.due && <span>⏰ {fmtDue(stats.next.due)}</span>}
+                          <span className="next-go">
+                            <Link href="/today">ดูรายละเอียด →</Link>
+                          </span>
+                        </div>
+                      </div>
         </section>
       ) : (
         <section className="next-card empty">
@@ -402,6 +432,7 @@ export default function HomePage() {
       </section>
 
       <footer>Auto-generated · ข้อมูลเรียนเชื่อม Google Classroom + Calendar</footer>
-    </div>
-  );
-}
+            {toast && <div className="hide-toast">{toast}</div>}
+          </div>
+        );
+      }

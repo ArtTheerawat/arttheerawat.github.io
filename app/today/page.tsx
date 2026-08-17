@@ -1,7 +1,20 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { DAYS, classifyAssignment, dataUrl, dueLabel, fmtDate, todayStr, type Bucket } from "@/lib/data";
+import {
+  clearHiddenTasks,
+  hideTask,
+  isTaskHidden,
+  loadHiddenTasks,
+  unhideTask,
+  type HiddenTask,
+} from "@/lib/hidden-tasks";
+import {
+  ConfirmClear,
+  HideButton,
+  hiddenReasonText,
+} from "@/components/HiddenTasks";
 
 interface Assignment {
   title?: string;
@@ -48,6 +61,27 @@ export default function TodayPage() {
   const [synced, setSynced] = useState("");
   const [err, setErr] = useState<string | null>(null);
   const [showLater, setShowLater] = useState(false);
+  const [hiddenList, setHiddenList] = useState<HiddenTask[]>([]);
+  const [showHidden, setShowHidden] = useState(false);
+  const [confirmClear, setConfirmClear] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
+  const toastTimer = useRef<number | null>(null);
+
+  useEffect(() => {
+    setHiddenList(loadHiddenTasks());
+  }, []);
+
+  const showToast = (msg: string) => {
+    setToast(msg);
+    if (toastTimer.current) window.clearTimeout(toastTimer.current);
+    toastTimer.current = window.setTimeout(() => setToast(null), 2600);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (toastTimer.current) window.clearTimeout(toastTimer.current);
+    };
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -56,8 +90,8 @@ export default function TodayPage() {
         if (!r.ok) throw new Error("HTTP " + r.status);
         const j: AssignData = await r.json();
         const todo = (j.todo || []).map((a) => ({ ...a }));
-                todo.forEach(classifyAssignment);
-                setAll(todo);
+        todo.forEach(classifyAssignment);
+        setAll(todo);
         setSynced(j.updated || "");
         try {
           const q = await fetch(dataUrl("/data/schedule.json"), { cache: "no-store" });
@@ -74,41 +108,63 @@ export default function TodayPage() {
     })();
   }, []);
 
+  // Always filter hidden assignments out of every bucket BEFORE computing stats.
+  const visible = useMemo(() => {
+    return all.filter((a) => !isTaskHidden(a, hiddenList));
+  }, [all, hiddenList]);
+
   const { over, tod, soon, later } = useMemo(() => {
     return {
-      over: all.filter((a) => a.bucket === "over"),
-      tod: all.filter((a) => a.bucket === "today"),
-      soon: all.filter((a) => a.bucket === "soon"),
-      later: all.filter((a) => a.bucket === "later"),
+      over: visible.filter((a) => a.bucket === "over"),
+      tod: visible.filter((a) => a.bucket === "today"),
+      soon: visible.filter((a) => a.bucket === "soon"),
+      later: visible.filter((a) => a.bucket === "later"),
     };
-  }, [all]);
+  }, [visible]);
 
   const now = new Date();
-    const today = todayStr();
-    const dayLabel = DAYS[(now.getDay() + 6) % 7];
+  const today = todayStr();
+  const dayLabel = DAYS[(now.getDay() + 6) % 7];
 
-    const Item = ({ a, overCl }: { a: Assignment; overCl?: boolean }) => {
-      const b = dueLabel(a);
-      return (
-        <div className={"item" + (overCl ? " over" : "")}>
-          <div className="pd">
-            <span className={"badge " + b.cls}>{b.txt}</span>
-            <span>⏰ {fmtDate(a.due)}</span>
-          </div>
-          <div className="ttl">{a.title}</div>
-          <div className="subj">{a.courseName || a.course || ""}</div>
+  const handleHide = (a: Assignment, reason: string, custom?: string) => {
+    setHiddenList((lst) => hideTask(lst, a, reason, custom));
+    showToast(`ซ่อน "${a.title}" แล้ว 🙈`);
+  };
+
+  const handleRestore = (key: string, title?: string) => {
+    setHiddenList((lst) => unhideTask(lst, key));
+    showToast(`นำ "${title}" กลับมาแล้ว`);
+  };
+
+  const handleClear = () => {
+    setHiddenList(clearHiddenTasks());
+    setConfirmClear(false);
+    showToast("ล้างงานที่ซ่อนทั้งหมดแล้ว");
+  };
+
+  const Item = ({ a, overCl }: { a: Assignment; overCl?: boolean }) => {
+    const b = dueLabel(a);
+    return (
+      <div className={"item" + (overCl ? " over" : "")}>
+        <div className="pd">
+          <span className={"badge " + b.cls}>{b.txt}</span>
+          <span>⏰ {fmtDate(a.due)}</span>
         </div>
-      );
-    };
+        <div className="ttl" style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "center" }}>
+          <span style={{ minWidth: 0 }}>{a.title}</span>
+          <HideButton assignment={a} onHide={(r, c) => handleHide(a, r, c)} />
+        </div>
+        <div className="subj">{a.courseName || a.course || ""}</div>
+      </div>
+    );
+  };
 
   const Section = ({
     label,
     items,
-    badgeCls,
   }: {
     label: string;
     items: Assignment[];
-    badgeCls: string;
   }) =>
     items.length ? (
       <div className="grp" style={{ marginTop: 8 }}>
@@ -183,9 +239,9 @@ export default function TodayPage() {
         </div>
       )}
 
-      <Section label="🔴 เลยกำหนด ต้องรีบทำ" items={over} badgeCls="b-over" />
-      <Section label="⏳ ครบกำหนดวันนี้" items={tod} badgeCls="b-today" />
-      <Section label="🟣 ใกล้ถึง (5 วัน)" items={soon} badgeCls="b-soon" />
+      <Section label="🔴 เลยกำหนด ต้องรีบทำ" items={over} />
+      <Section label="⏳ ครบกำหนดวันนี้" items={tod} />
+      <Section label="🟣 ใกล้ถึง (5 วัน)" items={soon} />
 
       {later.length > 0 && (
         <div className="grp" style={{ marginTop: 8 }}>
@@ -209,7 +265,10 @@ export default function TodayPage() {
                       <span className="badge b-soon">ครบใน {d} วัน</span>
                       <span>⏰ {fmtDate(a.due)}</span>
                     </div>
-                    <div className="ttl">{a.title}</div>
+                    <div className="ttl" style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "center" }}>
+                      <span style={{ minWidth: 0 }}>{a.title}</span>
+                      <HideButton assignment={a} onHide={(r, c) => handleHide(a, r, c)} />
+                    </div>
                     <div className="subj">{a.courseName || a.course || ""}</div>
                   </div>
                 );
@@ -225,6 +284,51 @@ export default function TodayPage() {
           <div style={{ color: "var(--muted)" }}>วันนี้ไม่มีงานค้าง / ครบส่ง ค่อยๆ ผ่อนได้</div>
         </div>
       )}
+
+      {/* Hidden tasks management (collapsible, at the bottom) */}
+      {hiddenList.length > 0 && (
+        <div className="grp" style={{ marginTop: 10 }}>
+          <button className="htoggle" onClick={() => setShowHidden((s) => !s)} aria-expanded={showHidden}>
+            🗂️ งานที่ซ่อนแล้ว <span className="cnt">({hiddenList.length})</span>
+            {showHidden ? " ▲" : " ▼"}
+          </button>
+          {showHidden && (
+            <div className="hidden-wrap">
+              {hiddenList.map((h) => (
+                <div className="hidden-card" key={h.key}>
+                  <div className="hid-ttl">{h.title || "งาน"}</div>
+                  <div className="hid-meta">
+                    {h.course} · กำหนดส่งเดิม {h.due || "—"}
+                  </div>
+                  <div className="hid-reason">เหตุผล: {hiddenReasonText(h)}</div>
+                  <div className="hid-foot">
+                    <span style={{ fontSize: 11, color: "var(--muted)" }}>
+                      {new Date(h.hiddenAt).toLocaleString("th-TH", {
+                        day: "2-digit",
+                        month: "2-digit",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </span>
+                    <button className="restore-btn" onClick={() => handleRestore(h.key, h.title)}>
+                      นำกลับมา
+                    </button>
+                  </div>
+                </div>
+              ))}
+              <button className="clear-hidden-btn" onClick={() => setConfirmClear(true)}>
+                ล้างรายการทั้งหมด
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {confirmClear && (
+        <ConfirmClear onConfirm={handleClear} onClose={() => setConfirmClear(false)} />
+      )}
+
+      {toast && <div className="hide-toast">{toast}</div>}
     </div>
   );
 }
