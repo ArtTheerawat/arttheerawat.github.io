@@ -139,12 +139,11 @@ function renderTable(){
         const c=(window.COURSES&&window.COURSES[s.code])||{name:s.code,color:'#22d3ee'};
         const span=seg.it.span;
         row+=`<td colspan="${span}" class="cl" style="border-left-color:${c.color};background:${shade(c.color)}"
-                 onclick="openDetail('${s.code}','${c.name}')">
-          <div class="nm">${c.name}</div>
-          <div class="rm">${s.room}</div>
-          <div class="tm">${fmt12(s.start)}–${fmt12(s.end)}</div></td>`;
-        c += span-1; // (unused, segs เดินเอง)
-      }
+                         onclick="openDetail('${s.code}','${c.name}')">
+                  <div class="nm">${c.name}</div>
+                  <div class="rm">${s.room}</div>
+                  <div class="tm">${fmt12(s.start)}–${fmt12(s.end)}</div></td>`;
+              }
     });
     row+=`</tr>`;
     trs+=row;
