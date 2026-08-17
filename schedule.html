@@ -6,7 +6,7 @@
 <title>🗓️ ตารางเรียน</title>
 <link rel="stylesheet" href="school.css">
 <style>
-  .grid{display:grid; grid-template-columns:64px repeat(5,1fr); gap:6px; min-width:860px}
+  .grid{display:grid; grid-template-columns:64px repeat(5,1fr); grid-template-rows:auto 520px; gap:6px; min-width:860px}
   .grid .hdn, .grid .dayhd{font-size:12px; color:var(--muted); text-align:center; padding:8px 0; font-weight:600}
   .col{position:relative; background:var(--card); border:1px solid var(--border); border-radius:10px; min-height:520px}
   .dayhd.today{color:#fff; background:var(--accent); border-radius:8px}
@@ -113,7 +113,7 @@ function hToY(h){ return (h-HH0)/(HH1-HH0)*520; }   // px from top
 function fmt12(h){const hh=Math.floor(h), mm=Math.round((h-hh)*60); const ap=hh>=12?"PM":"AM"; const hr=((hh+11)%12)+1; return `${hr}:${String(mm).padStart(2,'0')} ${ap}`;}
 
 function renderTimes(){
-  const tl=document.querySelector('.tlcol');
+  const tl=document.querySelectorAll('.tlcol')[1] || document.querySelector('.tlcol');  // ใช้ col ตัวแถวบล็อก (row2)
   for(let t=HH0;t<=HH1;t+=1){
     const y=hToY(t);
     const lbl=`<div style="position:absolute;right:6px;top:${y-7}px;font-size:9px;color:var(--muted)">${String(t).padStart(2,'0')}:00</div>`;
@@ -171,12 +171,14 @@ function switchView(v){
 function renderGrid(){
   const grid=$id('grid');
   const todayJD=(new Date().getDay()+6)%7+1; // 1=mon
+  // แถวที่ 1: หัวเวลา + หัววัน (เฉพาะ จ-ศ 5 วัน)
   let html='<div class="tlcol"></div>';
-  DAYS.forEach((d,i)=>{
+  DAYS.slice(0,5).forEach((d,i)=>{
     html+=`<div class="dayhd ${i+1===todayJD?'today':''}">${d}</div>`;
   });
+  // แถวที่ 2: คอลัมน์เวลา + คอลัมน์แต่ละวัน
   html+='<div class="tlcol"></div>';
-  DAYS.forEach((d,i)=>{ html+=`<div class="col" data-day="${i+1}"></div>`; });
+  DAYS.slice(0,5).forEach((d,i)=>{ html+=`<div class="col" data-day="${i+1}"></div>`; });
   grid.innerHTML=html;
   // grid lines
   for(let t=HH0;t<=HH1;t++){
