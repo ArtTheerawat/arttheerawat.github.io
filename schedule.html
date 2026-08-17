@@ -125,7 +125,7 @@ function addBlock(colEl, sch, overlay){
 }
 
 async function init(){
-  renderTimes(); renderGrid();
+  renderGrid(); renderTimes();
   try{
     const ev=await fetch('data/schedule.json',{cache:'no-store'});
     if(ev.ok){
