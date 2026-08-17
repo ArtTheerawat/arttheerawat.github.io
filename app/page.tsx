@@ -34,9 +34,9 @@ export default function HomePage() {
         <div className="logo">🎛️</div>
         <div>
           <h1>
-            My <span className="dot">Hub</span>
-          </h1>
-          <div className="sub">หน้าหลักรวมระบบทั้งหมดของธีรวัฒน์</div>
+                      Thee<span className="dot">Deck</span>
+                    </h1>
+                    <div className="sub">ศูนย์บัญชาการส่วนตัวของธีรวัฒน์</div>
         </div>
       </div>
 

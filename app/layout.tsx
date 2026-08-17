@@ -3,8 +3,8 @@ import "./globals.css";
 import Nav from "@/components/Nav";
 
 export const metadata: Metadata = {
-  title: "My Hub — รวมระบบของธีรวัฒน์",
-  description: "หน้าหลักรวมระบบทั้งหมดของธีรวัฒน์ (ตารางเรียน, งาน, เทรด, ฝึกฟัง)",
+  title: "TheeDeck — รวมระบบของธีรวัฒน์",
+    description: "TheeDeck · ศูนย์บัญชาการส่วนตัวของธีรวัฒน์ (ตารางเรียน, งาน, เทรด, ฝึกฟัง)",
 };
 
 export const viewport: Viewport = {

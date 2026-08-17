@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const LINKS = [
-  { href: "/", label: "🏠 Hub" },
+  { href: "/", label: "🃏 TheeDeck" },
   { href: "/today", label: "📚 งานวันนี้" },
   { href: "/schedule", label: "🗓️ ตาราง" },
   { href: "/trading", label: "📊 เทรด" },
