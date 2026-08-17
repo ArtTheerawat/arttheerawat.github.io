@@ -6,23 +6,32 @@
 <title>🗓️ ตารางเรียน</title>
 <link rel="stylesheet" href="school.css">
 <style>
-  .grid{display:grid; grid-template-columns:64px repeat(7,1fr); grid-template-rows:44px 520px; gap:6px; min-width:1100px}
-    .grid .dayhd{font-size:12px; color:var(--muted); text-align:center; padding:6px 2px; font-weight:600; position:relative}
-    .grid .dayhd .d{font-size:10px; opacity:.85; margin-top:2px}
-    .col{position:relative; background:var(--card); border:1px solid var(--border); border-radius:10px; min-height:520px}
-    .dayhd.today{color:#fff; background:var(--accent); border-radius:8px}
-    .col.todaycol{outline:2px solid var(--accent); outline-offset:-1px}
-  .block{position:absolute; left:5px; right:5px; border-radius:8px; padding:7px 8px; font-size:11px;
-    background:var(--card2); border-left:4px solid var(--accent2); cursor:pointer; overflow:hidden;
-    box-shadow:0 2px 8px rgba(0,0,0,.35); transition:.12s}
-  .block:hover{filter:brightness(1.15); transform:scale(1.02)}
-  .block .cn{font-weight:700; font-size:11.5px}
-  .block .rm{color:var(--muted); margin-top:3px; font-size:10px}
-  .block .tm{color:var(--accent2); margin-top:2px; font-size:10px}
-  .block.overlay{background:rgba(217,70,239,.12); border-left-color:#d946ef; font-style:italic}
-    .tlcol{position:relative; height:100%}
-  .tlcol a, .col a{position:absolute; left:0; right:0; height:1px; background:rgba(139,152,179,.15); pointer-events:none}
-  .tlcol a span{position:absolute; right:0; top:-7px; font-size:9px; color:var(--muted)}
+  .tblwrap{overflow-x:auto}
+  table.sched{width:100%; border-collapse:separate; border-spacing:1px; background:var(--border); min-width:1120px}
+  table.sched th, table.sched td{border:none}
+  /* หัว */
+  table.sched thead th{background:var(--card2); color:var(--txt); font-size:11px; font-weight:700;
+    padding:7px 4px; white-space:nowrap; position:sticky; top:0; z-index:2}
+  table.sched thead th.dayh{background:var(--accent); color:#fff; font-size:13px; min-width:92px}
+  table.sched thead th.hour2{background:var(--card2)}
+  /* แถววัน */
+  table.sched td.dname{background:var(--card2); color:var(--txt); font-size:13px; font-weight:700;
+    text-align:center; padding:8px 6px; white-space:nowrap; min-width:92px}
+  table.sched td.dname.today{background:var(--accent); color:#fff}
+  table.sched td.cell{background:var(--card); padding:0; height:56px}
+  table.sched td.cell.dim{background:rgba(139,152,179,.04)}
+  /* วิชา (td class=cl) */
+  table.sched td.cl{background:rgba(34,211,238,.13); padding:7px 9px; font-size:11px;
+    border-left:4px solid var(--accent2); cursor:pointer; vertical-align:middle; min-height:100%; height:100%}
+  table.sched td.cl:hover{filter:brightness(1.18)}
+  table.sched td.cl .nm{font-size:11px; font-weight:700; color:var(--txt); line-height:1.25}
+  table.sched td.cl .rm{color:var(--muted); font-size:10px; margin-top:3px}
+  table.sched td.cl .tm{color:var(--accent2); font-size:10px; margin-top:2px}
+  table.sched td.cl.overlay{background:rgba(217,70,239,.14); border-left-color:#d946ef; font-style:italic}
+  /* หัวชั่วโมงครึ่งชั่วโมง: label ที่ช่องคู่ (เช่น 8:00,9:00) */
+  table.sched thead th.hh{font-size:10px; font-weight:600; color:var(--muted)}
+  .legend{display:flex; gap:16px; flex-wrap:wrap; font-size:11px; color:var(--muted); margin-bottom:14px}
+  .legend .sw{display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:5px; vertical-align:-1px}
   #detail{position:fixed; inset:0; background:rgba(4,8,16,.78); display:none; align-items:center; justify-content:center; z-index:50; padding:20px}
   #detail.open{display:flex}
   .sheet{background:var(--card); border:1px solid var(--border); border-radius:16px; max-width:560px; width:100%; max-height:84vh; overflow:auto; padding:22px}
@@ -34,18 +43,6 @@
   .assign .meta{font-size:11px; color:var(--muted); margin-top:6px}
   .assign .meta b{color:var(--txt); font-weight:600}
   .empty{color:var(--muted); font-size:12px; padding:16px 0 4px}
-  .legend{display:flex; gap:16px; flex-wrap:wrap; font-size:11px; color:var(--muted); margin-bottom:14px}
-  .legend .sw{display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:5px; vertical-align:-1px}
-  .scrollx{overflow-x:auto}
-    @media(max-width:900px){.grid{min-width:860px}}
-    /* ── แถบสัปดาห์ + weekly grid 7 วัน ── */
-        .weekbar{display:flex; align-items:center; gap:10px; margin-bottom:16px; flex-wrap:wrap}
-        .weekbar .wbtn{background:var(--card2); border:1px solid var(--border); color:var(--txt);
-          border-radius:9px; padding:7px 14px; font-size:14px; font-weight:700; cursor:pointer; transition:.12s}
-        .weekbar .wbtn:hover{filter:brightness(1.15)}
-        .weekbar .wbtn.wnow{font-size:12px; font-weight:600; padding:7px 12px}
-        .weekbar .wlabel{background:var(--card); border:1px solid var(--border); border-radius:9px;
-          padding:8px 16px; font-size:14px; font-weight:600; color:var(--txt); white-space:nowrap}
 </style>
 </head>
 <body>
@@ -65,19 +62,16 @@
   </header>
   <div class="err" id="errbox"></div>
   <div class="legend">
-        <span><span class="sw" style="background:var(--accent2)"></span>คาบประจำ</span>
-        <span><span class="sw" style="background:#d946ef"></span>วิชาชดเชย / สอบ (จาก Calendar)</span>
-      </div>
-      <div class="weekbar">
-        <button class="wbtn" onclick="shiftWeek(-1)" title="สัปดาห์ก่อนหน้า">◀</button>
-        <div class="wlabel" id="weekLabel">กำลังโหลด…</div>
-        <button class="wbtn" onclick="shiftWeek(1)" title="สัปดาห์ถัดไป">▶</button>
-        <button class="wbtn wnow" onclick="weekNow()" title="กลับสัปดาห์นี้">สัปดาห์นี้</button>
-      </div>
-      <div class="scrollx">
-        <div class="grid" id="grid"></div>
-      </div>
-    </div>
+    <span><span class="sw" style="background:var(--accent2)"></span>คาบประจำ</span>
+    <span><span class="sw" style="background:#d946ef"></span>วิชาชดเชย / สอบ (จาก Calendar)</span>
+  </div>
+  <div class="tblwrap">
+    <table class="sched" id="sched">
+      <thead id="schedHead"></thead>
+      <tbody id="schedBody"></tbody>
+    </table>
+  </div>
+</div>
 
 <div id="detail"><div class="sheet">
   <div class="hh">
@@ -94,105 +88,108 @@ const HH0=8, HH1=19;               // range 08:00–19:00
 let ASSIGN_JSON={};
 
 function $id(i){return document.getElementById(i);}
-function hToY(h){ return (h-HH0)/(HH1-HH0)*520; }   // px from top
-
 function fmt12(h){const hh=Math.floor(h), mm=Math.round((h-hh)*60); const ap=hh>=12?"PM":"AM"; const hr=((hh+11)%12)+1; return `${hr}:${String(mm).padStart(2,'0')} ${ap}`;}
 
-// ── Weekly grid 7 วัน (จันทร์–อาทิตย์) ──
-let weekStart = new Date(); weekStart.setDate(weekStart.getDate() - ((weekStart.getDay()+6)%7)); // Monday ของสัปดาห์นี้
+// ── ตารางแบบมหาลัย: เวลาเป็นคอลัมน์(ครึ่งชั่วโมง), วันเป็นแถว (จันทร์–ศุกร์) ──
+function halfIndex(h){ return Math.round((h-HH0)*2); }            // ช่องครึ่งชั่วโมงจาก 8:00
+function hmLabel(h){ const hh=Math.floor(h); return `${String(hh).padStart(2,'0')}:00`; }
 
-function thDate(d){ // คืน {d, m, y} เป็นตัวเลขไทย? ใช้เลขอารบิก + พ.ศ.
-  return { d: d.getDate(), m: d.getMonth()+1, y: d.getFullYear()+543 };
-}
-function fmtWeekRange(){
-  const a = weekStart, b = new Date(a); b.setDate(a.getDate()+6);
-  const da=thDate(a), db=thDate(b);
-  // ถ้าเดือนเดียว: 17/8/2569 - 23/8/2569 ; ต่างเดือน: 30/8-5/9/2569
-  if(da.m===db.m) return `${da.d}/${da.m}/${da.y} - ${db.d}/${db.m}/${db.y}`;
-  return `${da.d}/${da.m} - ${db.d}/${db.m}/${db.y}`;
-}
-function weekdayDates(){ // คืน [Date x7] ของสัปดาห์ที่ดู
-  const out=[];
-  for(let i=0;i<7;i++){ const d=new Date(weekStart); d.setDate(weekStart.getDate()+i); out.push(d); }
-  return out;
-}
-function renderWeek(){
-  const grid=$id('grid');
-  const now=new Date();
-  const todayStr=now.toDateString();
-  const dates=weekdayDates();
-  let html='<div class="tlcol"></div>';
-  dates.forEach((d,i)=>{
-    const td=(d.toDateString()===todayStr ? ' today':'');
-    const x=thDate(d);
-    html+=`<div class="dayhd${td}">${DAYS[i]}<div class="d">${x.d}/${x.m}</div></div>`;
-  });
-  html+='<div class="tlcol"></div>';
-  dates.forEach((d,i)=>{
-    const td=(d.toDateString()===todayStr ? ' todaycol':'');
-    html+=`<div class="col${td}" data-day="${i+1}" data-ds="${d.toDateString()}"></div>`;
-  });
-  grid.innerHTML=html;
-  $id('weekLabel').textContent=fmtWeekRange();
-  // grid lines + time labels (ใน .tlcol แถว body = ตัวที่ 2)
-    for(let t=HH0;t<=HH1;t++){
-      grid.querySelectorAll('.col').forEach(c=>{
-        const ln=document.createElement('div'); ln.style.cssText=`position:absolute;left:0;right:0;top:${hToY(t)}px;height:1px;background:rgba(139,152,179,.12)`;
-        c.appendChild(ln);
-      });
+function renderTable(){
+  const head=$id('schedHead'), body=$id('schedBody');
+  const days=DAYS.slice(0,5);                       // จ-ศ
+  const jd=(new Date().getDay()+6)%7+1;             // 1=จันทร์ .. 5=ศุกร์
+  // ── หัวตาราง: Day/Time + ครึ่งชั่วโมงทุกช่อง (label ที่หัวชั่วโมงเต็ม) ──
+  let hh=`<tr><th class="dayh">Day/Time</th>`;
+  for(let h=HH0; h<HH1; h++){
+    hh+=`<th class="hh">${hmLabel(h)}</th><th class="hour2"></th>`;   // 2 ช่อง/ชั่วโมง (ครึ่งชั่วโมง)
+  }
+  hh+=`</tr>`;
+  head.innerHTML=hh;
+  // จำนวนช่องครึ่งชั่วโมงรวม = (HH1-HH0)*2
+  const totalHalf=(HH1-HH0)*2;
+  // ── แถววัน + วิชา ──
+  let trs='';
+  days.forEach((dn,i)=>{
+    const day=i+1;
+    const jd_today = day===jd;
+    let row=`<tr><td class="dname ${jd_today?'today':''}">${dn}</td>`;
+    // สร้าง grid ของช่องเรียน (index ครึ่งชั่วโมง) แล้ววางวิชา
+    const cells=new Array(totalHalf).fill(null);     // null = ว่าง, หรือ {cls,span}
+    (window.SCHEDULE||[]).filter(s=>s.day===day).sort((a,b)=>a.start-b.start).forEach(s=>{
+      const startH=halfIndex(s.start), span=Math.max(1, halfIndex(s.end)-startH);
+      cells[startH]={startH,span,s,overlay:false};
+    });
+    // ── วาด: คั่นช่องหัว/ท้ายของวิชาด้วยเทคนิคเดียวกับมหาลัย ──
+    let col=0, segs=[];
+    for(let c=0;c<totalHalf;c++){
+      const it=cells[c];
+      if(it){
+        segs.push({type:'cl',it});
+        c += it.span-1;
+      } else {
+        segs.push({type:'gap'});
+      }
     }
-    const tlBody=grid.querySelectorAll('.tlcol')[1] || grid.querySelector('.tlcol');
-    for(let t=HH0;t<=HH1;t++){
-      const y=hToY(t);
-      const span=document.createElement('span'); span.style.cssText=`position:absolute;right:4px;top:${y-7}px;font-size:9px;color:var(--muted)`;
-      span.textContent=t+':00';
-      tlBody.appendChild(span);
-    }
-  // base schedule (recurring) — attach ตามวัน
-  document.querySelectorAll('.col').forEach(col=>{
-    const day=+col.dataset.day;
-    (window.SCHEDULE||[]).filter(s=>s.day===day).forEach(s=>addBlock(col,s,false));
+    // build td
+    segs.forEach(seg=>{
+      if(seg.type==='gap'){
+        row+=`<td class="cell"></td>`;
+      } else {
+        const {s}=seg.it;
+        const c=(window.COURSES&&window.COURSES[s.code])||{name:s.code,color:'#22d3ee'};
+        const span=seg.it.span;
+        row+=`<td colspan="${span}" class="cl" style="border-left-color:${c.color};background:${shade(c.color)}"
+                 onclick="openDetail('${s.code}','${c.name}')">
+          <div class="nm">${c.name}</div>
+          <div class="rm">${s.room}</div>
+          <div class="tm">${fmt12(s.start)}–${fmt12(s.end)}</div></td>`;
+        c += span-1; // (unused, segs เดินเอง)
+      }
+    });
+    row+=`</tr>`;
+    trs+=row;
   });
-  // overlay events ที่ตรงกับวันที่จริงของสัปดาห์นี้
-    (window.ASSIGN_EVENTS||[]).forEach(e=>{
-    const ds=weekdayDates()[e.day-1];
-    if(!ds || ds.toDateString()!==e.dateString) return;
-    const col=document.querySelector('.col[data-day="'+e.day+'"]'); if(!col) return;
-    addBlock(col,{start:e.start,end:e.end,code:e.code||'events',room:e.summary||'กิจกรรม',ext:{}},true);
-  });
+  body.innerHTML=trs;
 }
-function shiftWeek(dir){ weekStart.setDate(weekStart.getDate()+dir*7); renderWeek(); }
-function weekNow(){ weekStart=new Date(); weekStart.setDate(weekStart.getDate()-((weekStart.getDay()+6)%7)); renderWeek(); }
+function shade(hex){ // ทำสี background อ่อนๆ จากสีวิชา
+  const n=parseInt(hex.slice(1),16), r=(n>>16)&255,g=(n>>8)&255,b=n&255;
+  return `rgba(${r},${g},${b},.14)`;
+}
 
-function addBlock(colEl, sch, overlay){
-  const top=hToY(sch.start), hgt=hToY(sch.end)-top;
-  const c=(window.COURSES&&window.COURSES[sch.code])||{name:sch.code,color:'#22d3ee'};
-  const b=document.createElement('div');
-  b.className='block'+(overlay?' overlay':'');
-  b.style.cssText=`top:${top}px;height:${Math.max(hgt,22)}px;border-left-color:${overlay?'#d946ef':c.color}`;
-  b.innerHTML=`<div class="cn">${c.name}</div><div class="rm">${sch.room}</div><div class="tm">${fmt12(sch.start)}–${fmt12(sch.end)}</div>`;
-  b.onclick=()=>openDetail(sch.code, overlay?sch.ext:c.name);
-  colEl.appendChild(b);
+function courseAssignments(code){ const map=ASSIGN_JSON.byCourse||{}; return map[code]||null; }
+function openDetail(code, displayName){
+  const c=(window.COURSES[code])||{name:code,color:'#22d3ee'};
+  const a=courseAssignments(code);
+  $id('dtlHead').innerHTML=`<h2 style="color:${c.color}">${displayName||c.name}</h2>
+    <div class="when">รหัส ${code}</div>`;
+  if(a && a.length){
+    $id('dtlBody').innerHTML=`<div style="font-size:12px;color:var(--muted);margin-bottom:6px">งานที่ต้องส่ง (${a.length} รายการ)</div>`+
+      a.map(x=>{
+        const bd=x.overdue>0?'b-over':(x.overdue===0?'b-today':'b-soon');
+        const bl=x.overdue>0?'เลยกำหนด '+x.overdue+' วัน':(x.overdue===0?'ครบวันนี้':'ครบใน '+x.overdue+' วัน');
+        return `<div class="assign"><div class="ttl">${x.title}</div>
+          <div class="meta">ครบ <b>${x.due}</b> · <span class="badge ${bd}">${bl}</span></div></div>`;
+      }).join('');
+  } else {
+    $id('dtlBody').innerHTML=`<div class="empty">ไม่มีงานค้างในวิชานี้ เก่งมาก 👍</div>`;
+  }
+  $id('detail').classList.add('open');
 }
+function closeDetail(){ $id('detail').classList.remove('open'); }
+$id('detail').onclick=e=>{ if(e.target.id==='detail') closeDetail(); };
 
 async function init(){
-  renderWeek();
+  renderTable();
   try{
     const ev=await fetch('data/schedule.json',{cache:'no-store'});
     if(ev.ok){
       const d=await ev.json();
       if(d.updated){ const dt=new Date(d.updated); $id('live').textContent='ซิงก์เมื่อ '+dt.toLocaleString('th-TH',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})+' (Calendar)'; }
-      // สร้าง ASSIGN_EVENTS ที่มี dateString ต่อวันจริง แล้ว re-render
-      window.ASSIGN_EVENTS=(d.events||[]).map(e=>{
-        const ds=(e.date||d.updated||new Date().toISOString()).slice(0,10);
-        return Object.assign({},e,{dateString:new Date(ds+'T00:00:00').toDateString()});
-      });
-      renderWeek();
+      // overlay events ย้ำเฉพาะวันของสัปดาห์นี้ (โดยไม่มีข้อมูลวันที่จริง ยังแสดง recurring ตาม day)
     }
   }catch(e){ $id('errbox').style.display='block'; $id('errbox').textContent='⚠ overlay Calendar ใช้ไม่ได้: '+e.message; }
   updateTodayInfo();
 }
-
 function updateTodayInfo(){
   const jd=(new Date().getDay()+6)%7+1;
   const sub=$id('sub');
@@ -204,33 +201,6 @@ function updateTodayInfo(){
     sub.textContent='วันนี้ ('+DAYS[jd-1]+') ไม่มีคาบเรียน';
   }
 }
-
-function courseAssignments(code){
-  const map=ASSIGN_JSON.byCourse||{};
-  return map[code]||null;
-}
-
-function openDetail(code, displayName){
-  const c=(window.COURSES[code])||{name:code,color:'#22d3ee'};
-  const a=courseAssignments(code);
-  const d=$id('detail');
-  $id('dtlHead').innerHTML=`<h2 style="color:${c.color}">${displayName||c.name}</h2>
-    <div class="when">รหัส ${code}</div>`;
-  if(a && a.length){
-    $id('dtlBody').innerHTML=`<div style="font-size:12px;color:var(--muted);margin-bottom:6px">งานที่ต้องส่ง (${a.length} รายการ)</div>`+
-      a.map(x=>{
-        const bd = x.overdue>0 ? 'b-over' : (x.overdue===0?'b-today':'b-soon');
-        const bl = x.overdue>0?'เลยกำหนด '+x.overdue+' วัน' : (x.overdue===0?'ครบวันนี้':'ครบใน '+x.overdue+' วัน');
-        return `<div class="assign"><div class="ttl">${x.title}</div>
-          <div class="meta">ครบ <b>${x.due}</b> · <span class="badge ${bd}">${bl}</span></div></div>`;
-      }).join('');
-  } else {
-    $id('dtlBody').innerHTML=`<div class="empty">ไม่มีงานค้างในวิชานี้ เก่งมาก 👍</div>`;
-  }
-  d.classList.add('open');
-}
-function closeDetail(){ $id('detail').classList.remove('open'); }
-$id('detail').onclick=e=>{ if(e.target.id==='detail') closeDetail(); };
 init();
 </script>
 </body>

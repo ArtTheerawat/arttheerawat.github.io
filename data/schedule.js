@@ -7,16 +7,15 @@
  *   code : รหัสวิชา (key ใน COURSES ด้านล่าง)
  *   room : ห้องเรียน (หรือ ARR-เรียนออนไลน์)
  * COURSES: ชื่อวิชา + สี ที่จะขึ้นบนเว็บ  (code เป็น key)
- *   ใส่ชื่อวิชาที่รู้ ถ้ายังไม่รู้ ปล่อย name ไว้เป็น "รหัส xxx" แล้วมาแก้ทีหลัง
  */
 window.COURSES = {
-  "88622065": { name: "Data Structures & Algorithms", color: "#6366f1" },
-  "88624065": { name: "รหัส 88624065", color: "#22d3ee" },
-  "88624165": { name: "รหัส 88624165", color: "#f59e0b" },
-  "88634065": { name: "รหัส 88634065", color: "#22c55e" },
-  "89520664": { name: "รหัส 89520664", color: "#ef4444" },
-  "89520864": { name: "รหัส 89520864", color: "#a855f7" },
-  "73101469": { name: "รหัส 73101469", color: "#ec4899" },
+  "88622065": { name: "Data Structures and Algorithms", color: "#6366f1" },
+  "88624065": { name: "Relational Database", color: "#22d3ee" },
+  "88624165": { name: "User Interface Design and Development", color: "#f59e0b" },
+  "88634065": { name: "Software Development", color: "#22c55e" },
+  "89520664": { name: "Experiential English", color: "#ef4444" },
+  "89520864": { name: "Thai Language Skills for Careers in Contemporary Society", color: "#a855f7" },
+  "73101469": { name: "Sexual Literacy", color: "#ec4899" },
 };
 
 window.SCHEDULE = [
