@@ -125,3 +125,30 @@ table.sched td.cl.overlay{background:rgba(217,70,239,.14); border-left-color:#d9
 .assign .ttl{font-size:13px; font-weight:600}
 .assign .meta{font-size:11px; color:var(--muted); margin-top:6px}
 .assign .meta b{color:var(--txt); font-weight:600}
+
+/* ── AI Token Usage (home) ── */
+.usage-sec{margin-top:22px}
+.usage-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:16px}
+.u-card{background:var(--card2); border:1px solid var(--border); border-radius:12px; padding:16px}
+.u-card.or{border-left:4px solid var(--accent)}
+.u-card.n9{border-left:4px solid var(--accent2)}
+.u-prov{display:flex; align-items:center; gap:8px; font-size:13px; margin-bottom:12px}
+.u-dot{width:9px; height:9px; border-radius:50%; background:var(--down)}
+.u-card.or .u-dot{background:var(--accent); box-shadow:0 0 6px var(--accent)}
+.u-card.n9 .u-dot{background:var(--accent2); box-shadow:0 0 6px var(--accent2)}
+.u-name{font-weight:700}
+.u-prov .u-state{margin-left:auto; font-size:11px; font-weight:600; padding:2px 8px; border-radius:999px; background:var(--card)}
+.u-prov .u-state.on{background:rgba(34,197,94,.16); color:#4ade80}
+.u-big{font-size:30px; font-weight:700; line-height:1.1}
+.u-sub{font-size:12px; color:var(--muted); margin:4px 0 12px}
+.u-meter{height:8px; border-radius:999px; background:var(--card); overflow:hidden}
+.u-meter-fill{height:100%; background:linear-gradient(90deg,var(--accent2),var(--accent)); border-radius:999px; transition:width .4s}
+.u-meter-fill.u-mid{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+.u-meter-fill.u-high{background:linear-gradient(90deg,#ef4444,#f87171)}
+.u-meter-row{display:flex; justify-content:space-between; font-size:11px; color:var(--muted); margin-top:5px}
+.u-pct.u-mid{color:#fbbf24}
+.u-pct.u-high{color:#f87171}
+.u-remain{font-weight:600; color:var(--txt)}
+.u-stats{display:flex; gap:14px; flex-wrap:wrap; font-size:11px; color:var(--muted); margin-top:14px}
+.u-note{font-size:11px; color:var(--muted); margin-top:10px; line-height:1.5; padding-top:10px; border-top:1px dashed var(--border)}
+.u-empty{color:var(--muted); font-size:13px; padding:12px 0}

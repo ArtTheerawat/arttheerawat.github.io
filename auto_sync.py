@@ -6,7 +6,7 @@ Designed to run on a frequent cron (e.g. every 15 min). Silent (no output) when
 nothing changed, which keeps the cron watchdog quiet.
 
 Usage: python auto_sync.py
-Requires: generate_data.py + git repo (origin=GitHub Pages root site)
+Requires: generate_data.py + pull_usage.py + git repo (origin=GitHub Pages root site)
 
 NOTE (Next.js): writes to public/data.json so the static export can serve it at
 /api-less /data.json. Pushes to branch 'main' explicitly.
@@ -23,7 +23,7 @@ DATA = BASE / "public" / "data.json"   # Next.js static export serves /data.json
 
 def sha(p: Path) -> str:
     """Hash data.json ignoring the volatile generated_at timestamp so we only
-    commit+push when actual trade/signal/perf data changed, not on every regen."""
+    commit+push when actual content changed, not on every regen."""
     if not p.exists():
         return ""
     raw = p.read_bytes()
@@ -55,6 +55,13 @@ def main():
     if r.returncode != 0:
         print("generate_data.py failed:", r.stderr[-500:])
         return 1
+
+    # 1b) inject live AI usage (OpenRouter + 9arm) into data.json before hashing
+    p = BASE / "pull_usage.py"
+    if p.exists():
+        ru = run(sys.executable, str(p))
+        if ru.returncode != 0:
+            print("pull_usage.py failed:", ru.stderr[-300:])
 
     after = sha(DATA)
 
