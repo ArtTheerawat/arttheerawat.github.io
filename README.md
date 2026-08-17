@@ -56,6 +56,36 @@
    npm run dev
    ```
 
+### ขั้นตอน Deploy ขึ้น Vercel
+
+> จะ dev/test บน local ก็ได้ แต่การซิงก์ข้ามอุปกรณ์ต้องขึ้น production ก่อน (Supabase URL ต้องเป็น URL จริง).
+
+1. **ตั้งค่า Auth URL configuration ที่ Supabase ก่อน** (สำคัญมาก — ถ้าข้าม ล็อกอินจะ redirect ไป `http://localhost:3000` แล้วพัง):
+   - Supabase Dashboard → **Authentication → URL Configuration**
+   - **Site URL** = `https://<your-app>.vercel.app` (URL production จริง — อย่าปล่อย default `localhost:3000`)
+   - **Redirect URLs** = เพิ่ม `https://<your-app>.vercel.app/auth/callback*` + `http://localhost:3000/**` แล้ว **Save URLs**
+
+2. **Push โค้ดขึ้น git** — commit แล้ว push ไป `main`:
+   ```
+   git add -A
+   git commit -m "feat: supabase sync + auth"
+   git push origin main
+   ```
+
+3. **ตั้ง env vars บน Vercel** — [vercel.com](https://vercel.com) → เข้าโปรเจกต์ → **Settings → Environment Variables** → เพิ่ม 2 ตัว (สำหรับ **Production + Preview**):
+   - `NEXT_PUBLIC_SUPABASE_URL` = `https://<project-ref>.supabase.co`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY` = `<anon key>`
+
+4. **Deploy** — ถ้าเชื่อม git repo ไว้ การ push ที่ข้อ 2 จะ**ขึ้น production อัตโนมัติ** (รอสัก 1–2 นาที). ถ้าไม่ auto → ที่ส่วน env เพิ่ง Add สำเร็จจะเห็นปุ่ม **Redeploy** → กดเลย.
+
+5. **Verify** — เปิด `https://<your-app>.vercel.app` → ดูว่า:
+   - Auth chip แสดง "เข้าสู่ระบบ" (ตอนยังไม่ login)
+   - ล็อกอิน Google → กลับมาหน้าเดิม (ไม่ติด `localhost`) → chip แสดงชื่อ
+   - กด 🙈 ซ่อนงาน → เลือกเหตุผล → **ยืนยันซ่อน** → งานหาย
+   - เปิดเครื่องอื่น login เดียวกัน → งานที่ซ่อนหายไปด้วย (cross-device sync ✅)
+
+> 💡 **บทเรียนจากแมลงที่เจอตอน deploy:** ถ้า Login ขึ้น URL `http://localhost:3000/?code=...` → สาเหตุคือ Supabase **Site URL / Redirect URLs ตั้งไม่ถูก** (default เป็น localhost) — กลับไปตั้งตามข้อ 1. ถ้า Production ไม่มี env (หน้า auth ไม่ทำงาน) → ตั้ง env ที่ข้อ 3 แล้ว Redeploy.
+
 ### วิธีทดสอบ
 
 1. ล็อกอิน Google จากคอม (ปุ่ม "เข้าสู่ระบบ" ที่ nav หรือปุ่ม 🔒 บนงานที่อยากซ่อน)
