@@ -159,8 +159,10 @@ alter table public.system_logs enable row level security;
 
 -- service_role bypasses RLS (server-side writes). Explicit grants so the
 -- Python sync script / side tooling are guaranteed read+write access even if
--- the project's default privileges for service_role differ.
-grant select, insert, update
+-- the project's default privileges for service_role differ. DELETE is included
+-- so the sync/cleanup tooling can remove stale rows (PostgREST returns 42501
+-- without a table-level DELETE grant even for service_role).
+grant select, insert, update, delete
   on public.trades, public.signals, public.trading_daily,
      public.sync_state, public.heartbeat, public.system_logs
   to service_role;
@@ -169,9 +171,15 @@ grant select, insert, update
 -- NOT enough — the dashboard also needs a table-level GRANT SELECT to anon,
 -- which Postgres does NOT auto-grant for tables created via raw SQL (only the
 -- policy). Without this grant anon gets 42501 even with a using(true) policy.
-grant select on public.trades         to anon;
-grant select on public.signals        to anon;
-grant select on public.trading_daily  to anon;
+--
+-- NOTE: @supabase/ssr's createBrowserClient authenticates every request as an
+-- ANONYMOUS SUPABASE USER → role = "authenticated" (not "anon") even when
+-- logged out. The dashboard showed "permission denied for table trades"
+-- (42501, hint: GRANT SELECT ... TO authenticated) because only anon was
+-- granted. Both roles need SELECT so the page works logged-in AND logged-out.
+grant select on public.trades         to anon, authenticated;
+grant select on public.signals        to anon, authenticated;
+grant select on public.trading_daily  to anon, authenticated;
 
 -- ============================================================================
 -- Verification queries (paste into SQL Editor to confirm):
