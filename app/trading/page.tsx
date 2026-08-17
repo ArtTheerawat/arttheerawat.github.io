@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { BarChart3, Activity, ShoppingCart, Radio } from "lucide-react";
 import { dataUrl, fmtMoney, fmtTimestamp, num } from "@/lib/data";
 
 interface Trade {
@@ -193,8 +194,8 @@ export default function TradingPage() {
       <div className="grid2">
         <div className="cards-sec">
           <h2>
-            📊 Performance <span className="tag">รายวัน</span>
-          </h2>
+                      <BarChart3 aria-hidden="true" /> Performance <span className="tag">รายวัน</span>
+                    </h2>
           {perfRows.length === 0 ? (
             <div className="empty">
               <div className="big">📊</div>
@@ -234,8 +235,8 @@ export default function TradingPage() {
         </div>
         <div className="cards-sec">
           <h2>
-            💹 P&L <span className="tag">Net / วัน</span>
-          </h2>
+                      <Activity aria-hidden="true" /> P&L <span className="tag">Net / วัน</span>
+                    </h2>
           {pnlBars.length === 0 ? (
             <div className="empty" style={{ padding: "0 0 28px" }}>
               <div className="big">📈</div>
@@ -266,20 +267,20 @@ export default function TradingPage() {
 
       <div className="cards-sec">
         <h2>
-          🛒 Trades <span className="tag">{tradeRows.length} rows</span>
-        </h2>
+                  <ShoppingCart aria-hidden="true" /> Trades <span className="tag">{tradeRows.length} rows</span>
+                </h2>
         {tradeRows.length === 0 ? (
           <div className="empty">
             <div className="big">🛒</div>
             {EMPTY_MSG}
           </div>
         ) : (
-          <table style={{ fontSize: 13 }}>
-            <thead>
-              <tr>
-                <th>Time</th>
-                <th>Symbol</th>
-                <th>Direction</th>
+          <table className="tbl desk-only" style={{ fontSize: 13 }}>
+                      <thead>
+                        <tr>
+                          <th>Time</th>
+                          <th>Symbol</th>
+                          <th>Direction</th>
                 <th>Entry</th>
                 <th>TP</th>
                 <th>Net P&L</th>
@@ -303,32 +304,70 @@ export default function TradingPage() {
                       {num(t.netPnl) ? (num(t.netPnl) >= 0 ? "+" : "") + fmtMoney(num(t.netPnl)) : "—"}
                     </td>
                     <td>
-                      <span className={"b-toggle " + st.cls}>{st.txt}</span>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        )}
+                                          <span className={"b-toggle " + st.cls}>{st.txt}</span>
+                                        </td>
+                                      </tr>
+                                    );
+                                  })}
+                                </tbody>
+                              </table>
+                            )}
+                            {/* ── Mobile: cards instead of wide horizontal-scroll table ── */}
+                            {tradeRows.length > 0 && (
+                              <div className="mob-trades">
+                                <div className="mob-list">
+                                  {tradeRows.map((t, i) => {
+                                    const st = statusBadge(t.status);
+                                    const dir = (t.direction || "").toUpperCase();
+                                    const pnl = num(t.netPnl);
+                                    return (
+                                      <div className="mob-card" key={i}>
+                                        <div className="mob-time">
+                                          {fmtTimestamp(t.timestamp) || "—"}
+                                          <span className="mob-chip">
+                                            <span className={"b-toggle " + st.cls}>{st.txt}</span>
+                                          </span>
+                                        </div>
+                                        <div className="mob-nm">
+                                          {t.symbol || ""}
+                                          <span className={"sig " + dir} style={{ marginLeft: 6 }}>
+                                            {t.direction || ""} {t.volume !== undefined && t.volume !== "" ? "· " + t.volume : ""}
+                                          </span>
+                                        </div>
+                                        <div className="t-card-grid">
+                                          <span className="t-card-lbl">Entry</span>
+                                          <span>{t.entry ?? "—"}</span>
+                                          <span className="t-card-lbl">TP</span>
+                                          <span>{t.tp ?? "—"}</span>
+                                          <span className="t-card-lbl">Net P&L</span>
+                                          <span className={pnl >= 0 ? "up" : "down"}>
+                                            {pnl ? (pnl >= 0 ? "+" : "") + fmtMoney(pnl) : "—"}
+                                          </span>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            )}
       </div>
 
       <div className="cards-sec">
         <h2>
-          📡 Signals <span className="tag">live จาก sheet</span>
-        </h2>
+                  <Radio aria-hidden="true" /> Signals <span className="tag">live จาก sheet</span>
+                </h2>
         {signalRows.length === 0 ? (
           <div className="empty">
             <div className="big">📡</div>
             {EMPTY_MSG}
           </div>
         ) : (
-          <table style={{ fontSize: 13 }}>
-            <thead>
-              <tr>
-                <th>Time</th>
-                <th>Symbol</th>
-                <th>Signal</th>
+                  <table className="tbl desk-only" style={{ fontSize: 13 }}>
+                    <thead>
+                      <tr>
+                        <th>Time</th>
+                        <th>Symbol</th>
+                        <th>Signal</th>
                 <th>Conf</th>
                 <th>D1/H1</th>
                 <th>Entry Zone</th>
@@ -354,11 +393,48 @@ export default function TradingPage() {
                 );
               })}
             </tbody>
-          </table>
-        )}
-      </div>
+                      </table>
+                    )}
+                    {/* ── Mobile: cards instead of wide horizontal-scroll table ── */}
+                    {signalRows.length > 0 && (
+                      <div className="mob-trades">
+                        <div className="mob-list">
+                          {signalRows.map((s, i) => {
+                            const sigStr = (s.signal || s.direction || "").toUpperCase();
+                            return (
+                              <div className="mob-card" key={i}>
+                                <div className="mob-time">
+                                  {fmtTimestamp(s.timestamp) || "—"}
+                                  <span className="mob-chip">
+                                    <span className={"b-toggle b-open"}>{s.status || "—"}</span>
+                                  </span>
+                                </div>
+                                <div className="mob-nm">
+                                  {s.symbol || ""}
+                                  <span className={"sig " + sigStr} style={{ marginLeft: 6 }}>
+                                    {s.signal || s.direction || ""}
+                                  </span>
+                                </div>
+                                <div className="t-card-grid">
+                                  <span className="t-card-lbl">Conf</span>
+                                  <span>{s.confidence || "—"}</span>
+                                  <span className="t-card-lbl">D1/H1</span>
+                                  <span>
+                                    {s.d1Trend || ""}
+                                    {s.h1Trend ? " · " + s.h1Trend : ""}
+                                  </span>
+                                  <span className="t-card-lbl">Entry</span>
+                                  <span>{s.entryZone || "—"}</span>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
 
-      <footer>Auto-generated by Hermes · data read live from Google Sheets (auto-sync)</footer>
+                  <footer>Auto-generated by Hermes · data read live from Google Sheets (auto-sync)</footer>
     </div>
   );
 }

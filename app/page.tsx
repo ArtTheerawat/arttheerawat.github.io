@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ListTodo, CalendarDays, CandlestickChart, Headphones, Zap, type LucideIcon } from "lucide-react";
 import { classifyAssignment, dataUrl, fmtDate, fmtMoney, nowBKKHour, todayIdxBKK, todayLabelBKK, todayStr, type Bucket } from "@/lib/data";
 import { SCHEDULE, COURSES } from "@/lib/schedule-data";
 import { useHiddenTasks } from "@/lib/hidden-tasks";
@@ -11,13 +12,14 @@ import { HideButton } from "@/components/HiddenTasks";
    Split into PRIMARY (study-critical: tasks + schedule — surface first and
    more prominent) and SECONDARY (support tools: trading + dictation — grouped
    below as plain "quick access"). Keeps task priority readable. */
-const PRIMARY_TILES = [
-  { href: "/today", ico: "📚", t: "งานวันนี้", d: "ทุกวิชา · กำหนดส่ง · แจ้งเตือนสอบ" },
-  { href: "/schedule", ico: "🗓️", t: "ตารางเรียน", d: "คาบเรียนรายสัปดาห์ + วิชาชดเชย" },
+type Tile = { href: string; Icon: LucideIcon; t: string; d: string };
+const PRIMARY_TILES: Tile[] = [
+  { href: "/today", Icon: ListTodo, t: "งานวันนี้", d: "ทุกวิชา · กำหนดส่ง · แจ้งเตือนสอบ" },
+  { href: "/schedule", Icon: CalendarDays, t: "ตารางเรียน", d: "คาบเรียนรายสัปดาห์ + วิชาชดเชย" },
 ];
-const SECONDARY_TILES = [
-  { href: "/trading", ico: "📊", t: "Trading Dashboard", d: "XAUUSD / BTC · Performance · P&L" },
-  { href: "/dictation", ico: "🔊", t: "Dictation Trainer", d: "ฝึกฟัง + ตรวจเสียง -s/-ed" },
+const SECONDARY_TILES: Tile[] = [
+  { href: "/trading", Icon: CandlestickChart, t: "Trading Dashboard", d: "XAUUSD / BTC · Performance · P&L" },
+  { href: "/dictation", Icon: Headphones, t: "Dictation Trainer", d: "ฝึกฟัง + ตรวจเสียง -s/-ed" },
 ];
 
 /* ── Usage data types (unchanged) ── */
@@ -344,36 +346,42 @@ export default function HomePage() {
       )}
 
       {/* ── Primary: study-critical quick actions ── */}
-            <div className="cards primary-first">
-              {PRIMARY_TILES.map((tl) => (
-                <Link key={tl.href} href={tl.href} className="tile primary">
-                  <div className="ico">{tl.ico}</div>
-                  <div className="t">{tl.t}</div>
-                  <div className="d">{tl.d}</div>
-                  <div className="go">เปิด →</div>
-                </Link>
-              ))}
-            </div>
+                  <div className="cards primary-first">
+                    {PRIMARY_TILES.map((tl) => {
+                      const Icon = tl.Icon;
+                      return (
+                        <Link key={tl.href} href={tl.href} className="tile primary">
+                          <div className="ico"><Icon aria-hidden="true" /></div>
+                          <div className="t">{tl.t}</div>
+                          <div className="d">{tl.d}</div>
+                          <div className="go">เปิด →</div>
+                        </Link>
+                      );
+                    })}
+                  </div>
 
-            {/* ── Secondary tools ── */}
-            <h2 className="sec-title quick">⚡ เข้าถึงด่วน</h2>
-            <div className="cards">
-              {SECONDARY_TILES.map((tl) => (
-                <Link key={tl.href} href={tl.href} className="tile">
-                  <div className="ico">{tl.ico}</div>
-                  <div className="t">{tl.t}</div>
-                  <div className="d">{tl.d}</div>
-                  <div className="go">เปิด →</div>
-                </Link>
-              ))}
-            </div>
+                  {/* ── Secondary tools ── */}
+                  <h2 className="sec-title quick"><Zap aria-hidden="true" /> เข้าถึงด่วน</h2>
+                  <div className="cards">
+                    {SECONDARY_TILES.map((tl) => {
+                      const Icon = tl.Icon;
+                      return (
+                        <Link key={tl.href} href={tl.href} className="tile">
+                          <div className="ico"><Icon aria-hidden="true" /></div>
+                          <div className="t">{tl.t}</div>
+                          <div className="d">{tl.d}</div>
+                          <div className="go">เปิด →</div>
+                        </Link>
+                      );
+                    })}
+                  </div>
 
       {/* ── AI Token Usage (kept, moved below quick access) ── */}
       <section className="cards-sec usage-sec">
         <h2>
-          ⚡ AI Token Usage
-          <span className="tag">อัปเดต {timeAgoOr(usage?.updated_at) || usage?.updated_at || "—"}</span>
-        </h2>
+                  <Zap aria-hidden="true" /> AI Token Usage
+                  <span className="tag">อัปเดต {timeAgoOr(usage?.updated_at) || usage?.updated_at || "—"}</span>
+                </h2>
 
         {usageErr && (
                   <div role="alert" className="err">
