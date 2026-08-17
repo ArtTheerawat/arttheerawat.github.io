@@ -37,7 +37,28 @@
   .legend{display:flex; gap:16px; flex-wrap:wrap; font-size:11px; color:var(--muted); margin-bottom:14px}
   .legend .sw{display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:5px; vertical-align:-1px}
   .scrollx{overflow-x:auto}
-  @media(max-width:900px){.grid{min-width:860px}}
+    @media(max-width:900px){.grid{min-width:860px}}
+    /* ── มุมมองตารางแบบมหาลัย (grid วัน x คาบ) ── */
+    .tabs{display:flex; gap:8px; margin-bottom:16px}
+    .tabbtn{background:var(--card2); border:1px solid var(--border); color:var(--muted);
+      border-radius:9px; padding:7px 14px; font-size:12.5px; font-weight:600; cursor:pointer; transition:.12s}
+    .tabbtn:hover{filter:brightness(1.12); color:var(--txt)}
+    .tabbtn.on{background:var(--accent); color:#fff; border-color:var(--accent)}
+    #mtable{display:none; width:100%; border-collapse:collapse; min-width:860px; margin-top:4px}
+    #mtable thead th{background:var(--card2); color:var(--txt); font-size:12px; font-weight:700;
+      padding:10px 6px; border:1px solid var(--border); position:sticky; top:0}
+    #mtable .daycell{background:var(--card2); color:var(--muted); font-size:12.5px; font-weight:700;
+      padding:10px 8px; border:1px solid var(--border); text-align:center; width:96px; white-space:nowrap}
+    #mtable .daycell.today{background:var(--accent); color:#fff}
+    #mtable td.hour{background:var(--card); border:1px solid var(--border); padding:6px}
+    #mtable .cl{background:var(--card2); border-left:4px solid var(--accent2); border-radius:7px;
+      padding:7px 9px; font-size:11px}
+    #mtable .cl .nm{font-weight:700; font-size:12px}
+    #mtable .cl .rm{color:var(--muted); margin-top:3px; font-size:10px}
+    #mtable .cl .tm{color:var(--accent2); margin-top:2px; font-size:10px}
+    #mtable .cl.click{cursor:pointer}
+    #mtable .cl.click:hover{filter:brightness(1.2)}
+    #mtable td.empty{background:transparent; border:none}
 </style>
 </head>
 <body>
@@ -57,13 +78,20 @@
   </header>
   <div class="err" id="errbox"></div>
   <div class="legend">
-    <span><span class="sw" style="background:var(--accent2)"></span>คาบประจำ</span>
-    <span><span class="sw" style="background:#d946ef"></span>วิชาชดเชย / สอบ (จาก Calendar)</span>
+      <span><span class="sw" style="background:var(--accent2)"></span>คาบประจำ</span>
+      <span><span class="sw" style="background:#d946ef"></span>วิชาชดเชย / สอบ (จาก Calendar)</span>
+    </div>
+    <div class="tabs">
+      <button class="tabbtn on" id="tabTimeline" onclick="switchView('timeline')">⏱️ Timeline</button>
+      <button class="tabbtn" id="tabTable" onclick="switchView('table')">🗓️ ตารางมหาลัย</button>
+    </div>
+    <div class="scrollx" id="timelineWrap">
+      <div class="grid" id="grid"></div>
+    </div>
+    <div class="scrollx" id="tableWrap">
+      <table id="mtable"><thead id="mthead"></thead><tbody id="mbody"></tbody></table>
+    </div>
   </div>
-  <div class="scrollx">
-    <div class="grid" id="grid"></div>
-  </div>
-</div>
 
 <div id="detail"><div class="sheet">
   <div class="hh">
@@ -86,13 +114,58 @@ function fmt12(h){const hh=Math.floor(h), mm=Math.round((h-hh)*60); const ap=hh>
 
 function renderTimes(){
   const tl=document.querySelector('.tlcol');
-  for(let t=HH0;t<=HH1;t+=1){
-    const y=hToY(t);
-    const lbl=`<div style="position:absolute;right:6px;top:${y-7}px;font-size:9px;color:var(--muted)">${String(t).padStart(2,'0')}:00</div>`;
-    const div=document.createElement('div'); div.style.cssText=`position:absolute;left:0;right:0;top:${y}px;height:1px;background:rgba(139,152,179,.15)`;
-    tl.appendChild(div); tl.innerHTML+=`<span style="position:absolute;right:6px;top:${y-7}px;font-size:9px;color:var(--muted)">${String(t).padStart(2,'0')}:00</span>`;
+    for(let t=HH0;t<=HH1;t+=1){
+      const y=hToY(t);
+      const lbl=`<div style="position:absolute;right:6px;top:${y-7}px;font-size:9px;color:var(--muted)">${String(t).padStart(2,'0')}:00</div>`;
+      const div=document.createElement('div'); div.style.cssText=`position:absolute;left:0;right:0;top:${y}px;height:1px;background:rgba(139,152,179,.15)`;
+      tl.appendChild(div); tl.innerHTML+=`<span style="position:absolute;right:6px;top:${y-7}px;font-size:9px;color:var(--muted)">${String(t).padStart(2,'0')}:00</span>`;
+    }
   }
-}
+
+  // ── สลับมุมมอง Timeline ⇄ ตารางมหาลัย ──
+  function switchView(v){
+    $id('tabTimeline').classList.toggle('on', v==='timeline');
+    $id('tabTable').classList.toggle('on', v==='table');
+    $id('timelineWrap').style.display = v==='timeline'?'block':'none';
+    $id('tableWrap').style.display    = v==='table'?'block':'none';
+    if(v==='table') renderGridTable();
+  }
+
+  // วาดตารางแบบมหาลัย: แถว = วัน, หลัก = คาบ(8:00–19:00 ต่อชั่วโมง)
+  // รวมหลายคาบที่ติดกันเป็นช่วงเดียวด้วย rowspan/merge ด้วยการใช้เวลา
+  function renderGridTable(){
+    const thead=$id('mthead'), tbody=$id('mbody');
+    const jd=(new Date().getDay()+6)%7+1;
+    // หัวตาราง: คาบเวลา
+    let hh=`<tr><th style="min-width:96px">Day/Time</th>`;
+    for(let t=HH0;t<HH1;t++) hh+=`<th>${String(t).padStart(2,'0')}:00–${String(t+1).padStart(2,'0')}:00</th>`;
+    hh+=`</tr>`;
+    thead.innerHTML=hh;
+    const days=["จันทร์","อังคาร","พุธ","พฤหัสบดี","ศุกร์"];
+    let body='';
+    days.forEach((dn,i)=>{
+      const day=i+1;
+      let row=`<tr><td class="daycell ${day===jd?'today':''}">${dn}</td>`;
+      const tod=(window.SCHEDULE||[]).filter(s=>s.day===day).sort((a,b)=>a.start-b.start);
+      for(let h=HH0;h<HH1;h++){
+        // ชั่วโมงแรกของช่วงที่คาบเริ่ม -> วาด block + colSpan ครอบช่วง
+        const cur=tod.find(s=>Math.abs(s.start-h)<=0.1); // ชั่วโมงเริ่ม
+        if(cur){
+          // span = จำนวนชั่วโมงที่ช่วงครอบ (ปัดขึ้น เผื่อครึ่งชั่วโมง)
+          const span=Math.max(1, Math.round(cur.end-cur.start));
+          const nmc=(window.COURSES[cur.code])||{name:cur.code,color:'#22d3ee'};
+          row+=`<td colspan="${span}" class="hour"><div class="cl click" style="border-left-color:${nmc.color}" onclick="openDetail('${cur.code}','${nmc.name}')">
+            <div class="nm">${nmc.name}</div><div class="rm">${cur.room}</div><div class="tm">${fmt12(cur.start)}–${fmt12(cur.end)}</div></div></td>`;
+          h += span-1; // ข้ามชั่วโมงที่ถูกครอบ
+        } else {
+          row+=`<td class="empty"></td>`;
+        }
+      }
+      row+=`</tr>`;
+      body+=row;
+    });
+    tbody.innerHTML=body;
+  }
 
 function renderGrid(){
   const grid=$id('grid');
