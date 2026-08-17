@@ -1,5 +1,5 @@
 {
-  "updated": "2026-08-17T11:28:26+07:00",
+  "updated": "2026-08-17T11:42:45+07:00",
   "todo": [
     {
       "title": "ยืนยันการเข้าเรียน",
@@ -11,6 +11,15 @@
       "points": 1
     },
     {
+      "title": "[vdo เก่าเอาไว้ดูประกอบหากไม่เข้าใจ] Week5: GUI+Class Diagram",
+      "course": "88634065",
+      "courseName": "Softdev2026 G2",
+      "due": "2026-08-12",
+      "overdue": 5,
+      "workType": "ASSIGNMENT",
+      "points": 100
+    },
+    {
       "title": "Vector Stack Queue",
       "course": "88622065",
       "courseName": "88622065 Data Structures and Algorithms",
@@ -18,9 +27,56 @@
       "overdue": 3,
       "workType": "ASSIGNMENT",
       "points": null
+    },
+    {
+      "title": "Week5",
+      "course": "88634065",
+      "courseName": "Softdev2026 G2",
+      "due": "2026-08-17",
+      "overdue": 0,
+      "workType": "ASSIGNMENT",
+      "points": 100
+    },
+    {
+      "title": "Week 6: File",
+      "course": "88634065",
+      "courseName": "Softdev2026 G2",
+      "due": "2026-08-24",
+      "overdue": 0,
+      "workType": "ASSIGNMENT",
+      "points": 100
     }
   ],
   "byCourse": {
+    "88634065": [
+      {
+        "title": "Week5",
+        "course": "88634065",
+        "courseName": "Softdev2026 G2",
+        "due": "2026-08-17",
+        "overdue": 0,
+        "workType": "ASSIGNMENT",
+        "points": 100
+      },
+      {
+        "title": "Week 6: File",
+        "course": "88634065",
+        "courseName": "Softdev2026 G2",
+        "due": "2026-08-24",
+        "overdue": 0,
+        "workType": "ASSIGNMENT",
+        "points": 100
+      },
+      {
+        "title": "[vdo เก่าเอาไว้ดูประกอบหากไม่เข้าใจ] Week5: GUI+Class Diagram",
+        "course": "88634065",
+        "courseName": "Softdev2026 G2",
+        "due": "2026-08-12",
+        "overdue": 5,
+        "workType": "ASSIGNMENT",
+        "points": 100
+      }
+    ],
     "88622065": [
       {
         "title": "Vector Stack Queue",
@@ -43,6 +99,7 @@
     ]
   },
   "courseNames": {
+    "88634065": "Softdev2026 G2",
     "88622065": "88622065 Data Structures and Algorithms",
     "89510564": "89510564 การบริหารสุขภาวะทางจิต"
   }
