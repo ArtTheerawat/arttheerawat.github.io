@@ -103,7 +103,14 @@ export async function loadHiddenTasks(): Promise<HiddenTask[]> {
 
 /** Hide an assignment globally. RLS enforces owner-only writes server-side.
  *  Returns the real Supabase error message on failure so the UI can show the
- *  exact reason (RLS, missing grant, or conflict) instead of a generic toast. */
+ *  exact reason (RLS, missing grant, or conflict) instead of a generic toast.
+ *
+ *  `user_id` is deliberately included: the live table still has `user_id`
+ *  NOT NULL (migrations 0002/0003 that try to `drop not null` were never fully
+ *  applied), so an upsert without it fails with a not-null violation. Setting it
+ *  to the logged-in user's id satisfies the constraint and is harmless to the
+ *  global model (reads are global via select_public; writes are owner-gated by
+ *  email). If the migration is applied later, the column is merely populated. */
 export async function hideTask(
   a: Hiddenable,
   reason: string,
@@ -112,8 +119,12 @@ export async function hideTask(
   const sb = getSupabaseBrowserClient();
   if (!sb) return { ok: false, error: "Supabase ยังไม่ได้ติดตั้ง (ไม่พบ env)" };
   const key = taskKey(a);
+  // Read the current user id so we can satisfy the NOT NULL user_id column.
+  const { data: sess } = await sb.auth.getSession();
+  const uid = sess?.session?.user?.id ?? null;
   const payload = {
     task_key: key,
+    user_id: uid,
     course: (a.course || "").trim(),
     title: (a.title || "").trim(),
     due: (a.due || "").trim() || null,
