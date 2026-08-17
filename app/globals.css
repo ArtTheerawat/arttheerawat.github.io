@@ -101,7 +101,7 @@ td .sig{font-weight:700}
 .tblwrap{overflow-x:auto}
 table.sched{width:100%; border-collapse:separate; border-spacing:1px; background:var(--border); min-width:1120px}
 table.sched th, table.sched td{border:none}
-table.sched thead th{background:var(--card2); color:var(--txt); font-size:11px; font-weight:700; padding:7px 4px; white-space:nowrap; position:sticky; top:52px; z-index:2}
+table.sched thead th{background:var(--card2); color:var(--txt); font-size:11px; font-weight:700; padding:7px 4px; white-space:nowrap}
 table.sched thead th.dayh{background:var(--accent); color:#fff; font-size:13px; min-width:92px}
 table.sched thead th.hh{font-size:10px; font-weight:600; color:var(--muted)}
 table.sched td.dname{background:var(--card2); color:var(--txt); font-size:13px; font-weight:700; text-align:center; padding:8px 6px; white-space:nowrap; min-width:92px}
