@@ -154,7 +154,7 @@ function renderWeek(){
     (window.SCHEDULE||[]).filter(s=>s.day===day).forEach(s=>addBlock(col,s,false));
   });
   // overlay events ที่ตรงกับวันที่จริงของสัปดาห์นี้
-  (ASSIGN_EVENTS||[]).forEach(e=>{
+    (window.ASSIGN_EVENTS||[]).forEach(e=>{
     const ds=weekdayDates()[e.day-1];
     if(!ds || ds.toDateString()!==e.dateString) return;
     const col=document.querySelector('.col[data-day="'+e.day+'"]'); if(!col) return;
