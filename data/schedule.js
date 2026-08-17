@@ -34,5 +34,28 @@ window.SCHEDULE = [
   // พฤหัสบดี
   { day: 4, start: 9.0,  end: 11.84, code: "73101469", room: "ARR-เรียนออนไลน์" },
   // ศุกร์
-  { day: 5, start: 10.0, end: 11.84, code: "88622065", room: "IF-3C01" },
-];
+    { day: 5, start: 10.0, end: 11.84, code: "88622065", room: "IF-3C01" },
+  ];
+
+  /* 🎓 ตารางสอนชดเชย — กลุ่ม 2 (วิชา 88624165 User Interface Design and Development)
+   *
+   * MAKEUP: เรียนชดเชยของน้า (วันจริง ไม่ใช่รายสัปดาห์)
+   *   date   : วันที่เรียนชดเชย (YYYY-MM-DD)
+   *   group  : กลุ่มที่เรียน (เช่น "G2", "G1-2")
+   *   kind   : "Lab" หรือ "Lec"
+   *   start  : เวลาเริ่ม (ชั่วโมง ทศนิยม)
+   *   end    : เวลาเลิก
+   *   code   : รหัสวิชา (key ใน COURSES)
+   *   room   : ห้อง
+   *
+   * - 13/08/2569 (พฤหัส) ชดเชยวันเฉลิมพระชนมพรรษา
+   * - 22/08/2569 (เสาร์) ชดเชยวันเฉลิมพระชนฯ + วันอาสาฬหบูชา
+   * - 29/08/2569 (เสาร์) ชดเชย Open House
+   */
+  window.MAKEUP = [
+    { date:"2026-08-13", group:"G2",   kind:"Lab", start:13.0, end:15.0, code:"88624165", room:"IF3C01" },
+    { date:"2026-08-22", group:"G1-2", kind:"Lec", start:10.0, end:12.0, code:"88624165", room:"3M210" },
+    { date:"2026-08-22", group:"G2",   kind:"Lab", start:15.0, end:17.0, code:"88624165", room:"IF3C01" },
+    { date:"2026-08-29", group:"G1-2", kind:"Lec", start:10.0, end:12.0, code:"88624165", room:"3M210" },
+    { date:"2026-08-29", group:"G2",   kind:"Lab", start:15.0, end:17.0, code:"88624165", room:"IF3C01" },
+  ];

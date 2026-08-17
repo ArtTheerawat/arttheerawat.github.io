@@ -138,29 +138,52 @@ function renderTable(){
     const isToday = showNow && day===jd;
     let row=`<tr><td class="dname ${isToday?'today':''}">${dn}</td>`;
     const cells=new Array(totalHalf).fill(null);
-    (window.SCHEDULE||[]).filter(s=>s.day===day).sort((a,b)=>a.start-b.start).forEach(s=>{
-      const startH=halfIndex(s.start), span=spanHours(s.start,s.end);
-      cells[startH]={startH,span,s};
-    });
-    let segs=[];
-    for(let c=0;c<totalHalf;c++){
-      const it=cells[c];
-      if(it){ segs.push({type:'cl',it}); c += it.span-1; }
-      else { segs.push({type:'gap'}); }
-    }
-    segs.forEach(seg=>{
-      if(seg.type==='gap'){ row+=`<td class="cell"></td>`; }
-      else {
-        const s=seg.it.s;
-        const c=(window.COURSES&&window.COURSES[s.code])||{name:s.code,color:'#22d3ee'};
-        const span=seg.it.span;
-        row+=`<td colspan="${span}" class="cl" style="border-left-color:${c.color};background:${shade(c.color)}"
-                 onclick="openDetail('${s.code}','${c.name}')">
-          <div class="nm">${c.name}</div>
-          <div class="rm">${s.room}</div>
-          <div class="tm">${fmt12(s.start)}–${fmt12(s.end)}</div></td>`;
-      }
-    });
+        (window.SCHEDULE||[]).filter(s=>s.day===day).sort((a,b)=>a.start-b.start).forEach(s=>{
+          const startH=halfIndex(s.start), span=spanHours(s.start,s.end);
+          cells[startH]={startH,span,s};
+        });
+        // ── เรียนชดเชย (MAKEUP): เฉพาะวันจริงที่อยู่ในสัปดาห์ที่ดู ──
+        (window.MAKEUP||[]).forEach(m=>{
+          const dm=new Date(m.date+'T00:00:00');
+          const md=(dm.getDay()+6)%7+1;                 // 1=จันทร์..7=อาทิตย์
+          const st=new Date(weekStart); const en=new Date(weekStart); en.setDate(weekStart.getDate()+6);
+          const dn=new Date(dm.getFullYear(),dm.getMonth(),dm.getDate());
+          const wStart=new Date(st.getFullYear(),st.getMonth(),st.getDate());
+          const wEnd=new Date(en.getFullYear(),en.getMonth(),en.getDate());
+          if(md===day && dn>=wStart && dn<=wEnd){
+            const startH=halfIndex(m.start), span=spanHours(m.start,m.end);
+            if(startH>=0 && startH+span<=totalHalf) cells[startH]={startH,span,s:m,isMakeup:true};
+          }
+        });
+        let segs=[];
+        for(let c=0;c<totalHalf;c++){
+          const it=cells[c];
+          if(it){ segs.push({type:it.isMakeup?'mk':'cl',it}); c += it.span-1; }
+          else { segs.push({type:'gap'}); }
+        }
+        segs.forEach(seg=>{
+          if(seg.type==='gap'){ row+=`<td class="cell"></td>`; }
+          else if(seg.type==='mk'){
+            const s=seg.it.s;
+            const c=(window.COURSES&&window.COURSES[s.code])||{name:s.code,color:'#22d3ee'};
+            const span=seg.it.span;
+            row+=`<td colspan="${span}" class="cl overlay" style="border-left-color:#d946ef;background:${shade('#d946ef')}"
+                     onclick="openDetail('${s.code}','${c.name}')">
+              <div class="nm">${c.name}</div>
+              <div class="rm">${s.room} · ${s.group} (${s.kind})</div>
+              <div class="tm">${fmt12(s.start)}–${fmt12(s.end)}</div></td>`;
+          }
+          else {
+            const s=seg.it.s;
+            const c=(window.COURSES&&window.COURSES[s.code])||{name:s.code,color:'#22d3ee'};
+            const span=seg.it.span;
+            row+=`<td colspan="${span}" class="cl" style="border-left-color:${c.color};background:${shade(c.color)}"
+                     onclick="openDetail('${s.code}','${c.name}')">
+              <div class="nm">${c.name}</div>
+              <div class="rm">${s.room}</div>
+              <div class="tm">${fmt12(s.start)}–${fmt12(s.end)}</div></td>`;
+          }
+        });
     row+=`</tr>`;
     trs+=row;
   });
