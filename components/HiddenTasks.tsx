@@ -176,11 +176,31 @@ interface HideButtonProps {
   assignment: Hiddenable;
   onHide: (reason: string, custom?: string) => void;
   compact?: boolean;
+  /** When true (and not signed in), render a lock button that triggers onLogin
+   *  instead of the hide flow — hidden-task sync requires a signed-in user. */
+  signedIn?: boolean;
+  onLogin?: () => void;
 }
 
-/** Small hide button (🙈 ไม่ต้องทำแล้ว) that opens the confirmation modal. */
-export function HideButton({ assignment, onHide, compact }: HideButtonProps) {
+/** Small hide button (🙈 ไม่ต้องทำแล้ว) that opens the confirmation modal.
+ *  When !signedIn, renders a locked hint that asks the user to sign in. */
+export function HideButton({ assignment, onHide, compact, signedIn = true, onLogin }: HideButtonProps) {
   const [open, setOpen] = useState(false);
+
+  if (!signedIn) {
+    return (
+      <button
+        type="button"
+        className={compact ? "hide-btn compact locked" : "hide-btn locked"}
+        title="ล็อกอินเพื่อซิงก์งานที่ซ่อนข้ามอุปกรณ์"
+        onClick={() => onLogin?.()}
+        aria-label="ล็อกอินเพื่อซ่อนงาน"
+      >
+        {compact ? "🔒" : "🔒 ล็อกอินเพื่อซ่อน"}
+      </button>
+    );
+  }
+
   return (
     <>
       <button

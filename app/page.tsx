@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { DAYS, classifyAssignment, dataUrl, fmtDate, fmtMoney, todayStr, type Bucket } from "@/lib/data";
 import { SCHEDULE, COURSES } from "@/lib/schedule-data";
-import { isTaskHidden, loadHiddenTasks, hideTask, type HiddenTask } from "@/lib/hidden-tasks";
+import { useHiddenTasks } from "@/lib/hidden-tasks";
 import { HideButton } from "@/components/HiddenTasks";
 
 /* ── Quick-access tiles (keep as secondary nav, not the hero) ── */
@@ -105,11 +105,9 @@ export default function HomePage() {
   const [usage, setUsage] = useState<UsageData | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [assign, setAssign] = useState<Assignment[]>([]);
-  const [hiddenList, setHiddenList] = useState<HiddenTask[]>([]);
-  const [toast, setToast] = useState<string | null>(null);
-  const toastTimer = useRef<number | null>(null);
-
-  useEffect(() => setHiddenList(loadHiddenTasks()), []);
+    const [toast, setToast] = useState<string | null>(null);
+    const toastTimer = useRef<number | null>(null);
+    const { user, hiddenList, hide, signInWithGoogle } = useHiddenTasks();
 
   const showToast = (msg: string) => {
     setToast(msg);
@@ -182,7 +180,8 @@ export default function HomePage() {
     const stats = useMemo(() => {
       const over: Assignment[] = [], tod: Assignment[] = [], soon: Assignment[] = [];
       assign.forEach((a) => {
-        if (isTaskHidden(a, hiddenList)) return;
+              const k = (a.course || "").trim() + "|" + (a.title || "").trim() + "|" + (a.due || "").trim();
+              if (hiddenList.some((h) => h.key === k)) return;
         const b = classify(a);
         if (b === "over") over.push(a);
         else if (b === "today") tod.push(a);
@@ -260,16 +259,15 @@ export default function HomePage() {
                         <div className="next-ttl" style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
                           <span style={{ minWidth: 0 }}>{stats.next.title || "งาน"}</span>
                           <HideButton
-                            compact
-                            assignment={stats.next}
-                            onHide={(r, c) => {
-                              setHiddenList((lst) => {
-                                const next = hideTask(lst, stats.next, r, c);
-                                showToast(`ซ่อน "${stats.next.title}" แล้ว 🙈`);
-                                return next;
-                              });
-                            }}
-                          />
+                                                      compact
+                                                      signedIn={!!user}
+                                                      onLogin={signInWithGoogle}
+                                                      assignment={stats.next}
+                                                      onHide={async (r, c) => {
+                                                                                    const ok = await hide(stats.next, r, c);
+                                                                                    if (ok) showToast(`ซ่อน "${stats.next.title}" แล้ว 🙈`);
+                                                                                  }}
+                                                    />
                         </div>
                         <div className="next-meta">
                           {stats.next.due && <span>⏰ {fmtDue(stats.next.due)}</span>}

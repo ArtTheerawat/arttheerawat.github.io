@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import AuthStatus from "./AuthStatus";
 
 const LINKS = [
   { href: "/", label: "🃏 TheeDeck" },
@@ -17,14 +18,17 @@ export default function Nav() {
     <nav className="app-nav">
       <div className="app-nav-inner">
         {LINKS.map((l) => {
-          const active = l.href === "/" ? pathname === "/" : pathname.startsWith(l.href);
-          return (
-            <Link key={l.href} href={l.href} className={active ? "on" : ""}>
-              {l.label}
-            </Link>
-          );
-        })}
-      </div>
-    </nav>
+                  const active = l.href === "/" ? pathname === "/" : pathname.startsWith(l.href);
+                  return (
+                    <Link key={l.href} href={l.href} className={active ? "on" : ""}>
+                      {l.label}
+                    </Link>
+                  );
+                })}
+                <span className="nav-auth">
+                  <AuthStatus />
+                </span>
+              </div>
+            </nav>
   );
 }

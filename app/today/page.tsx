@@ -2,14 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { DAYS, classifyAssignment, dataUrl, dueLabel, fmtDate, todayStr, type Bucket } from "@/lib/data";
-import {
-  clearHiddenTasks,
-  hideTask,
-  isTaskHidden,
-  loadHiddenTasks,
-  unhideTask,
-  type HiddenTask,
-} from "@/lib/hidden-tasks";
+import { useHiddenTasks } from "@/lib/hidden-tasks";
 import {
   ConfirmClear,
   HideButton,
@@ -61,15 +54,11 @@ export default function TodayPage() {
   const [synced, setSynced] = useState("");
   const [err, setErr] = useState<string | null>(null);
   const [showLater, setShowLater] = useState(false);
-  const [hiddenList, setHiddenList] = useState<HiddenTask[]>([]);
-  const [showHidden, setShowHidden] = useState(false);
-  const [confirmClear, setConfirmClear] = useState(false);
-  const [toast, setToast] = useState<string | null>(null);
-  const toastTimer = useRef<number | null>(null);
-
-  useEffect(() => {
-    setHiddenList(loadHiddenTasks());
-  }, []);
+    const [showHidden, setShowHidden] = useState(false);
+    const [confirmClear, setConfirmClear] = useState(false);
+    const [toast, setToast] = useState<string | null>(null);
+    const toastTimer = useRef<number | null>(null);
+    const { user, hiddenList, hide, unhide, clearAll, signInWithGoogle } = useHiddenTasks();
 
   const showToast = (msg: string) => {
     setToast(msg);
@@ -109,9 +98,16 @@ export default function TodayPage() {
   }, []);
 
   // Always filter hidden assignments out of every bucket BEFORE computing stats.
-  const visible = useMemo(() => {
-    return all.filter((a) => !isTaskHidden(a, hiddenList));
-  }, [all, hiddenList]);
+    const visible = useMemo(() => {
+      return all.filter(
+        (a) =>
+          !hiddenList.some(
+            (h) =>
+              h.key ===
+              (a.course || "").trim() + "|" + (a.title || "").trim() + "|" + (a.due || "").trim()
+          )
+      );
+    }, [all, hiddenList]);
 
   const { over, tod, soon, later } = useMemo(() => {
     return {
@@ -127,20 +123,23 @@ export default function TodayPage() {
   const dayLabel = DAYS[(now.getDay() + 6) % 7];
 
   const handleHide = (a: Assignment, reason: string, custom?: string) => {
-    setHiddenList((lst) => hideTask(lst, a, reason, custom));
-    showToast(`ซ่อน "${a.title}" แล้ว 🙈`);
-  };
+      hide(a, reason, custom).then((ok) => {
+        if (ok) showToast(`ซ่อน "${a.title}" แล้ว 🙈`);
+      });
+    };
 
-  const handleRestore = (key: string, title?: string) => {
-    setHiddenList((lst) => unhideTask(lst, key));
-    showToast(`นำ "${title}" กลับมาแล้ว`);
-  };
+    const handleRestore = (key: string, title?: string) => {
+      unhide(key).then((ok) => {
+        if (ok) showToast(`นำ "${title}" กลับมาแล้ว`);
+      });
+    };
 
-  const handleClear = () => {
-    setHiddenList(clearHiddenTasks());
-    setConfirmClear(false);
-    showToast("ล้างงานที่ซ่อนทั้งหมดแล้ว");
-  };
+    const handleClear = () => {
+      clearAll().then((ok) => {
+        if (ok) showToast("ล้างงานที่ซ่อนทั้งหมดแล้ว");
+      });
+      setConfirmClear(false);
+    };
 
   const Item = ({ a, overCl }: { a: Assignment; overCl?: boolean }) => {
     const b = dueLabel(a);
@@ -152,7 +151,12 @@ export default function TodayPage() {
         </div>
         <div className="ttl" style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "center" }}>
           <span style={{ minWidth: 0 }}>{a.title}</span>
-          <HideButton assignment={a} onHide={(r, c) => handleHide(a, r, c)} />
+          <HideButton
+          assignment={a}
+          signedIn={!!user}
+          onLogin={signInWithGoogle}
+          onHide={(r, c) => handleHide(a, r, c)}
+        />
         </div>
         <div className="subj">{a.courseName || a.course || ""}</div>
       </div>
@@ -267,7 +271,12 @@ export default function TodayPage() {
                     </div>
                     <div className="ttl" style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "center" }}>
                       <span style={{ minWidth: 0 }}>{a.title}</span>
-                      <HideButton assignment={a} onHide={(r, c) => handleHide(a, r, c)} />
+                      <HideButton
+          assignment={a}
+          signedIn={!!user}
+          onLogin={signInWithGoogle}
+          onHide={(r, c) => handleHide(a, r, c)}
+        />
                     </div>
                     <div className="subj">{a.courseName || a.course || ""}</div>
                   </div>

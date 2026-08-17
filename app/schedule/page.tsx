@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { classifyAssignment, dataUrl, dueLabel, thDate, thDayIdx, type Bucket } from "@/lib/data";
 import { MAKEUP, SCHEDULE, courseDef } from "@/lib/schedule-data";
-import { isTaskHidden, loadHiddenTasks, hideTask, type HiddenTask } from "@/lib/hidden-tasks";
+import { useHiddenTasks } from "@/lib/hidden-tasks";
 import { HideButton } from "@/components/HiddenTasks";
 
 const DAYS = ["จันทร์", "อังคาร", "พุธ", "พฤหัสบดี", "ศุกร์", "เสาร์", "อาทิตย์"];
@@ -77,10 +77,8 @@ export default function SchedulePage() {
   const [mobileDay, setMobileDay] = useState<number>(() => thDayIdx(new Date()));
   const lastFocusedRef = useRef<HTMLElement | null>(null);
   const closeBtnRef = useRef<HTMLButtonElement | null>(null);
-  const [hiddenList, setHiddenList] = useState<HiddenTask[]>([]);
   const [toast, setToast] = useState<string | null>(null);
-
-  useEffect(() => setHiddenList(loadHiddenTasks()), []);
+    const { user, hiddenList, hide, signInWithGoogle } = useHiddenTasks();
 
   const showToast = (msg: string) => {
     setToast(msg);
@@ -214,8 +212,19 @@ export default function SchedulePage() {
 
   const course = detail ? courseDef(detail.code) : null;
   const assignments = detail
-    ? (assignByCourse[detail.code] || null)?.filter((a) => !isTaskHidden(a, hiddenList))
-    : null;
+      ? (assignByCourse[detail.code] || null)?.filter(
+          (a) =>
+            !hiddenList.some(
+              (h) =>
+                h.key ===
+                (detail.code || "").trim() +
+                  "|" +
+                  (a.title || "").trim() +
+                  "|" +
+                  (a.due || "").trim()
+            )
+        )
+      : null;
 
   return (
     <div className="wrap">
@@ -411,15 +420,14 @@ export default function SchedulePage() {
                       </div>
                       <div style={{ marginTop: 8 }}>
                         <HideButton
-                          assignment={a}
-                          onHide={(r, c) => {
-                            setHiddenList((lst) => {
-                              const next = hideTask(lst, a, r, c);
-                              showToast(`ซ่อน "${a.title}" แล้ว 🙈`);
-                              return next;
-                            });
-                          }}
-                        />
+                                                  assignment={a}
+                                                  signedIn={!!user}
+                                                  onLogin={signInWithGoogle}
+                                                  onHide={async (r, c) => {
+                                                    const ok = await hide(a, r, c);
+                                                    if (ok) showToast(`ซ่อน "${a.title}" แล้ว 🙈`);
+                                                  }}
+                                                />
                       </div>
                     </div>
                   );
