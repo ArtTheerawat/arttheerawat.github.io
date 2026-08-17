@@ -93,12 +93,69 @@ export function fmtTimestamp(t: unknown): string | null {
   return String(t);
 }
 
-/** Today's ISO date string (YYYY-MM-DD) in local (not UTC) time. */
+/** Bangkok timezone — the app is a Thai personal dashboard, so ALL \"now\"
+ *  calculations must anchor to Asia/Bangkok regardless of where the Next.js
+ *  server (SSR) or user agent (hydrate) happens to be. Without a fixed
+ *  timezone you get server-vs-browser date divergence (e.g. server renders
+ *  ``17/08`` while the browser hydrates to ``18/08`` after midnight Thai time). */
+export const TH_TIMEZONE = "Asia/Bangkok";
+
+/** Now as a JS Date normalised to the Bangkok wall-clock day (localtime-safe
+ *  for day maths). Prefer this over bare ``new Date()`` everywhere "today"
+ *  in Thailand is meant. */
+export function nowBKK(): Date {
+  const now = new Date();
+  // Convert to a Date whose local fields reflect Bangkok's wall clock:
+  // Bangkok is UTC+7 (no DST), so shift by the current UTC offset diff.
+  const bkkParts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: TH_TIMEZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  }).formatToParts(now);
+  const get = (t: string) =>
+    parseInt(
+      (bkkParts.find((p) => p.type === t) || { value: "0" }).value,
+      10
+    );
+  return new Date(get("year"), get("month") - 1, get("day"), get("hour"), get("minute"), get("second"));
+}
+
+/** Today's ISO date string (YYYY-MM-DD) in Bangkok time. Use everywhere a
+ *  human-visible "today" date is rendered or used for day-diff maths. */
 export function todayStr(): string {
-  const d = new Date();
+  const d = nowBKK();
   const m = String(d.getMonth() + 1).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");
   return `${d.getFullYear()}-${m}-${day}`;
+}
+
+/** Weekday index 1..7 (1=Mon..7=Sun) for TODAY in Bangkok time. */
+export function todayIdxBKK(): number {
+  return (nowBKK().getDay() + 6) % 7 + 1;
+}
+
+/** Current hour-of-day (0..23) in Bangkok time — for time-of-day greetings. */
+export function nowBKKHour(): number {
+  return nowBKK().getHours();
+}
+
+/** Thai weekday name for today in Bangkok time. */
+export function todayLabelBKK(): string {
+  return DAYS[(nowBKK().getDay() + 6) % 7];
+}
+
+/** Format a schedule hour (e.g. ``10.5`` = 10:30) as 24h ``"10:30"``.
+ *  Single consistent time format across the site (matches Home's schedule),
+ *  replaces the AM/PM ``fmt12`` used by the Schedule page. */
+export function fmt24(h: number): string {
+  const hh = String(Math.floor(h)).padStart(2, "0");
+  const mm = h % 1 ? "30" : "00";
+  return `${hh}:${mm}`;
 }
 
 /**

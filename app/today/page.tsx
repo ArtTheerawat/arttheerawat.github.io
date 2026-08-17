@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { DAYS, classifyAssignment, dataUrl, dueLabel, fmtDate, todayStr, type Bucket } from "@/lib/data";
+import { classifyAssignment, dataUrl, dueLabel, fmtDate, nowBKK, todayLabelBKK, todayStr, type Bucket } from "@/lib/data";
 import { useHiddenTasks } from "@/lib/hidden-tasks";
 import {
   ConfirmClear,
@@ -127,9 +127,9 @@ export default function TodayPage() {
       };
     }, [visible]);
 
-  const now = new Date();
-  const today = todayStr();
-  const dayLabel = DAYS[(now.getDay() + 6) % 7];
+  const now = nowBKK();
+    const today = todayStr();
+    const dayLabel = todayLabelBKK();
 
   const handleHide = (a: Assignment, reason: string, custom?: string) => {
         hide(a, reason, custom).then((res) => {
@@ -222,26 +222,30 @@ export default function TodayPage() {
               </div>
             )}
 
-            <div className="counts">
-              <div className="c">
-                <b className="down" style={{ color: "var(--down)" }}>
-                  {over.length}
-                </b>
-                เลยกำหนด
-              </div>
-              <div className="c">
-                <b style={{ color: "var(--warn)" }}>{tod.length}</b>
-                ครบวันนี้
-              </div>
-              <div className="c">
-                <b style={{ color: "var(--accent2)" }}>{soon.length}</b>
-                ใกล้ถึง (5 วัน)
-              </div>
-              <div className="c">
-                <b>{quizzes.length}</b>
-                สอบ/กิจกรรม
-              </div>
-            </div>
+            {/* Counts only make sense once data arrived — during load they
+                           would show a misleading 0 for everything (false affordance). */}
+                        {!loading && (
+                        <div className="counts">
+                          <div className="c">
+                            <b className="down" style={{ color: "var(--down)" }}>
+                              {over.length}
+                            </b>
+                            เลยกำหนด
+                          </div>
+                          <div className="c">
+                            <b style={{ color: "var(--warn)" }}>{tod.length}</b>
+                            ครบวันนี้
+                          </div>
+                          <div className="c">
+                            <b style={{ color: "var(--accent2)" }}>{soon.length}</b>
+                            ใกล้ถึง (5 วัน)
+                          </div>
+                          <div className="c">
+                            <b>{quizzes.length}</b>
+                            สอบ/กิจกรรม
+                          </div>
+                        </div>
+                        )}
 
       {quizzes.length > 0 && (
         <div className="quizban">

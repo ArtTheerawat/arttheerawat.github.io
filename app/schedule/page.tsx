@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { classifyAssignment, dataUrl, dueLabel, thDate, thDayIdx, type Bucket } from "@/lib/data";
+import { classifyAssignment, dataUrl, dueLabel, fmt24, nowBKK, thDate, thDayIdx, type Bucket } from "@/lib/data";
 import { MAKEUP, SCHEDULE, courseDef } from "@/lib/schedule-data";
 import { taskKey, useHiddenTasks } from "@/lib/hidden-tasks";
 import { HideButton, useModalFocusTrap } from "@/components/HiddenTasks";
@@ -19,14 +19,6 @@ interface SessionLike {
   end?: number;
   group?: string;
   kind?: string;
-}
-
-function fmt12(h: number): string {
-  const hh = Math.floor(h);
-  const mm = Math.round((h - hh) * 60);
-  const ap = hh >= 12 ? "PM" : "AM";
-  const hr = ((hh + 11) % 12) + 1;
-  return `${hr}:${String(mm).padStart(2, "0")} ${ap}`;
 }
 
 function mondayOf(d: Date): Date {
@@ -69,12 +61,12 @@ interface AssignInfo {
 }
 
 export default function SchedulePage() {
-  const [weekStart, setWeekStart] = useState<Date>(() => mondayOf(new Date()));
+  const [weekStart, setWeekStart] = useState<Date>(() => mondayOf(nowBKK()));
   const [assignByCourse, setAssignByCourse] = useState<Record<string, AssignInfo[]>>({});
   const [detail, setDetail] = useState<{ code: string; name: string } | null>(null);
   const [synced, setSynced] = useState("");
   const [err, setErr] = useState<string | null>(null);
-  const [mobileDay, setMobileDay] = useState<number>(() => thDayIdx(new Date()));
+  const [mobileDay, setMobileDay] = useState<number>(() => thDayIdx(nowBKK()));
   const lastFocusedRef = useRef<HTMLElement | null>(null);
     const closeBtnRef = useRef<HTMLButtonElement | null>(null);
     const detailModalRef = useRef<HTMLDivElement | null>(null);
@@ -146,17 +138,17 @@ export default function SchedulePage() {
     (dir: number) => setWeekStart((w) => mondayOf(new Date(w.getTime() + dir * 7 * 86400000))),
     []
   );
-  const weekNow = useCallback(() => setWeekStart(mondayOf(new Date())), []);
+  const weekNow = useCallback(() => setWeekStart(mondayOf(nowBKK())), []);
 
   const isThisWeek = useMemo(() => {
-    const m = mondayOf(new Date());
-    const mStart = m.getTime();
-    const mEnd = mStart + 7 * 86400000;
-    const ws = mondayOf(weekStart).getTime();
-    return ws >= mStart && ws < mEnd;
-  }, [weekStart]);
+      const m = mondayOf(nowBKK());
+      const mStart = m.getTime();
+      const mEnd = mStart + 7 * 86400000;
+      const ws = mondayOf(weekStart).getTime();
+      return ws >= mStart && ws < mEnd;
+    }, [weekStart]);
 
-  const jd = thDayIdx(new Date()); // 1=Mon..7=Sun
+    const jd = thDayIdx(nowBKK()); // 1=Mon..7=Sun
   const showNow = isThisWeek;
 
   const rows = useMemo(() => {
@@ -302,7 +294,7 @@ export default function SchedulePage() {
                   onClick={() => openCourse(code, cd.name)}
                   style={{ borderLeftColor: isMk ? "#d946ef" : cd.color }}
                 >
-                  <div className="mob-time">{fmt12(s.start || 0)}–{fmt12(s.end || 0)}</div>
+                  <div className="mob-time">{fmt24(s.start || 0)}–{fmt24(s.end || 0)}</div>
                   <div className="mob-nm" style={{ color: isMk ? "#d946ef" : cd.color }}>{cd.name}</div>
                   <div className="mob-rm">
                     {s.room}
@@ -352,7 +344,7 @@ export default function SchedulePage() {
                             {s.room} · {s.group} ({s.kind})
                           </span>
                           <span className="tm">
-                            {fmt12(s.start || 0)}–{fmt12(s.end || 0)}
+                            {fmt24(s.start || 0)}–{fmt24(s.end || 0)}
                           </span>
                         </button>
                       </td>
@@ -369,7 +361,7 @@ export default function SchedulePage() {
                         <span className="nm">{cd.name}</span>
                         <span className="rm">{s.room}</span>
                         <span className="tm">
-                          {fmt12(s.start || 0)}–{fmt12(s.end || 0)}
+                          {fmt24(s.start || 0)}–{fmt24(s.end || 0)}
                         </span>
                       </button>
                     </td>

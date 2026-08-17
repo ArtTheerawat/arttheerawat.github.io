@@ -2,17 +2,22 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { DAYS, classifyAssignment, dataUrl, fmtDate, fmtMoney, todayStr, type Bucket } from "@/lib/data";
+import { classifyAssignment, dataUrl, fmtDate, fmtMoney, nowBKKHour, todayIdxBKK, todayLabelBKK, todayStr, type Bucket } from "@/lib/data";
 import { SCHEDULE, COURSES } from "@/lib/schedule-data";
 import { useHiddenTasks } from "@/lib/hidden-tasks";
 import { HideButton } from "@/components/HiddenTasks";
 
-/* ── Quick-access tiles (keep as secondary nav, not the hero) ── */
-const TILES = [
+/* ── Quick-access tiles ──
+   Split into PRIMARY (study-critical: tasks + schedule — surface first and
+   more prominent) and SECONDARY (support tools: trading + dictation — grouped
+   below as plain "quick access"). Keeps task priority readable. */
+const PRIMARY_TILES = [
+  { href: "/today", ico: "📚", t: "งานวันนี้", d: "ทุกวิชา · กำหนดส่ง · แจ้งเตือนสอบ" },
   { href: "/schedule", ico: "🗓️", t: "ตารางเรียน", d: "คาบเรียนรายสัปดาห์ + วิชาชดเชย" },
+];
+const SECONDARY_TILES = [
   { href: "/trading", ico: "📊", t: "Trading Dashboard", d: "XAUUSD / BTC · Performance · P&L" },
   { href: "/dictation", ico: "🔊", t: "Dictation Trainer", d: "ฝึกฟัง + ตรวจเสียง -s/-ed" },
-  { href: "/today", ico: "📚", t: "ดูงานทั้งหมด", d: "ทุกวิชา · กำหนดส่ง · แจ้งเตือนสอบ" },
 ];
 
 /* ── Usage data types (unchanged) ── */
@@ -117,11 +122,11 @@ export default function HomePage() {
   };
   useEffect(() => () => { if (toastTimer.current) window.clearTimeout(toastTimer.current); }, []);
 
-  /* Today's date + weekday (local) */
-  const now = new Date();
-  const todayIso = todayStr();
-  const dayIdx = (now.getDay() + 6) % 7 + 1; // 1=Mon..7=Sun
-  const dayLabel = DAYS[(now.getDay() + 6) % 7];
+  /* Today's date + weekday (Bangkok time — single source of truth) */
+    const todayIso = todayStr();
+    const dayIdx = todayIdxBKK(); // 1=Mon..7=Sun
+    const dayLabel = todayLabelBKK();
+    const hourBKK = nowBKKHour();
 
   /* Today's classes from the weekly schedule */
   const todayClasses = useMemo(() => {
@@ -187,11 +192,14 @@ export default function HomePage() {
   }, []);
 
   useEffect(() => {
-    load();
-    loadAssign();
-    const t = setInterval(load, 60000);
-    return () => clearInterval(t);
-  }, [load, loadAssign]);
+      load();
+      loadAssign();
+      // Usage is secondary data — poll every 5 min instead of every 60s to cut
+      // needless OpenRouter calls from the dashboard (primary info is schedule/
+      // assignments, which load on page open).
+      const t = setInterval(load, 5 * 60 * 1000);
+      return () => clearInterval(t);
+    }, [load, loadAssign]);
 
   /* Deadline stats from today's perspective (classify writes bucket back so
          the "what's next" card colours/flag correctly). */
@@ -220,8 +228,8 @@ export default function HomePage() {
   const n9 = usage?.["9arm"];
 
   const heroCount = stats.over.length + stats.tod.length;
-  const hasUrgent = heroCount > 0;
-  const timeGreet = now.getHours() < 12 ? "สวัสดีตอนเช้า" : now.getHours() < 17 ? "สวัสดีตอนบ่าย" : "สวัสดีตอนเย็น";
+    const hasUrgent = heroCount > 0;
+    const timeGreet = hourBKK < 12 ? "สวัสดีตอนเช้า" : hourBKK < 17 ? "สวัสดีตอนบ่าย" : "สวัสดีตอนเย็น";
 
   return (
     <div className="wrap">
@@ -335,18 +343,30 @@ export default function HomePage() {
         </section>
       )}
 
-      {/* ── Quick access ── */}
-      <h2 className="sec-title quick">⚡ เข้าถึงด่วน</h2>
-      <div className="cards">
-        {TILES.map((tl) => (
-          <Link key={tl.href} href={tl.href} className="tile">
-            <div className="ico">{tl.ico}</div>
-            <div className="t">{tl.t}</div>
-            <div className="d">{tl.d}</div>
-            <div className="go">เปิด →</div>
-          </Link>
-        ))}
-      </div>
+      {/* ── Primary: study-critical quick actions ── */}
+            <div className="cards primary-first">
+              {PRIMARY_TILES.map((tl) => (
+                <Link key={tl.href} href={tl.href} className="tile primary">
+                  <div className="ico">{tl.ico}</div>
+                  <div className="t">{tl.t}</div>
+                  <div className="d">{tl.d}</div>
+                  <div className="go">เปิด →</div>
+                </Link>
+              ))}
+            </div>
+
+            {/* ── Secondary tools ── */}
+            <h2 className="sec-title quick">⚡ เข้าถึงด่วน</h2>
+            <div className="cards">
+              {SECONDARY_TILES.map((tl) => (
+                <Link key={tl.href} href={tl.href} className="tile">
+                  <div className="ico">{tl.ico}</div>
+                  <div className="t">{tl.t}</div>
+                  <div className="d">{tl.d}</div>
+                  <div className="go">เปิด →</div>
+                </Link>
+              ))}
+            </div>
 
       {/* ── AI Token Usage (kept, moved below quick access) ── */}
       <section className="cards-sec usage-sec">

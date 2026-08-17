@@ -5,12 +5,11 @@ import { getSupabaseServerClient } from "@/lib/supabase/server";
  * GET /api/usage — live OpenRouter credit usage, fetched server-side so the
  * OPENROUTER_API_KEY never ships to the browser.
  *
- * Authorization: this endpoint returns a user's private cost/credit data, so it
+ * Authorization: this *** returns a user's private cost/credit data, so it
  * is gated behind Supabase auth. Guests get 401, signed-in non-owners 403, and
- * only the owner (email in USAGE_ALLOWED_EMAILS) gets the data. If the
- * allowlist env is unset, any signed-in user is treated as the owner (least
- * restrictive — acceptable for a personal dashboard, but set the allowlist to
- * lock it to one account).
+ * only the owner (email in USAGE_ALLOWED_EMAILS) gets the data. The allowlist
+ * is REQUIRED (fail-closed): if it is unset/blank, EVERYONE is denied (403)
+ * rather than leaking usage to any signed-in user.
  */
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -19,8 +18,9 @@ function isOwner(email: string | null | undefined): boolean {
   if (!email) return false;
   const allow = process.env.USAGE_ALLOWED_EMAILS;
   if (!allow || !allow.trim()) {
-    // No allowlist configured → any authenticated user is allowed (default).
-    return true;
+    // Fail-closed: no allowlist configured → nobody is the owner. Set
+    // USAGE_ALLOWED_EMAILS to your email to grant access.
+    return false;
   }
   return allow
     .split(",")
