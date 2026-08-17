@@ -151,7 +151,16 @@ table.sched td.cl.overlay{background:rgba(217,70,239,.14); border-left-color:#d9
 .u-remain{font-weight:600; color:var(--txt)}
 .u-stats{display:flex; gap:14px; flex-wrap:wrap; font-size:11px; color:var(--muted); margin-top:14px}
 .u-note{font-size:11px; color:var(--muted); margin-top:10px; line-height:1.5; padding-top:10px; border-top:1px dashed var(--border)}
-.u-empty{color:var(--muted); font-size:13px; padding:12px 0}
+/* ── 9arm per-model breakdown ── */
+.n9-models{display:grid;gap:8px;margin:10px 0 6px}
+.n9-model{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:9px 11px}
+.n9-model.live{border-color:rgba(34,211,238,.35);background:rgba(34,211,238,.06)}
+.n9m-tok.empty{color:var(--muted);font-size:13px}
+.n9m-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:2px}
+.n9m-name{font-weight:600;font-size:12.5px;color:var(--fg);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;overflow-wrap:anywhere}
+.n9m-calls{font-size:11px;color:var(--muted)}
+.n9m-tok{font-size:16px;font-weight:700}
+.n9m-io{font-size:11px;color:var(--muted)}
 
 /* ── Home: Personal Command Center (Today/Next-action) ── */
 .today-strip{background:linear-gradient(180deg,var(--card),var(--card2)); border:1px solid var(--border); border-left:4px solid var(--accent); border-radius:14px; padding:20px; margin-bottom:16px}

@@ -26,6 +26,13 @@ interface OpenRouterUsage {
   error?: string;
   updated_at?: string;
 }
+interface NineArmModel {
+  tokens_in?: number;
+  tokens_out?: number;
+  tokens_total?: number;
+  calls?: number;
+  last_used?: string;
+}
 interface NineArmUsage {
   status?: string;
   tokens_in?: number;
@@ -33,6 +40,7 @@ interface NineArmUsage {
   tokens_total?: number;
   calls?: number;
   last_model?: string;
+  by_model?: Record<string, NineArmModel>;
   error?: string;
   updated_at?: string;
 }
@@ -52,6 +60,12 @@ interface Assignment {
 }
 
 type Bucket = "over" | "today" | "soon" | "later";
+
+/** 2 fixed 9arm model slots shown on the card (keep even if a model is unused). */
+const NINE_MODELS: { id: string; label: string }[] = [
+  { id: "qwen3.8-27b-fp8", label: "qwen3.8-27b-fp8" },
+  { id: "deepseek-v4-flash-0731", label: "deepseek-v4-flash-0731" },
+];
 
 /** Classify an assignment into a deadline bucket (same logic as /today). */
 function classify(a: Assignment): Bucket {
@@ -347,29 +361,53 @@ export default function HomePage() {
             </div>
 
             <div className="u-card n9">
-              <div className="u-prov">
-                <span className="u-dot" />
-                <span className="u-name">9arm</span>
-                <span className={`u-state ${(n9?.status === "ok" || (n9 && (n9.calls ?? 0) > 0)) ? "on" : ""}`}>
-                  {n9?.status === "error" ? "error" : (n9?.calls ?? 0) > 0 ? "ใช้งานอยู่" : "ยังไม่ใช้"}
-                </span>
-              </div>
-              {n9?.status === "error" || (n9?.calls ?? 0) === 0 ? (
-                <div className="u-empty">{n9?.error || "ยังไม่มีข้อมูล — เรียก 9arm แล้วจะสะสมตรงนี้"}</div>
-              ) : (
-                <>
-                  <div className="u-big">{fmt(n9?.tokens_total)}</div>
-                  <div className="u-sub">tokens รวม · {fmt(n9?.calls)} calls</div>
-                  <div className="u-stats">
-                    <span>input {fmt(n9?.tokens_in)}</span>
-                    <span>output {fmt(n9?.tokens_out)}</span>
-                  </div>
-                  <div className="u-note">
-                    {n9?.last_model ? `รุ่น: ${n9.last_model} · ` : ""}สะสมจากสคริปต์ 9arm_qwen.py
-                  </div>
-                </>
-              )}
-            </div>
+                          <div className="u-prov">
+                            <span className="u-dot" />
+                            <span className="u-name">9arm</span>
+                            <span className={`u-state ${(n9?.status === "ok" || (n9 && (n9.calls ?? 0) > 0)) ? "on" : ""}`}>
+                              {n9?.status === "error" ? "error" : (n9?.calls ?? 0) > 0 ? "ใช้งานอยู่" : "ยังไม่ใช้"}
+                            </span>
+                          </div>
+                          {n9?.status === "error" || (n9?.calls ?? 0) === 0 ? (
+                            <div className="u-empty">{n9?.error || "ยังไม่มีข้อมูล — เรียก 9arm แล้วจะสะสมตรงนี้"}</div>
+                          ) : (
+                            <>
+                              <div className="u-big">{fmt(n9?.tokens_total)}</div>
+                              <div className="u-sub">tokens รวม · {fmt(n9?.calls)} calls</div>
+                              <div className="u-stats">
+                                <span>input {fmt(n9?.tokens_in)}</span>
+                                <span>output {fmt(n9?.tokens_out)}</span>
+                              </div>
+                              {/* per-model breakdown: 2 fixed slots (qwen + deepseek) */}
+                                                            <div className="n9-models">
+                                                              {NINE_MODELS.map((mDef) => {
+                                                                const m = n9?.by_model?.[mDef.id];
+                                                                return (
+                                                                  <div className={`n9-model ${m ? "live" : ""}`} key={mDef.id}>
+                                                                    <div className="n9m-head">
+                                                                      <span className="n9m-name">{mDef.label}</span>
+                                                                      <span className="n9m-calls">
+                                                                        {m ? `${fmt(m.calls)} calls` : "ยังไม่ใช้"}
+                                                                      </span>
+                                                                    </div>
+                                                                    {m ? (
+                                                                      <>
+                                                                        <div className="n9m-tok">{fmt(m.tokens_total)} tokens</div>
+                                                                        <div className="n9m-io">in {fmt(m.tokens_in)} · out {fmt(m.tokens_out)}</div>
+                                                                      </>
+                                                                    ) : (
+                                                                      <div className="n9m-tok empty">—</div>
+                                                                    )}
+                                                                  </div>
+                                                                );
+                                                              })}
+                                                            </div>
+                                                            <div className="u-note">
+                                                              {n9?.last_model ? `รุ่นล่าสุด: ${n9.last_model} · ` : ""}สะสมจากสคริปต์ 9arm_qwen.py
+                                                            </div>
+                            </>
+                          )}
+                        </div>
           </div>
         )}
       </section>
