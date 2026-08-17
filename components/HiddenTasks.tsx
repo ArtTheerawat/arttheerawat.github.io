@@ -20,6 +20,50 @@ export function hiddenReasonText(h: HiddenTask): string {
   return h.custom ? `${base} · ${h.custom}` : base;
 }
 
+/**
+ * Modal a11y helper: traps Tab focus inside `container` (cycles through the
+ * focusable descendants) and restores focus to whichever element had it before
+ * the modal opened when the modal unmounts.
+ */
+export function useModalFocusTrap(container: React.RefObject<HTMLElement | null>) {
+  // Remember the trigger that opened the dialog so we can hand focus back.
+  useEffect(() => {
+    const previouslyFocused =
+      (document.activeElement as HTMLElement | null) ?? null;
+    return () => {
+      // Restore focus only if it hasn't been moved to a now-removed element.
+      if (previouslyFocused && document.body.contains(previouslyFocused)) {
+        previouslyFocused.focus?.();
+      }
+    };
+  }, []);
+
+  const onKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key !== "Tab") return;
+    const root = container.current;
+    if (!root) return;
+    const focusables = Array.from(
+      root.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      )
+    ).filter((el) => el.offsetParent !== null || el === document.activeElement); // skip hidden
+    if (focusables.length === 0) return;
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+    const active = document.activeElement;
+    if (e.shiftKey) {
+      if (active === first || !root.contains(active)) {
+        e.preventDefault();
+        (last as HTMLElement).focus();
+      }
+    } else if (active === last || !root.contains(active)) {
+      e.preventDefault();
+      (first as HTMLElement).focus();
+    }
+  };
+  return onKeyDown;
+}
+
 interface HideModalProps {
   assignment: Hiddenable;
   onConfirm: (reason: string, custom?: string) => void;
@@ -31,9 +75,10 @@ export function HideModal({ assignment, onConfirm, onClose }: HideModalProps) {
   const [reason, setReason] = useState("wrong-due");
   const [other, setOther] = useState("");
   const firstInputRef = useRef<HTMLInputElement | null>(null);
-  const cancelRef = useRef<HTMLButtonElement | null>(null);
+  const modalRef = useRef<HTMLDivElement | null>(null);
+  const trapKeyDown = useModalFocusTrap(modalRef);
 
-  // Focus first radio on open; Esc closes; restore nothing (page stays live).
+  // Focus first radio on open; Esc closes; Tab traps; focus restored on unmount.
   useEffect(() => {
     const raf = requestAnimationFrame(() => {
       firstInputRef.current?.focus?.();
@@ -52,6 +97,8 @@ export function HideModal({ assignment, onConfirm, onClose }: HideModalProps) {
 
   return (
     <div
+      ref={modalRef}
+      onKeyDown={trapKeyDown}
       className="detail-modal open hide-modal"
       role="dialog"
       aria-modal="true"
@@ -62,7 +109,6 @@ export function HideModal({ assignment, onConfirm, onClose }: HideModalProps) {
         <div className="hh">
           <h2 id="hide-task-title">ซ่อนงานนี้?</h2>
           <button
-            ref={cancelRef}
             className="close"
             onClick={onClose}
             aria-label="ปิดหน้าต่าง"
@@ -129,6 +175,7 @@ interface ConfirmClearProps {
 /** Small "are you sure" dialog before clearing all hidden tasks. */
 export function ConfirmClear({ onConfirm, onClose }: ConfirmClearProps) {
   const ref = useRef<HTMLDivElement | null>(null);
+  const trapKeyDown = useModalFocusTrap(ref);
 
   useEffect(() => {
     ref.current?.focus?.();
@@ -142,6 +189,7 @@ export function ConfirmClear({ onConfirm, onClose }: ConfirmClearProps) {
   return (
     <div
       ref={ref}
+      onKeyDown={trapKeyDown}
       className="detail-modal open hide-modal"
       role="dialog"
       aria-modal="true"

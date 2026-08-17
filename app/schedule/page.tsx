@@ -3,8 +3,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { classifyAssignment, dataUrl, dueLabel, thDate, thDayIdx, type Bucket } from "@/lib/data";
 import { MAKEUP, SCHEDULE, courseDef } from "@/lib/schedule-data";
-import { useHiddenTasks } from "@/lib/hidden-tasks";
-import { HideButton } from "@/components/HiddenTasks";
+import { taskKey, useHiddenTasks } from "@/lib/hidden-tasks";
+import { HideButton, useModalFocusTrap } from "@/components/HiddenTasks";
 
 const DAYS = ["จันทร์", "อังคาร", "พุธ", "พฤหัสบดี", "ศุกร์", "เสาร์", "อาทิตย์"];
 const HH0 = 8;
@@ -76,7 +76,9 @@ export default function SchedulePage() {
   const [err, setErr] = useState<string | null>(null);
   const [mobileDay, setMobileDay] = useState<number>(() => thDayIdx(new Date()));
   const lastFocusedRef = useRef<HTMLElement | null>(null);
-  const closeBtnRef = useRef<HTMLButtonElement | null>(null);
+    const closeBtnRef = useRef<HTMLButtonElement | null>(null);
+    const detailModalRef = useRef<HTMLDivElement | null>(null);
+    const detailTrapKeyDown = useModalFocusTrap(detailModalRef);
   const [toast, setToast] = useState<string | null>(null);
     const { user, hiddenList, hide, signInWithGoogle } = useHiddenTasks();
 
@@ -212,19 +214,10 @@ export default function SchedulePage() {
 
   const course = detail ? courseDef(detail.code) : null;
   const assignments = detail
-      ? (assignByCourse[detail.code] || null)?.filter(
-          (a) =>
-            !hiddenList.some(
-              (h) =>
-                h.key ===
-                (detail.code || "").trim() +
-                  "|" +
-                  (a.title || "").trim() +
-                  "|" +
-                  (a.due || "").trim()
-            )
-        )
-      : null;
+        ? (assignByCourse[detail.code] || null)?.filter(
+            (a) => !hiddenList.some((h) => h.key === taskKey({ course: detail.code, title: a.title, due: a.due }))
+          )
+        : null;
 
   return (
     <div className="wrap">
@@ -389,13 +382,15 @@ export default function SchedulePage() {
       </div>
 
       {detail && course && (
-        <div
-          className="detail-modal open"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="sched-detail-title"
-          onClick={(e) => e.target === e.currentTarget && closeDetail()}
-        >
+              <div
+                ref={detailModalRef}
+                onKeyDown={detailTrapKeyDown}
+                className="detail-modal open"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="sched-detail-title"
+                onClick={(e) => e.target === e.currentTarget && closeDetail()}
+              >
           <div className="sheet">
             <div className="hh">
               <div>
@@ -416,17 +411,18 @@ export default function SchedulePage() {
                     <div className="assign" key={i}>
                       <div className="ttl">{a.title}</div>
                       <div className="meta">
-                        ครบ <b>{a.due}</b> · <span className={"badge " + b.cls}>{b.txt}</span>
-                      </div>
+                                              ครบ <b>{a.due ? a.due : "—"}</b> · <span className={"badge " + b.cls}>{b.txt}</span>
+                                            </div>
                       <div style={{ marginTop: 8 }}>
                         <HideButton
                                                   assignment={a}
                                                   signedIn={!!user}
                                                   onLogin={signInWithGoogle}
                                                   onHide={async (r, c) => {
-                                                    const ok = await hide(a, r, c);
-                                                    if (ok) showToast(`ซ่อน "${a.title}" แล้ว 🙈`);
-                                                  }}
+                                                                                                      const ok = await hide(a, r, c);
+                                                                                                      if (ok) showToast(`ซ่อน "${a.title}" แล้ว 🙈`);
+                                                                                                      else showToast("ซ่อนงานไม่สำเร็จ — ล็อกอินอยู่ไหม? ลองอีกครั้ง");
+                                                                                                    }}
                                                 />
                       </div>
                     </div>

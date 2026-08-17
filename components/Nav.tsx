@@ -20,9 +20,9 @@ export default function Nav() {
         {LINKS.map((l) => {
                   const active = l.href === "/" ? pathname === "/" : pathname.startsWith(l.href);
                   return (
-                    <Link key={l.href} href={l.href} className={active ? "on" : ""}>
-                      {l.label}
-                    </Link>
+                    <Link key={l.href} href={l.href} className={active ? "on" : ""} aria-current={active ? "page" : undefined}>
+                                          {l.label}
+                                        </Link>
                   );
                 })}
                 <span className="nav-auth">

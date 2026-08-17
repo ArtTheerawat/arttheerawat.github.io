@@ -56,8 +56,20 @@ export default function DictationPage() {
   const [score, setScore] = useState(0);
   const [listenCount, setListenCount] = useState(0);
   const [input, setInput] = useState("");
-  const [inputErr, setInputErr] = useState(false);
-  const [feedback, setFeedback] = useState<null | { ok: boolean; detail: string; tip: string }>(null);
+    const [inputErr, setInputErr] = useState(false);
+    // Structured feedback (never raw HTML) so user content can't inject markup.
+    interface Feedback {
+      ok: boolean;
+      tip: string;
+      userInput: string;
+      correctAnswer: string;
+      finalSoundWarning: string;
+    }
+    const [feedback, setFeedback] = useState<Feedback | null>(null);
+    // Non-blocking live region for alerts (listen-limit, unsupported TTS), so we
+    // never call window.alert() which locks the tab and isn't screen-reader friendly.
+    const [notice, setNotice] = useState<string | null>(null);
+    const noticeTimer = useRef<number | null>(null);
   const [log, setLog] = useState<AnswerLog[]>([]);
   const [started, setStarted] = useState(false);
 
@@ -74,15 +86,20 @@ export default function DictationPage() {
   }, []);
 
   const playAudio = useCallback(() => {
-    if (examMode && listenCount >= maxListens) {
-      alert("โหมดสอบ: คุณฟังครบ 2 ครั้งแล้วสำหรับข้อนี้ครับ");
-      return;
-    }
-    if (!supportsSpeech()) {
-      alert("เบราว์เซอร์ของคุณไม่รองรับ Text-to-Speech กรุณาใช้ Chrome, Safari หรือ Edge");
-      return;
-    }
-    if (!q) return;
+      const flash = (msg: string) => {
+        setNotice(msg);
+        if (noticeTimer.current) window.clearTimeout(noticeTimer.current);
+        noticeTimer.current = window.setTimeout(() => setNotice(null), 2600);
+      };
+      if (examMode && listenCount >= maxListens) {
+        flash("โหมดสอบ: คุณฟังครบ 2 ครั้งแล้วสำหรับข้อนี้ครับ");
+        return;
+      }
+      if (!supportsSpeech()) {
+        flash("เบราว์เซอร์ของคุณไม่รองรับ Text-to-Speech กรุณาใช้ Chrome, Safari หรือ Edge");
+        return;
+      }
+      if (!q) return;
     cancelSpeech();
     const utterance = new SpeechSynthesisUtterance(q.full_sentence);
     utterance.lang = "en-US";
@@ -107,8 +124,15 @@ export default function DictationPage() {
   }, [screen, index, q, playAudio]);
 
   useEffect(() => {
-    if (screen === "game") inputRef.current?.focus();
-  }, [screen, index]);
+      if (screen === "game") inputRef.current?.focus();
+    }, [screen, index]);
+
+    /* Clean up the notice timer on unmount so it never fires after teardown. */
+    useEffect(() => {
+      return () => {
+        if (noticeTimer.current) window.clearTimeout(noticeTimer.current);
+      };
+    }, []);
 
   const startTopic = useCallback(
     (key: TopicKey | "all") => {
@@ -166,16 +190,14 @@ export default function DictationPage() {
     };
     setLog((l) => [...l, newLog]);
 
-    let detail: string;
-    if (isCorrect) {
-      detail = `คำตอบของคุณ: ${userInput}`;
-    } else {
-      detail = `คำตอบที่คุณพิมพ์: <s>${userInput}</s><br>คำตอบที่ถูกต้องคือ: ${q.answer}${
-        finalSoundWarning ? "<br>" + finalSoundWarning : ""
-      }`;
-    }
-    setFeedback({ ok: isCorrect, detail, tip: q.tip });
-  }, [q, input, index]);
+    setFeedback({
+          ok: isCorrect,
+          tip: q.tip,
+          userInput,
+          correctAnswer: q.answer,
+          finalSoundWarning,
+        });
+      }, [q, input, index]);
 
   const nextQuestion = useCallback(() => {
     cancelSpeech();
@@ -292,12 +314,24 @@ export default function DictationPage() {
           </div>
 
           <div className="audio-control-box" style={{ background: "var(--primary-gradient, linear-gradient(135deg,#4f46e5,#6366f1))" }}>
-            <button className="play-btn" onClick={playAudio}>🔊</button>
-            <div className="listen-count" id="listen-counter" style={{ color: "#fff" }}>
-              {examMode
-                ? `ฟังไปแล้ว ${listenCount} / ${maxListens} ครั้ง`
-                : `โหมดฝึกซ้อม: ฟังไปแล้ว ${listenCount} ครั้ง (กดฟังได้เรื่อยๆ)`}
-            </div>
+            <button
+                          className="play-btn"
+                          onClick={playAudio}
+                          aria-label={examMode ? "ฟังเสียง (เหลือ " + Math.max(0, maxListens - listenCount) + " ครั้ง)" : "ฟังเสียง"}
+                          title="กดเพื่อฟังเสียงประโยค"
+                        >
+                          🔊
+                        </button>
+                        <div className="listen-count" id="listen-counter" style={{ color: "#fff" }}>
+                          {examMode
+                            ? `ฟังไปแล้ว ${listenCount} / ${maxListens} ครั้ง`
+                            : `โหมดฝึกซ้อม: ฟังไปแล้ว ${listenCount} ครั้ง (กดฟังได้เรื่อยๆ)`}
+                        </div>
+                        {notice && (
+                          <div className="notice" role="status" aria-live="polite">
+                            {notice}
+                          </div>
+                        )}
             <div className="speed-controls">
               {[0.7, 0.9, 1.0, 1.25].map((s) => (
                 <button
@@ -349,7 +383,22 @@ export default function DictationPage() {
             <>
               <div className={`feedback-area ${feedback.ok ? "correct" : "incorrect"}`}>
                 <div className="fb-title">{feedback.ok ? "✅ ถูกต้อง! (Correct)" : "❌ ยังไม่ถูกต้อง (Incorrect)"}</div>
-                <div className="fb-details" dangerouslySetInnerHTML={{ __html: feedback.detail }} />
+                <div className="fb-details">
+                  {feedback.ok ? (
+                    <div>คำตอบของคุณ: <strong>{feedback.userInput}</strong></div>
+                  ) : (
+                    <div>
+                      <div>
+                        คำตอบที่คุณพิมพ์:{" "}
+                        <s>{feedback.userInput || "(ว่าง)"}</s>
+                      </div>
+                      <div>คำตอบที่ถูกต้องคือ: <strong>{feedback.correctAnswer}</strong></div>
+                      {feedback.finalSoundWarning && (
+                        <div>{feedback.finalSoundWarning}</div>
+                      )}
+                    </div>
+                  )}
+                </div>
                 <div className="fb-tip">
                   💡 <strong>คำอธิบาย/จุดสังเกต:</strong> {feedback.tip}
                   <br />

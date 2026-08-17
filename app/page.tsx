@@ -103,7 +103,8 @@ function fmtDue(iso?: string): string {
 
 export default function HomePage() {
   const [usage, setUsage] = useState<UsageData | null>(null);
-  const [err, setErr] = useState<string | null>(null);
+  const [usageErr, setUsageErr] = useState<string | null>(null);
+  const [usageLoading, setUsageLoading] = useState<boolean>(true); // true until first result
   const [assign, setAssign] = useState<Assignment[]>([]);
     const [toast, setToast] = useState<string | null>(null);
     const toastTimer = useRef<number | null>(null);
@@ -135,23 +136,42 @@ export default function HomePage() {
   }, [dayIdx]);
 
   /* Load usage (openrouter proxy + 9arm from data.json) */
-  const load = useCallback(async () => {
-    setErr(null);
-    try {
-      const [orRes, hubRes] = await Promise.all([
-        fetch("/api/usage", { cache: "no-store" }),
-        fetch(dataUrl("/data.json"), { cache: "no-store" }),
-      ]);
-      const orJson = orRes.ok ? await orRes.json() : null;
-      const hubJson = hubRes.ok ? await hubRes.json() : null;
-      const n9 = hubJson?.usage?.["9arm"] ?? null;
-      if (orJson || n9) {
-        setUsage({ openrouter: orJson ?? undefined, "9arm": n9 ?? undefined, updated_at: new Date().toISOString() });
+    const load = useCallback(async () => {
+      setUsageErr(null);
+      setUsageLoading(true);
+      try {
+        const [orRes, hubRes] = await Promise.all([
+          fetch("/api/usage", { cache: "no-store" }),
+          fetch(dataUrl("/data.json"), { cache: "no-store" }),
+        ]);
+        let orJson: OpenRouterUsage | null = null;
+        if (orRes.ok) {
+          orJson = await orRes.json();
+        }
+        const hubJson = hubRes.ok ? await hubRes.json() : null;
+        const n9 = hubJson?.usage?.["9arm"] ?? null;
+        if (orJson || n9) {
+          // At least one source succeeded → show what we have. A failed source
+          // keeps its card in an "unavailable" state (never an endless loader).
+          setUsage({ openrouter: orJson ?? undefined, "9arm": n9 ?? undefined, updated_at: new Date().toISOString() });
+        } else {
+          // Harden toast/error messaging: distinguish "not configured" from an
+          // auth gate (401/403) from a real outage.
+          const bothDown = !orRes.ok && !hubRes.ok;
+          setUsageErr(
+            orRes.status === 401 || orRes.status === 403
+              ? "เข้าสู่ระบบเพื่อดูข้อมูล AI usage หรือคุณไม่มีสิทธิ์ดูข้อมูลนี้"
+              : bothDown
+              ? `ไม่สามารถโหลดข้อมูล usage ได้ (OpenRouter ${orRes.status}/สัญญาณ, data ${hubRes.status}/สัญญาณ)`
+              : "ยังไม่มีการตั้งค่าข้อมูล usage — ไม่พบข้อมูลจากทั้งสองแหล่ง"
+          );
+        }
+      } catch (e) {
+        setUsageErr("โหลดข้อมูล usage ล้มเหลว: " + (e instanceof Error ? e.message : String(e)));
+      } finally {
+        setUsageLoading(false);
       }
-    } catch (e) {
-      setErr("โหลดข้อมูล usage ล้มเหลว: " + (e instanceof Error ? e.message : String(e)));
-    }
-  }, []);
+    }, []);
 
   /* Load today's assignments */
   const loadAssign = useCallback(async () => {
@@ -336,12 +356,40 @@ export default function HomePage() {
           <span className="tag">อัปเดต {timeAgoOr(usage?.updated_at) || usage?.updated_at || "—"}</span>
         </h2>
 
-        {err ? (
-          <div className="err">{err}</div>
-        ) : !usage ? (
-          <div className="src">กำลังโหลดข้อมูล usage…</div>
-        ) : (
-          <div className="usage-grid">
+        {usageErr && (
+                  <div role="alert" className="err">
+                    {usageErr}{" "}
+                    <button
+                      type="button"
+                      className="retry-btn"
+                      onClick={load}
+                      disabled={usageLoading}
+                    >
+                      {usageLoading ? "กำลังลองใหม่…" : "ลองใหม่"}
+                    </button>
+                  </div>
+                )}
+
+                {usageLoading && !usage && (
+                  <div className="src" role="status" aria-live="polite">
+                    กำลังโหลดข้อมูล usage…
+                  </div>
+                )}
+
+                {!usage && !usageLoading && !usageErr && (
+                  <div className="src" role="status">
+                    ยังไม่มีการตั้งค่าข้อมูล usage — ลองรีเฟรชหรือกดปุ่มด้านบน
+                  </div>
+                )}
+
+                {usage && (
+                  <>
+                    {usageLoading && (
+                      <div className="src stale" role="status" aria-live="polite">
+                        กำลังอัปเดตข้อมูล… (ยังแสดงข้อมูลล่าสุด)
+                      </div>
+                    )}
+                    <div className="usage-grid">
             <div className="u-card or">
               <div className="u-prov">
                 <span className="u-dot" />
@@ -351,10 +399,14 @@ export default function HomePage() {
                 </span>
               </div>
               {or?.usage === undefined || or.total_credits === undefined ? (
-                <div className="u-empty">
-                  {or?.error || or?.status === "error" ? "เชื่อม API ไม่ได้" : "ยังไม่มีข้อมูล"}
-                </div>
-              ) : (
+                              <div className="u-empty">
+                                {or?.status === "unconfigured"
+                                  ? "ยังไม่ได้ตั้งค่า OpenRouter (OPENROUTER_API_KEY)"
+                                  : or?.error || or?.status === "error"
+                                  ? "เชื่อม API ไม่ได้ — ลองอีกครั้ง"
+                                  : "ยังไม่มีข้อมูล"}
+                              </div>
+                            ) : (
                 <>
                   <div className="u-big">${fmtMoney(or.usage)}</div>
                   <div className="u-sub">ใช้ไปจาก ${fmtMoney(or.total_credits)}</div>
@@ -425,9 +477,10 @@ export default function HomePage() {
                             </>
                           )}
                         </div>
-          </div>
-        )}
-      </section>
+                                </div>
+                                  </>
+                                )}
+                              </section>
 
       <footer>Auto-generated · ข้อมูลเรียนเชื่อม Google Classroom + Calendar</footer>
             {toast && <div className="hide-toast">{toast}</div>}

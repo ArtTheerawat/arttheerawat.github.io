@@ -69,32 +69,41 @@ export default function TradingPage() {
   const [err, setErr] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    setLoading(true);
-    setErr(null);
-    try {
-      const res = await fetch(dataUrl("/data.json"), { cache: "no-store" });
-      if (res.ok) {
-        const j = await res.json();
-        if (j && Array.isArray(j.trades)) {
-          setData({
-            trades: j.trades || [],
-            signals: j.signals || [],
-            perf: j.perf || [],
-          });
-          setSource({ ok: true, label: "Google Sheets (auto)" });
+      setLoading(true);
+      setErr(null);
+      try {
+        const res = await fetch(dataUrl("/data.json"), { cache: "no-store" });
+        if (res.ok) {
+          const j = await res.json();
+          // Accept both a bare {trades: [...]} payload and a {data: {...}} wrapper.
+          const root = j && (j.trades ? j : j.data);
+          if (root && Array.isArray(root.trades)) {
+            setData({
+              trades: root.trades || [],
+              signals: root.signals || [],
+              perf: root.perf || [],
+            });
+            setSource({ ok: true, label: "Google Sheets (auto)" });
+          } else {
+            // 200 but the shape isn't what we expect → invalid schema, not a network failure.
+            setData(EMPTY);
+            setErr("รูปแบบข้อมูล (schema) เปลี่ยนไป — กรุณาตรวจ data.json / สคริปต์ซิงก์");
+            setSource({ ok: false, label: "schema mismatch" });
+          }
+        } else {
+          // offline fallback — distinguish real HTTP failure from empty-but-valid.
+          setData(EMPTY);
+          setErr("โหลดข้อมูลไม่ได้ (HTTP " + res.status + ") — รอ cron ซิงก์แล้วลองใหม่");
+          setSource({ ok: false, label: "offline · HTTP " + res.status });
         }
-      } else {
-        // offline fallback
+      } catch (e) {
         setData(EMPTY);
-        setSource({ ok: false, label: "offline · sample data" });
+        setErr("โหลดข้อมูลล้มเหลว: " + (e instanceof Error ? e.message : String(e)));
+        setSource({ ok: false, label: "error" });
+      } finally {
+        setLoading(false);
       }
-    } catch (e) {
-      setErr("โหลดข้อมูลล้มเหลว: " + (e instanceof Error ? e.message : String(e)));
-      setSource({ ok: false, label: "error" });
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    }, []);
 
   useEffect(() => {
     load();
@@ -156,11 +165,18 @@ export default function TradingPage() {
       </header>
 
       <div className="src">
-        แหล่งข้อมูล: Google Sheets (Trading Bot Log) · auto-sync (data.json){" "}
-        {loading ? "· กำลังโหลด…" : ""}
-      </div>
+              แหล่งข้อมูล: Google Sheets (Trading Bot Log) · auto-sync (data.json){" "}
+              {loading ? "· กำลังโหลด…" : ""}
+            </div>
 
-      {err && <div className="err">⚠ {err}</div>}
+            {err && (
+              <div role="alert" className="err">
+                ⚠ {err}{" "}
+                <button type="button" className="retry-btn" onClick={load}>
+                  ลองใหม่
+                </button>
+              </div>
+            )}
 
       <section className="kpis">
         {kpis.map((k) => (

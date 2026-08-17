@@ -22,6 +22,11 @@ h1 .dot{color:var(--accent2)}
 .b-done{background:rgba(34,197,94,.16); color:#4ade80}
 .b-quiz{background:rgba(217,70,239,.18); color:#f0abfc}
 .err{background:rgba(239,68,68,.12); border:1px solid rgba(239,68,68,.4); color:#fecaca; border-radius:12px; padding:14px; margin-bottom:16px; font-size:13px}
+.retry-btn{background:var(--card2); border:1px solid var(--border); color:var(--txt); font:inherit; font-size:12px; font-weight:600; padding:6px 14px; border-radius:999px; cursor:pointer; margin-left:8px}
+.retry-btn:hover{filter:brightness(1.15)}
+.retry-btn:disabled{opacity:.55; cursor:not-allowed}
+.retry-btn:focus-visible{outline:2px solid var(--accent); outline-offset:1px}
+.src.stale{color:var(--warn)}
 footer{color:var(--muted); font-size:11px; text-align:center; margin-top:26px}
 .when{font-size:12px; color:var(--accent2)}
 
@@ -179,6 +184,7 @@ table.sched td.cl.overlay .cl-btn{font-style:italic}
 
 /* Non-intrusive confirmation toast */
 .hide-toast{position:fixed; bottom:22px; left:50%; transform:translateX(-50%); z-index:80; background:var(--card2); border:1px solid var(--accent); color:var(--txt); font-size:13px; font-weight:600; padding:11px 18px; border-radius:999px; box-shadow:0 8px 30px rgba(0,0,0,.4); animation:toast-in .25s ease}
+.hide-toast.err-toast{border-color:rgba(239,68,68,.7); background:rgba(70,20,20,.9); color:#fecaca}
 @keyframes toast-in{from{opacity:0; transform:translate(-50%,8px)}to{opacity:1; transform:translate(-50%,0)}}
 
 /* ── AI Token Usage (home) ── */
@@ -271,7 +277,11 @@ table.sched td.cl.overlay .cl-btn{font-style:italic}
   .app-nav-inner{flex-wrap:nowrap; overflow-x:auto; padding:10px 16px; -webkit-overflow-scrolling:touch; scrollbar-width:none}
   .app-nav-inner::-webkit-scrollbar{display:none}
   .app-nav a{flex:0 0 auto}
-  }
+  /* Trading/schedule wide tables: don't squish on phones — let the card grow and
+       the page scroll horizontally so columns stay readable. */
+    .cards-sec{max-width:100vw; overflow-x:auto}
+    .cards-sec table{min-width:640px}
+    }
 
   /* ── Schedule: mobile day-picker view (replaces wide table) ── */
   .mob-container{display:none}

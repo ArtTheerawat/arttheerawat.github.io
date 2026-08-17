@@ -35,6 +35,7 @@ export default function AuthStatus() {
         type="button"
         className="auth-logout"
         title="ออกจากระบบ"
+        aria-label="ออกจากระบบ"
         onClick={async () => {
           const res = await fetch("/auth/sign-out", { method: "POST" });
           if (res.ok) {

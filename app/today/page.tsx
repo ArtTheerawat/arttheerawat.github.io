@@ -52,19 +52,23 @@ export default function TodayPage() {
   const [all, setAll] = useState<Assignment[]>([]);
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [synced, setSynced] = useState("");
+  const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
+  const [quizError, setQuizError] = useState<string | null>(null);
   const [showLater, setShowLater] = useState(false);
     const [showHidden, setShowHidden] = useState(false);
     const [confirmClear, setConfirmClear] = useState(false);
     const [toast, setToast] = useState<string | null>(null);
-    const toastTimer = useRef<number | null>(null);
-    const { user, hiddenList, hide, unhide, clearAll, signInWithGoogle } = useHiddenTasks();
+        const [toastError, setToastError] = useState(false);
+        const toastTimer = useRef<number | null>(null);
+        const { user, hiddenList, hide, unhide, clearAll, signInWithGoogle } = useHiddenTasks();
 
-  const showToast = (msg: string) => {
-    setToast(msg);
-    if (toastTimer.current) window.clearTimeout(toastTimer.current);
-    toastTimer.current = window.setTimeout(() => setToast(null), 2600);
-  };
+      const showToast = (msg: string, isError = false) => {
+        setToast(msg);
+        setToastError(isError);
+        if (toastTimer.current) window.clearTimeout(toastTimer.current);
+        toastTimer.current = window.setTimeout(() => setToast(null), 2600);
+      };
 
   useEffect(() => {
     return () => {
@@ -73,29 +77,33 @@ export default function TodayPage() {
   }, []);
 
   useEffect(() => {
-    (async () => {
-      try {
-        const r = await fetch(dataUrl("/data/assignments.json"), { cache: "no-store" });
-        if (!r.ok) throw new Error("HTTP " + r.status);
-        const j: AssignData = await r.json();
-        const todo = (j.todo || []).map((a) => ({ ...a }));
-        todo.forEach(classifyAssignment);
-        setAll(todo);
-        setSynced(j.updated || "");
+      (async () => {
+        setLoading(true);
+        try {
+          const r = await fetch(dataUrl("/data/assignments.json"), { cache: "no-store" });
+          if (!r.ok) throw new Error("HTTP " + r.status);
+          const j: AssignData = await r.json();
+          const todo = (j.todo || []).map((a) => ({ ...a }));
+          todo.forEach(classifyAssignment);
+          setAll(todo);
+          setSynced(j.updated || "");
+        } catch (e) {
+          setErr("โหลดข้อมูลไม่ได้: " + (e instanceof Error ? e.message : String(e)) + " (รัน cron ซิงก์แล้วลองใหม่)");
+        } finally {
+          setLoading(false);
+        }
+        // Quizzes are optional — surface their failure separately so a schedule
+        // feed outage doesn't take down the whole Today page.
         try {
           const q = await fetch(dataUrl("/data/schedule.json"), { cache: "no-store" });
-          if (q.ok) {
-            const qj: SchedData = await q.json();
-            setQuizzes(qj.quizzes || []);
-          }
-        } catch {
-          /* quizzes optional */
+          if (!q.ok) throw new Error("HTTP " + q.status);
+          const qj: SchedData = await q.json();
+          setQuizzes(qj.quizzes || []);
+        } catch (e) {
+          setQuizError("โหลดรายการสอบ/กิจกรรมไม่ได้: " + (e instanceof Error ? e.message : String(e)));
         }
-      } catch (e) {
-        setErr("โหลดข้อมูลไม่ได้: " + (e instanceof Error ? e.message : String(e)) + " (รัน cron ซิงก์แล้วลองใหม่)");
-      }
-    })();
-  }, []);
+      })();
+    }, []);
 
   // Always filter hidden assignments out of every bucket BEFORE computing stats.
     const visible = useMemo(() => {
@@ -109,14 +117,15 @@ export default function TodayPage() {
       );
     }, [all, hiddenList]);
 
-  const { over, tod, soon, later } = useMemo(() => {
-    return {
-      over: visible.filter((a) => a.bucket === "over"),
-      tod: visible.filter((a) => a.bucket === "today"),
-      soon: visible.filter((a) => a.bucket === "soon"),
-      later: visible.filter((a) => a.bucket === "later"),
-    };
-  }, [visible]);
+  const { over, tod, soon, later, no_due } = useMemo(() => {
+      return {
+        over: visible.filter((a) => a.bucket === "over"),
+        tod: visible.filter((a) => a.bucket === "today"),
+        soon: visible.filter((a) => a.bucket === "soon"),
+        later: visible.filter((a) => a.bucket === "later"),
+        no_due: visible.filter((a) => a.bucket === "no_due"),
+      };
+    }, [visible]);
 
   const now = new Date();
   const today = todayStr();
@@ -125,21 +134,24 @@ export default function TodayPage() {
   const handleHide = (a: Assignment, reason: string, custom?: string) => {
       hide(a, reason, custom).then((ok) => {
         if (ok) showToast(`ซ่อน "${a.title}" แล้ว 🙈`);
+        else showToast("ซ่อนงานไม่สำเร็จ — ล็อกอินอยู่ไหม? ลองอีกครั้ง", true);
       });
-    };
+      };
 
-    const handleRestore = (key: string, title?: string) => {
-      unhide(key).then((ok) => {
-        if (ok) showToast(`นำ "${title}" กลับมาแล้ว`);
-      });
-    };
+      const handleRestore = (key: string, title?: string) => {
+        unhide(key).then((ok) => {
+          if (ok) showToast(`นำ "${title}" กลับมาแล้ว`);
+          else showToast("นำงานกลับมาไม่สำเร็จ — ลองอีกครั้ง", true);
+        });
+      };
 
-    const handleClear = () => {
-      clearAll().then((ok) => {
-        if (ok) showToast("ล้างงานที่ซ่อนทั้งหมดแล้ว");
-      });
-      setConfirmClear(false);
-    };
+      const handleClear = () => {
+        clearAll().then((ok) => {
+          if (ok) showToast("ล้างงานที่ซ่อนทั้งหมดแล้ว");
+          else showToast("ล้างงานที่ซ่อนไม่สำเร็จ — ลองอีกครั้ง", true);
+        });
+        setConfirmClear(false);
+      };
 
   const Item = ({ a, overCl }: { a: Assignment; overCl?: boolean }) => {
     const b = dueLabel(a);
@@ -199,26 +211,38 @@ export default function TodayPage() {
 
       {err && <div className="err">⚠ {err}</div>}
 
-      <div className="counts">
-        <div className="c">
-          <b className="down" style={{ color: "var(--down)" }}>
-            {over.length}
-          </b>
-          เลยกำหนด
-        </div>
-        <div className="c">
-          <b style={{ color: "var(--warn)" }}>{tod.length}</b>
-          ครบวันนี้
-        </div>
-        <div className="c">
-          <b style={{ color: "var(--accent2)" }}>{soon.length}</b>
-          ใกล้ถึง (5 วัน)
-        </div>
-        <div className="c">
-          <b>{quizzes.length}</b>
-          สอบ/กิจกรรม
-        </div>
-      </div>
+            {loading && !err && (
+              <div className="src" role="status" aria-live="polite">
+                กำลังโหลดงานเรียน…
+              </div>
+            )}
+
+            {!loading && quizError && (
+              <div className="err" role="alert">
+                ⚠ {quizError}
+              </div>
+            )}
+
+            <div className="counts">
+              <div className="c">
+                <b className="down" style={{ color: "var(--down)" }}>
+                  {over.length}
+                </b>
+                เลยกำหนด
+              </div>
+              <div className="c">
+                <b style={{ color: "var(--warn)" }}>{tod.length}</b>
+                ครบวันนี้
+              </div>
+              <div className="c">
+                <b style={{ color: "var(--accent2)" }}>{soon.length}</b>
+                ใกล้ถึง (5 วัน)
+              </div>
+              <div className="c">
+                <b>{quizzes.length}</b>
+                สอบ/กิจกรรม
+              </div>
+            </div>
 
       {quizzes.length > 0 && (
         <div className="quizban">
@@ -244,8 +268,34 @@ export default function TodayPage() {
       )}
 
       <Section label="🔴 เลยกำหนด ต้องรีบทำ" items={over} />
-      <Section label="⏳ ครบกำหนดวันนี้" items={tod} />
-      <Section label="🟣 ใกล้ถึง (5 วัน)" items={soon} />
+            <Section label="⏳ ครบกำหนดวันนี้" items={tod} />
+            <Section label="🟣 ใกล้ถึง (5 วัน)" items={soon} />
+
+            {no_due.length > 0 && (
+              <div className="grp" style={{ marginTop: 8 }}>
+                <h2>
+                  ⚪ ยังไม่ระบุกำหนดส่ง <span className="cnt">{no_due.length}</span>
+                </h2>
+                {no_due.map((a, i) => (
+                  <div className="item" key={i}>
+                    <div className="pd">
+                      <span className="badge b-done">ยังไม่ระบุกำหนดส่ง</span>
+                      <span>⏰ —</span>
+                    </div>
+                    <div className="ttl" style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "center" }}>
+                      <span style={{ minWidth: 0 }}>{a.title}</span>
+                      <HideButton
+                        assignment={a}
+                        signedIn={!!user}
+                        onLogin={signInWithGoogle}
+                        onHide={(r, c) => handleHide(a, r, c)}
+                      />
+                    </div>
+                    <div className="subj">{a.courseName || a.course || ""}</div>
+                  </div>
+                ))}
+              </div>
+            )}
 
       {later.length > 0 && (
         <div className="grp" style={{ marginTop: 8 }}>
@@ -287,12 +337,12 @@ export default function TodayPage() {
         </div>
       )}
 
-      {!over.length && !tod.length && !soon.length && (
-        <div className="cards-sec" style={{ textAlign: "center", padding: 34 }}>
-          <div style={{ fontSize: 30, marginBottom: 8 }}>🎉</div>
-          <div style={{ color: "var(--muted)" }}>วันนี้ไม่มีงานค้าง / ครบส่ง ค่อยๆ ผ่อนได้</div>
-        </div>
-      )}
+      {!loading && !err && !over.length && !tod.length && !soon.length && (
+              <div className="cards-sec" style={{ textAlign: "center", padding: 34 }}>
+                <div style={{ fontSize: 30, marginBottom: 8 }}>🎉</div>
+                <div style={{ color: "var(--muted)" }}>วันนี้ไม่มีงานค้าง / ครบส่ง ค่อยๆ ผ่อนได้</div>
+              </div>
+            )}
 
       {/* Hidden tasks management (collapsible, at the bottom) */}
       {hiddenList.length > 0 && (
@@ -337,7 +387,11 @@ export default function TodayPage() {
         <ConfirmClear onConfirm={handleClear} onClose={() => setConfirmClear(false)} />
       )}
 
-      {toast && <div className="hide-toast">{toast}</div>}
+      {toast && (
+        <div className={toastError ? "hide-toast err-toast" : "hide-toast"} role="status" aria-live="polite">
+          {toast}
+        </div>
+      )}
     </div>
   );
 }

@@ -30,3 +30,9 @@ yarn-error.log*
 
 # vercel
 .vercel
+
+# python / sync scripts
+__pycache__/
+*.pyc
+.venv/
+venv/
