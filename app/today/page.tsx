@@ -151,6 +151,14 @@ export default function TodayPage() {
     const [detailTask, setDetailTask] = useState<PriorityTask | null>(null);
     const detailModalRef = useRef<HTMLDivElement | null>(null);
     const [courseMap, setCourseMap] = useState<Record<string, string>>({});
+    // courseName+title key -> {courseId, workId} so we can deep-link straight to
+    // the assignment (/c/{courseId}/a/{workId}) instead of the course stream page
+    // (which is what "กดเข้าแล้วหมุน" was — the stream never settles fast enough).
+    const [courseWorkMap, setCourseWorkMap] = useState<Record<string, { courseId: string; workId: string }>>({});
+    // Manual per-task URL override, persisted to localStorage (no DB needed to
+    // work immediately; Supabase migration 0009 is a later nicety).
+    const [linkOverrides, setLinkOverrides] = useState<Record<string, string>>({});
+    const [editingLink, setEditingLink] = useState<string | null>(null); // task key being edited
     const [toast, setToast] = useState<string | null>(null);
         const [toastError, setToastError] = useState(false);
         const toastTimer = useRef<number | null>(null);
@@ -162,6 +170,49 @@ export default function TodayPage() {
         if (toastTimer.current) window.clearTimeout(toastTimer.current);
         toastTimer.current = window.setTimeout(() => setToast(null), 2600);
       };
+
+  /* Resolve the effective "ไปที่ Classroom" URL for the open task:
+       1. manual override (editable by the owner, saved to localStorage) wins,
+       2. else a deterministic deep-link to the assignment when we know the
+          google courseId + workId (courseName + title match from classroom.json),
+       3. else the course-level link from course_id_map.json. */
+  const taskClassroomLink = (): { href: string; editable: boolean } => {
+    if (!detailTask) return { href: "", editable: false };
+    const manual = linkOverrides[detailTask.key];
+    if (manual) return { href: manual, editable: true };
+    const nameKey =
+      (detailTask.courseName || "").trim() + "\u0001" + (detailTask.title || "").trim();
+    const cw = courseWorkMap[nameKey];
+    if (cw && courseMap[detailTask.course]) {
+      // Prefer the authoritative google courseId from classroom.json.
+      const gid = courseMap[detailTask.course];
+      return {
+        href: `https://classroom.google.com/u/0/c/${gid}/a/${cw.workId}`,
+        editable: true,
+      };
+    }
+    const gid = courseMap[detailTask.course];
+    if (gid) return { href: `https://classroom.google.com/u/0/c/${gid}`, editable: true };
+    return { href: "", editable: false };
+  };
+  const saveOverride = (url: string) => {
+    if (!detailTask) return;
+    const trimmed = (url || "").trim();
+    const next = { ...linkOverrides };
+    if (trimmed && /^https?:\/\//.test(trimmed)) {
+      next[detailTask.key] = trimmed;
+    } else {
+      delete next[detailTask.key];
+    }
+    setLinkOverrides(next);
+    try {
+      window.localStorage.setItem("td_link_overrides", JSON.stringify(next));
+    } catch {
+      /* ignore */
+    }
+    setEditingLink(null);
+    showToast(trimmed ? "บันทึกลิงก์แล้ว" : "คืนค่าเริ่มต้นแล้ว");
+  };
 
   useEffect(() => {
     return () => {
@@ -230,6 +281,35 @@ export default function TodayPage() {
         /* optional — button simply won't show for unknown courses */
       }
     })();
+    (async () => {
+      try {
+        const r = await fetch(dataUrl("/data/classroom.json", { cache: true }), { cache: "force-cache" });
+        if (r.ok) {
+          const j: { courses?: { id?: string; name?: string; coursework?: { id?: string; title?: string }[] }[] } = await r.json();
+          const m: Record<string, { courseId: string; workId: string }> = {};
+          for (const c of j.courses || []) {
+            const cid = c.id;
+            if (!cid) continue;
+            for (const w of c.coursework || []) {
+              if (!w.id || !w.title) continue;
+              const courseName = (c.name || "").trim();
+              const t = (w.title || "").trim();
+              if (courseName) m[courseName + "\u0001" + t] = { courseId: cid, workId: w.id };
+            }
+          }
+          setCourseWorkMap(m);
+        }
+      } catch {
+        /* optional — deep link falls back to course-level link */
+      }
+    })();
+    // Restore any manual link overrides saved locally for this task.
+    try {
+      const saved = window.localStorage.getItem("td_link_overrides");
+      if (saved) setLinkOverrides(JSON.parse(saved));
+    } catch {
+      /* ignore — private mode etc. */
+    }
   }, []);
   useEffect(() => {
     if (!detailTask) return;
@@ -639,17 +719,78 @@ export default function TodayPage() {
                 <span className="badge b-soon">🕐 {detailTask.recommendedStart}</span>
               )}
             </div>
-            {courseMap[detailTask.course] && (
-              <a
-                className="next-go-btn"
-                href={`https://classroom.google.com/u/0/c/${courseMap[detailTask.course]}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ display: "inline-block", marginTop: 16, textDecoration: "none" }}
-              >
-                📚 ไปที่ Classroom ({detailTask.courseName || detailTask.course})
-              </a>
-            )}
+            {(() => {
+              const { href, editable } = taskClassroomLink();
+              const editing = editingLink === detailTask.key;
+              if (!href) return null;
+              return (
+                <div style={{ marginTop: 16 }} className="classroom-link-block">
+                  {!editing ? (
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}>
+                      <a
+                        className="next-go-btn"
+                        href={href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6 }}
+                      >
+                        📚 ไปที่ Classroom ({detailTask.courseName || detailTask.course})
+                      </a>
+                      {editable && (
+                        <button
+                          type="button"
+                          className="next-go-btn"
+                          style={{ textDecoration: "underline" }}
+                          onClick={() => setEditingLink(detailTask.key)}
+                        >
+                          ✏️ แก้ลิงก์เอง
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}>
+                      <input
+                        type="text"
+                        defaultValue={linkOverrides[detailTask.key] || href}
+                        key={href}
+                        placeholder="https://classroom.google.com/..."
+                        style={{
+                          flex: 1,
+                          minWidth: 220,
+                          padding: "8px 10px",
+                          borderRadius: 8,
+                          border: "1px solid var(--border, #444)",
+                          background: "transparent",
+                          color: "inherit",
+                          fontSize: 14,
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") saveOverride((e.target as HTMLInputElement).value);
+                          if (e.key === "Escape") setEditingLink(null);
+                        }}
+                        id={`link-input-${detailTask.key}`}
+                      />
+                      <button type="button" className="next-go-btn" onClick={() => saveOverride((document.getElementById(`link-input-${detailTask.key}`) as HTMLInputElement)?.value || "")}>
+                        บันทึก
+                      </button>
+                      <button type="button" className="next-go-btn" onClick={() => setEditingLink(null)}>
+                        ยกเลิก
+                      </button>
+                      {linkOverrides[detailTask.key] && (
+                        <button
+                          type="button"
+                          className="next-go-btn"
+                          style={{ textDecoration: "underline" }}
+                          onClick={() => saveOverride("")}
+                        >
+                          คืนค่าเริ่มต้น
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
           </div>
         </div>
       )}

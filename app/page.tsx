@@ -149,17 +149,59 @@ export default function HomePage() {
     const { hiddenList, hide, canEdit } = useHiddenTasks();
 
   const showToast = (msg: string) => {
-    setToast(msg);
-    if (toastTimer.current) window.clearTimeout(toastTimer.current);
-    toastTimer.current = window.setTimeout(() => setToast(null), 2600);
-  };
-  useEffect(() => () => { if (toastTimer.current) window.clearTimeout(toastTimer.current); }, []);
+      setToast(msg);
+      if (toastTimer.current) window.clearTimeout(toastTimer.current);
+      toastTimer.current = window.setTimeout(() => setToast(null), 2600);
+    };
+
+    /* Resolve the effective "ไปที่ Classroom" URL for the open task: manual
+       override (localStorage) wins, then deep-link to the assignment, then
+       course-level link. */
+    const taskClassroomLink = (): { href: string; editable: boolean } => {
+      if (!detailTask) return { href: "", editable: false };
+      const manual = linkOverrides[detailTask.key];
+      if (manual) return { href: manual, editable: true };
+      const nameKey =
+        (detailTask.courseName || "").trim() + "\u0001" + (detailTask.title || "").trim();
+      const cw = courseWorkMap[nameKey];
+      const gid = courseMap[detailTask.course];
+      if (cw && gid) {
+        return {
+          href: `https://classroom.google.com/u/0/c/${gid}/a/${cw.workId}`,
+          editable: true,
+        };
+      }
+      if (gid) return { href: `https://classroom.google.com/u/0/c/${gid}`, editable: true };
+      return { href: "", editable: false };
+    };
+    const saveOverride = (url: string) => {
+      if (!detailTask) return;
+      const trimmed = (url || "").trim();
+      const next = { ...linkOverrides };
+      if (trimmed && /^https?:\/\//.test(trimmed)) {
+        next[detailTask.key] = trimmed;
+      } else {
+        delete next[detailTask.key];
+      }
+      setLinkOverrides(next);
+      try {
+        window.localStorage.setItem("td_link_overrides", JSON.stringify(next));
+      } catch {
+        /* ignore */
+      }
+      setEditingLink(null);
+      showToast(trimmed ? "บันทึกลิงก์แล้ว" : "คืนค่าเริ่มต้นแล้ว");
+    };
+    useEffect(() => () => { if (toastTimer.current) window.clearTimeout(toastTimer.current); }, []);
 
   /* Next-action detail modal (same affordance as /today) — "ดูรายละเอียด →"
      used to navigate to /today; now it opens an in-page task sheet instead. */
   const [detailTask, setDetailTask] = useState<PriorityTask | null>(null);
-    const detailModalRef = useRef<HTMLDivElement | null>(null);
-    const [courseMap, setCourseMap] = useState<Record<string, string>>({});
+      const detailModalRef = useRef<HTMLDivElement | null>(null);
+      const [courseMap, setCourseMap] = useState<Record<string, string>>({});
+      const [courseWorkMap, setCourseWorkMap] = useState<Record<string, { courseId: string; workId: string }>>({});
+      const [linkOverrides, setLinkOverrides] = useState<Record<string, string>>({});
+      const [editingLink, setEditingLink] = useState<string | null>(null);
   useEffect(() => {
     if (!detailTask) return;
     const onKey = (e: KeyboardEvent) => {
@@ -170,21 +212,49 @@ export default function HomePage() {
   }, [detailTask]);
 
   // Course-id map for the "ไป classroom" deep link (code -> Google courseId).
-  useEffect(() => {
-    (async () => {
-      try {
-        const r = await fetch(dataUrl("/data/course_id_map.json", { cache: true }), { cache: "force-cache" });
-        if (r.ok) {
-          const m: Record<string, string> = await r.json();
-          const inv: Record<string, string> = {};
-          for (const [gid, code] of Object.entries(m)) inv[code] = gid;
-          setCourseMap(inv);
+    useEffect(() => {
+      (async () => {
+        try {
+          const r = await fetch(dataUrl("/data/course_id_map.json", { cache: true }), { cache: "force-cache" });
+          if (r.ok) {
+            const m: Record<string, string> = await r.json();
+            const inv: Record<string, string> = {};
+            for (const [gid, code] of Object.entries(m)) inv[code] = gid;
+            setCourseMap(inv);
+          }
+        } catch {
+          /* optional — button simply won't show for unknown courses */
         }
+      })();
+      (async () => {
+        try {
+          const r = await fetch(dataUrl("/data/classroom.json", { cache: true }), { cache: "force-cache" });
+          if (r.ok) {
+            const j: { courses?: { id?: string; name?: string; coursework?: { id?: string; title?: string }[] }[] } = await r.json();
+            const m: Record<string, { courseId: string; workId: string }> = {};
+            for (const c of j.courses || []) {
+              const cid = c.id;
+              if (!cid) continue;
+              for (const w of c.coursework || []) {
+                if (!w.id || !w.title) continue;
+                const courseName = (c.name || "").trim();
+                const t = (w.title || "").trim();
+                if (courseName) m[courseName + "\u0001" + t] = { courseId: cid, workId: w.id };
+              }
+            }
+            setCourseWorkMap(m);
+          }
+        } catch {
+          /* optional */
+        }
+      })();
+      try {
+        const saved = window.localStorage.getItem("td_link_overrides");
+        if (saved) setLinkOverrides(JSON.parse(saved));
       } catch {
-        /* optional — button simply won't show for unknown courses */
+        /* ignore */
       }
-    })();
-  }, []);
+    }, []);
 
   /* Today's date + weekday (Bangkok time — single source of truth) */
     const todayIso = todayStr();
@@ -666,17 +736,79 @@ export default function HomePage() {
                                                       <span className="badge b-soon">🕐 {detailTask.recommendedStart}</span>
                                                     )}
                                                   </div>
-                                                  {courseMap[detailTask.course] && (
-                                                    <a
-                                                      className="next-go-btn"
-                                                      href={`https://classroom.google.com/u/0/c/${courseMap[detailTask.course]}`}
-                                                      target="_blank"
-                                                      rel="noopener noreferrer"
-                                                      style={{ display: "inline-block", marginTop: 16, textDecoration: "none" }}
-                                                    >
-                                                      📚 ไปที่ Classroom ({detailTask.courseName || detailTask.course})
-                                                    </a>
-                                                  )}
+                                                  {(() => {
+                                                                                                    const { href, editable } = taskClassroomLink();
+                                                                                                    const editing = editingLink === detailTask.key;
+                                                                                                    const inputId = `link-input-${detailTask.key}`;
+                                                                                                    if (!href) return null;
+                                                                                                    return (
+                                                                                                      <div style={{ marginTop: 16 }} className="classroom-link-block">
+                                                                                                        {!editing ? (
+                                                                                                          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}>
+                                                                                                            <a
+                                                                                                              className="next-go-btn"
+                                                                                                              href={href}
+                                                                                                              target="_blank"
+                                                                                                              rel="noopener noreferrer"
+                                                                                                              style={{ textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6 }}
+                                                                                                            >
+                                                                                                              📚 ไปที่ Classroom ({detailTask.courseName || detailTask.course})
+                                                                                                            </a>
+                                                                                                            {editable && (
+                                                                                                              <button
+                                                                                                                type="button"
+                                                                                                                className="next-go-btn"
+                                                                                                                style={{ textDecoration: "underline" }}
+                                                                                                                onClick={() => setEditingLink(detailTask.key)}
+                                                                                                              >
+                                                                                                                ✏️ แก้ลิงก์เอง
+                                                                                                              </button>
+                                                                                                            )}
+                                                                                                          </div>
+                                                                                                        ) : (
+                                                                                                          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}>
+                                                                                                            <input
+                                                                                                              type="text"
+                                                                                                              defaultValue={linkOverrides[detailTask.key] || href}
+                                                                                                              key={href}
+                                                                                                              placeholder="https://classroom.google.com/..."
+                                                                                                              style={{
+                                                                                                                flex: 1,
+                                                                                                                minWidth: 220,
+                                                                                                                padding: "8px 10px",
+                                                                                                                borderRadius: 8,
+                                                                                                                border: "1px solid var(--border, #444)",
+                                                                                                                background: "transparent",
+                                                                                                                color: "inherit",
+                                                                                                                fontSize: 14,
+                                                                                                              }}
+                                                                                                              onKeyDown={(e) => {
+                                                                                                                if (e.key === "Enter") saveOverride((e.target as HTMLInputElement).value);
+                                                                                                                if (e.key === "Escape") setEditingLink(null);
+                                                                                                              }}
+                                                                                                              id={inputId}
+                                                                                                            />
+                                                                                                            <button type="button" className="next-go-btn" onClick={() => saveOverride((document.getElementById(inputId) as HTMLInputElement)?.value || "")}>
+                                                                                                              บันทึก
+                                                                                                            </button>
+                                                                                                            <button type="button" className="next-go-btn" onClick={() => setEditingLink(null)}>
+                                                                                                              ยกเลิก
+                                                                                                            </button>
+                                                                                                            {linkOverrides[detailTask.key] && (
+                                                                                                              <button
+                                                                                                                type="button"
+                                                                                                                className="next-go-btn"
+                                                                                                                style={{ textDecoration: "underline" }}
+                                                                                                                onClick={() => saveOverride("")}
+                                                                                                              >
+                                                                                                                คืนค่าเริ่มต้น
+                                                                                                              </button>
+                                                                                                            )}
+                                                                                                          </div>
+                                                                                                        )}
+                                                                                                      </div>
+                                                                                                    );
+                                                                                                  })()}
                                                 </div>
                                               </div>
                                             )}
