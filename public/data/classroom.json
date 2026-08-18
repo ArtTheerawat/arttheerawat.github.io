@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-19T04:09:33",
+  "generated_at": "2026-08-19T04:28:43",
   "courses": [
     {
       "name": "G2  User Interface Design and Development",
@@ -9,42 +9,48 @@
           "due": "2026-08-24",
           "dueTime": "16:59",
           "state": "PUBLISHED",
-          "id": "874684912691"
+          "id": "874684912691",
+          "submitted": false
         },
         {
           "title": "ใบงานที่ 5",
           "due": "2026-08-16",
           "dueTime": "16:59",
           "state": "PUBLISHED",
-          "id": "855759563399"
+          "id": "855759563399",
+          "submitted": true
         },
         {
           "title": "ใบงานที่ 4 ",
           "due": "2026-08-09",
           "dueTime": "16:59",
           "state": "PUBLISHED",
-          "id": "871260281468"
+          "id": "871260281468",
+          "submitted": true
         },
         {
           "title": "ใบงานที่ 3",
           "due": "2026-07-26",
           "dueTime": "16:59",
           "state": "PUBLISHED",
-          "id": "855601492229"
+          "id": "855601492229",
+          "submitted": true
         },
         {
           "title": "ใบงานที่ 2 ",
           "due": "2026-07-19",
           "dueTime": "16:59",
           "state": "PUBLISHED",
-          "id": "870602317465"
+          "id": "870602317465",
+          "submitted": true
         },
         {
           "title": "ใบงานที่ 1",
           "due": "2026-07-09",
           "dueTime": "16:59",
           "state": "PUBLISHED",
-          "id": "798401811408"
+          "id": "798401811408",
+          "submitted": true
         }
       ],
       "announcements": [
@@ -108,49 +114,56 @@
           "due": "2026-08-17",
           "dueTime": "16:59",
           "state": "PUBLISHED",
-          "id": "872293234299"
+          "id": "872293234299",
+          "submitted": true
         },
         {
           "title": "Week 6: File",
           "due": "2026-08-24",
           "dueTime": "16:59",
           "state": "PUBLISHED",
-          "id": "874755816896"
+          "id": "874755816896",
+          "submitted": false
         },
         {
           "title": "[vdo เก่าเอาไว้ดูประกอบหากไม่เข้าใจ] Week5: GUI+Class Diagram",
           "due": "2026-08-12",
           "dueTime": "16:59",
           "state": "PUBLISHED",
-          "id": "855849304929"
+          "id": "855849304929",
+          "submitted": false
         },
         {
           "title": "Week4",
           "due": "2026-08-10",
           "dueTime": "16:59",
           "state": "PUBLISHED",
-          "id": "871636915620"
+          "id": "871636915620",
+          "submitted": true
         },
         {
           "title": "Week3",
           "due": "2026-07-27",
           "dueTime": "16:59",
           "state": "PUBLISHED",
-          "id": "855627432090"
+          "id": "855627432090",
+          "submitted": true
         },
         {
           "title": "week2",
           "due": "2026-07-20",
           "dueTime": "16:59",
           "state": "PUBLISHED",
-          "id": "855535351182"
+          "id": "855535351182",
+          "submitted": true
         },
         {
           "title": "กำหนดให้เขียน scenario ของ XO",
           "due": "2026-07-13",
           "dueTime": "16:59",
           "state": "PUBLISHED",
-          "id": "855462569479"
+          "id": "855462569479",
+          "submitted": true
         }
       ],
       "announcements": []
@@ -163,49 +176,56 @@
           "due": "2026-08-14",
           "dueTime": "05:00",
           "state": "PUBLISHED",
-          "id": "871906119812"
+          "id": "871906119812",
+          "submitted": false
         },
         {
           "title": "ยืนยันการเข้าเรียน",
           "due": "2026-08-07",
           "dueTime": "05:05",
           "state": "PUBLISHED",
-          "id": "871916161925"
+          "id": "871916161925",
+          "submitted": false
         },
         {
           "title": "List Advanced Homework",
           "due": "2026-08-02",
           "dueTime": "16:59",
           "state": "PUBLISHED",
-          "id": "855696874135"
+          "id": "855696874135",
+          "submitted": true
         },
         {
           "title": "List (Homework)",
           "due": "2026-07-26",
           "dueTime": "16:59",
           "state": "PUBLISHED",
-          "id": "871046405605"
+          "id": "871046405605",
+          "submitted": true
         },
         {
           "title": "Lists (ในห้องเรียน)",
           "due": "2026-07-24",
           "dueTime": "04:59",
           "state": "PUBLISHED",
-          "id": "871045201233"
+          "id": "871045201233",
+          "submitted": true
         },
         {
           "title": "Generics",
           "due": "2026-07-18",
           "dueTime": "16:59",
           "state": "PUBLISHED",
-          "id": "798462119618"
+          "id": "798462119618",
+          "submitted": true
         },
         {
           "title": "ArrayList",
           "due": "2026-07-11",
           "dueTime": "16:59",
           "state": "PUBLISHED",
-          "id": "798414946332"
+          "id": "798414946332",
+          "submitted": true
         }
       ],
       "announcements": [
@@ -224,7 +244,8 @@
           "due": "2026-02-27",
           "dueTime": "16:59",
           "state": "PUBLISHED",
-          "id": "825778768151"
+          "id": "825778768151",
+          "submitted": true
         }
       ],
       "announcements": [
@@ -273,105 +294,120 @@
           "due": "2025-10-15",
           "dueTime": "08:59",
           "state": "PUBLISHED",
-          "id": "812887406162"
+          "id": "812887406162",
+          "submitted": true
         },
         {
           "title": "ส่งใบงาน กายใจหัว",
           "due": "2025-10-01",
           "dueTime": "08:59",
           "state": "PUBLISHED",
-          "id": "810388489787"
+          "id": "810388489787",
+          "submitted": true
         },
         {
           "title": "ส่งงานเดี่ยว กิจกรรมนพลักษณ์",
           "due": "2025-09-24",
           "dueTime": "09:30",
           "state": "PUBLISHED",
-          "id": "803450956781"
+          "id": "803450956781",
+          "submitted": true
         },
         {
           "title": "ส่งงานกลุ่ม กิจกรรมนพลักษณ์",
           "due": "2025-09-24",
           "dueTime": "09:30",
           "state": "PUBLISHED",
-          "id": "803451215282"
+          "id": "803451215282",
+          "submitted": false
         },
         {
           "title": "ส่งบันทึกการเรียนรู้ ครั้งที่ 4 กิจกรรมกันและกัน",
           "due": "2025-09-23",
           "dueTime": "08:00",
           "state": "PUBLISHED",
-          "id": "807132145944"
+          "id": "807132145944",
+          "submitted": true
         },
         {
           "title": "ส่งงานกลุ่ม กิจกรรมกันและกัน",
           "due": "2025-09-17",
           "dueTime": "09:00",
           "state": "PUBLISHED",
-          "id": "807110353644"
+          "id": "807110353644",
+          "submitted": false
         },
         {
           "title": "ส่งใบงานชมภาพยนตร์",
           "due": "2025-09-09",
           "dueTime": "08:00",
           "state": "PUBLISHED",
-          "id": "795889593755"
+          "id": "795889593755",
+          "submitted": true
         },
         {
           "title": "ส่งงาน กิจกรรมผ่อนพักตระหนักรู้",
           "due": "2025-08-26",
           "dueTime": "08:00",
           "state": "PUBLISHED",
-          "id": "798970621756"
+          "id": "798970621756",
+          "submitted": true
         },
         {
           "title": "ส่งงานกลุ่ม ดินน้ำลมไฟ",
           "due": "2025-08-13",
           "dueTime": "09:00",
           "state": "PUBLISHED",
-          "id": "795303424343"
+          "id": "795303424343",
+          "submitted": false
         },
         {
           "title": "ส่งงานเดี่ยว ดินน้ำลมไฟ",
           "due": "2025-08-13",
           "dueTime": "09:00",
           "state": "PUBLISHED",
-          "id": "791870791098"
+          "id": "791870791098",
+          "submitted": true
         },
         {
           "title": "ส่งบันทึกการเรียนรู้ ครั้งที่ 3",
           "due": "2025-08-12",
           "dueTime": "08:00",
           "state": "PUBLISHED",
-          "id": "791222974677"
+          "id": "791222974677",
+          "submitted": true
         },
         {
           "title": "ส่งกิจกรรมตอบคำถาม แผนผังชีวิต",
           "due": "2025-08-06",
           "dueTime": "10:00",
           "state": "PUBLISHED",
-          "id": "791222980589"
+          "id": "791222980589",
+          "submitted": true
         },
         {
           "title": "ส่งงานกิจกรรมแสวงหา (ตอบคำถาม 6 ข้อ)",
           "due": "2025-07-30",
           "dueTime": "08:59",
           "state": "PUBLISHED",
-          "id": "790499351650"
+          "id": "790499351650",
+          "submitted": true
         },
         {
           "title": "ส่งบันทึกการเรียนรู้ ครั้งที่ 1",
           "due": "2025-07-29",
           "dueTime": "08:00",
           "state": "PUBLISHED",
-          "id": "700425713358"
+          "id": "700425713358",
+          "submitted": false
         },
         {
           "title": "ส่งงานอัตชีวประวัติ",
           "due": "2025-07-22",
           "dueTime": "08:00",
           "state": "PUBLISHED",
-          "id": "789380191511"
+          "id": "789380191511",
+          "submitted": true
         }
       ],
       "announcements": [
