@@ -387,6 +387,41 @@ function whatFirstAnswer(data: AssistantData): string {
   return `งานที่ควรทำก่อนที่สุดคือ "${top.title}" [${top.courseName}] (${top.dueLabel}) เพราะ ${top.reasons.join(" และ ") || "ระบบจัดลำดับความสำคัญไว้ก่อน"}`;
 }
 
+/** Deterministic Thai answer for a greeting (e.g. "สวัสดี", "hi", "ทักทาย"). */
+function greetingAnswer(data: AssistantData): string {
+  const dayIdx = todayIdxBKK();
+  const counts = taskCounts(data.todo);
+  const lines: string[] = [
+    `สวัสดีครับหัวหน้า 🙏 วันนี้วัน${DAY[dayIdx - 1]} (${todayStr()}) เป็นยังไงบ้างครับ`,
+  ];
+  if (counts.over > 0) {
+    lines.push(`มีงานเลยกำหนด ${counts.over} งานนะครับ แนะนำให้เคลียร์ก่อน 🫡`);
+  } else if (counts.today > 0) {
+    lines.push(`วันนี้มีงานครบกำหนด ${counts.today} งานครับ ลองถาม "งานไหนควรทำก่อน?"`);
+  } else if (counts.soon > 0) {
+    lines.push(`มีงานใกล้ถึง (5 วัน) ${counts.soon} งาน ลองถาม "ช่วยวางแผนวันนี้" ได้เลยครับ`);
+  } else {
+    lines.push("วันนี้ดูว่างไม่มีงานเร่งด่วนครับ อยากให้ช่วยอะไร เช่น วางแผนวันนี้ หรือดูงานที่จะถึง?");
+  }
+  lines.push("ฉันตอบได้เกี่ยวกับงาน กำหนดส่ง ตารางเรียน และลำดับความสำคัญจากข้อมูลจริงเท่านั้นนะครับ");
+  return lines.join("\n");
+}
+
+/** Deterministic Thai answer for an unclassifiable question (unknown intent). */
+function unknownAnswer(data: AssistantData): string {
+  const counts = taskCounts(data.todo);
+  const bits: string[] = [];
+  if (counts.over > 0) bits.push(`เลยกำหนด ${counts.over}`);
+  if (counts.today > 0) bits.push(`ครบวันนี้ ${counts.today}`);
+  if (counts.soon > 0) bits.push(`ใกล้ถึง (5 วัน) ${counts.soon}`);
+  const load = bits.length ? " ภาระงาน: " + bits.join(" · ") : " ไม่มีงานเร่งด่วน";
+  return (
+    "ขอโทษครับ ผมตอบได้เฉพาะเรื่องงาน/ตาราง/ลำดับความสำคัญใน TheeDeck นะครับ (ตอบจากข้อมูลจริงเท่านั้น)" +
+    load +
+    "\nลองถามแบบนี้: \"งานไหนควรทำก่อน?\", \"วันนี้มีอะไร?\", \"ช่วยวางแผนวันนี้\", หรือระบุชื่องาน เช่น \"Lab 5\""
+  );
+}
+
 /** Compose a deterministic answer for the given intent, or null when the
  *  intent is not deterministically answerable (wants AI). */
 export function buildDeterministicAnswer(
@@ -408,7 +443,8 @@ export function buildDeterministicAnswer(
         ? buildContext("task_detail", term, data).replace(/^วันนี้[^\n]*\n/, "").trim()
         : "ขอระบุชื่องาน/คำค้นหน่อยนะครับ เช่น \"Lab 5\" หรือ \"ใบงานที่ 6\"";
     case "unknown":
+      return greetingAnswer(data);
     default:
-      return null;
+      return unknownAnswer(data);
   }
 }
