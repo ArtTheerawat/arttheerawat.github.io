@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-18T10:30:51",
+  "generated_at": "2026-08-18T10:46:52",
   "trades": [],
   "signals": [
     {
@@ -6273,6 +6273,70 @@
       "tp": "",
       "status": "ANALYZED",
       "notes": "scalp: no RSI-overextension at EMA20"
+    },
+    {
+      "timestamp": 46252.438101851854,
+      "symbol": "XAUUSDm",
+      "signal": "NONE",
+      "direction": "?",
+      "confidence": "",
+      "d1Trend": "-",
+      "h1Trend": "-",
+      "rsi": 32.1,
+      "atr": 17.17,
+      "entryZone": "",
+      "sl": "",
+      "tp": "",
+      "status": "ANALYZED",
+      "notes": "scalp: no RSI-overextension at EMA20"
+    },
+    {
+      "timestamp": 46252.44157407407,
+      "symbol": "XAUUSDm",
+      "signal": "NONE",
+      "direction": "?",
+      "confidence": "",
+      "d1Trend": "-",
+      "h1Trend": "-",
+      "rsi": 32.1,
+      "atr": 17.17,
+      "entryZone": "",
+      "sl": "",
+      "tp": "",
+      "status": "ANALYZED",
+      "notes": "scalp: no RSI-overextension at EMA20"
+    },
+    {
+      "timestamp": 46252.4450462963,
+      "symbol": "XAUUSDm",
+      "signal": "NONE",
+      "direction": "?",
+      "confidence": "",
+      "d1Trend": "-",
+      "h1Trend": "-",
+      "rsi": 31.2,
+      "atr": 17.17,
+      "entryZone": "",
+      "sl": "",
+      "tp": "",
+      "status": "ANALYZED",
+      "notes": "scalp: no RSI-overextension at EMA20"
+    },
+    {
+      "timestamp": 46252.44851851852,
+      "symbol": "XAUUSDm",
+      "signal": "BUY",
+      "direction": "BUY",
+      "confidence": "MEDIUM",
+      "d1Trend": "-",
+      "h1Trend": "-",
+      "rsi": 20.4,
+      "atr": 17.17,
+      "entryZone": 4394.48,
+      "sl": 4368.72,
+      "tp": 4433.12,
+      "status": "ANALYZED",
+      "notes": "scalp reversion: M15 RSI 20 oversold at EMA20 + reversion"
     }
   ],
   "perf": [],
@@ -6295,6 +6359,6 @@
       },
       "updated_at": "2026-08-17T17:10:48"
     },
-    "updated_at": "2026-08-18T10:30:51"
+    "updated_at": "2026-08-18T10:46:52"
   }
 }
