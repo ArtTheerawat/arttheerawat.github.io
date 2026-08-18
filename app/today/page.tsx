@@ -320,9 +320,26 @@ export default function TodayPage() {
       };
     }, [visible]);
 
-  const now = nowBKK();
-      const today = todayStr();
+  /* Live "now" clock, anchored to Bangkok wall time. Ticks every 30s so the
+     header clock and the timeline's past / current / upcoming states stay fresh
+     without a full re-render storm. When it is a new BKK day the timeline + task
+     buckets recompute naturally (see memos below). */
+  const [nowClock, setNowClock] = useState<Date>(() => nowBKK());
+  useEffect(() => {
+    const id = window.setInterval(() => setNowClock(nowBKK()), 30_000);
+    return () => window.clearInterval(id);
+  }, []);
+
+  const today = todayStr();
       const dayLabel = todayLabelBKK();
+      const nowHour = nowClock.getHours() + nowClock.getMinutes() / 60;
+
+    /* Classify a timeline row against the live clock (BKK hour): a session fully
+       finished before now = past (dim), spanning now = current (highlight), not
+       started yet = upcoming (normal). Events never get a fake start — this only
+       shades rows that genuinely have start/end times. */
+    const tlState = (row: TimelineRow): "past" | "now" | "upcoming" =>
+      nowHour >= row.end ? "past" : nowHour >= row.time ? "now" : "upcoming";
 
     /* Today's timeline: recurring classes + makeup sessions, merged in time order. */
     const timelineRows = useMemo(() => buildTimeline(todayIdxBKK(), todayStr()), [today]);
@@ -411,14 +428,19 @@ export default function TodayPage() {
 
   return (
     <div className="wrap">
-      <header>
+      <header className="today-head">
         <div>
           <h1>
             เช็ค<span className="dot">งาน</span>วันนี้
           </h1>
           <div className="dayhead">
             <div className="sub">
-              วันนี้ {dayLabel} · {today}
+              วันที่ {dayLabel} · {today}
+            </div>
+            <div className="live-clock" role="timer" aria-live="off">
+              <span className="lc-ico">🕐</span>
+              <b>{nowClock.toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit", hour12: false })}</b>
+              <span className="lc-tz">ICT</span>
             </div>
           </div>
         </div>
@@ -439,66 +461,74 @@ export default function TodayPage() {
                           </div>
                         )}
 
-                  {/* ── TODAY TIMELINE ──
-                      Real time-ordered view of today: recurring classes + makeup sessions.
-                      This is the "เวลา → กิจกรรม" spine gpt proposed — wraps the schedule
-                      data (from lib/schedule-data.ts) filtered to the current weekday. */}
-                  <section className="today-tl">
-                    <h2 className="sec-title">
-                      🕐 Timeline วันนี้ <span className="cnt">{timelineRows.length} คาบ</span>
-                    </h2>
-                    {timelineRows.length === 0 ? (
-                      <div className="tl-empty">วันนี้ไม่มีคาบเรียน — เวลาว่าง 🎉</div>
-                    ) : (
-                      <div className="tl-list">
-                        {timelineRows.map((r, i) => {
-                          const icon = CLASS_ICONS[r.code] || r.icon;
-                          return (
-                            <div
-                              className={"tl-row" + (r.kind === "makeup" ? " makeup" : "")}
-                              key={i}
-                              style={{ "--tl-c": r.color } as CSSProperties}
-                            >
-                              <div className="tl-time">
-                                <div className="tl-h">{fmtH(r.time)}</div>
-                                <div className="tl-end">–{fmtH(r.end)}</div>
-                              </div>
-                              <div className="tl-axis">
-                                <span className="tl-dot" />
-                              </div>
-                              <div className="tl-body">
-                                <div className="tl-act">
-                                  <span className="tl-emoji">{icon}</span>
-                                  <span className="tl-name">{r.label}</span>
-                                  {r.kind === "makeup" && <span className="tl-tag">ชดเชย</span>}
-                                </div>
-                                <div className="tl-meta">
-                                  <span className="tl-code">{r.code}</span>
-                                  {r.room && <span className="tl-room">📍 {r.room}</span>}
-                                </div>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </section>
-
                   {/* ── MORNING BRIEF + NEXT ACTION ──
-                        Priority is decided by the deterministic Priority Engine
-                        (lib/priority.ts), never AI — `engine` above. When a fresh
-                        AI brief exists we show the merged MorningBriefCard (AI
-                        summary + deterministic next + generated time); otherwise we
-                        fall back to the plain deterministic NextActionCard. */}
-                  {aiBrief && aiVisibleItems.length > 0 ? (
-                    <MorningBriefCard
-                      brief={aiBrief}
-                      engine={engine}
-                      onDetail={() => engine.next && setDetailTask(engine.next)}
-                    />
-                  ) : (
-                    <NextActionCard result={engine} detailLabel="ดูรายละเอียด →" onDetail={() => engine.next && setDetailTask(engine.next)} />
-                  )}
+                                          Priority is decided by the deterministic Priority Engine
+                                          (lib/priority.ts), never AI — `engine` above. When a fresh
+                                          AI brief exists we show the merged MorningBriefCard (AI
+                                          summary + deterministic next + generated time); otherwise we
+                                          fall back to the plain deterministic NextActionCard. */}
+                                    {aiBrief && aiVisibleItems.length > 0 ? (
+                                      <MorningBriefCard
+                                        brief={aiBrief}
+                                        engine={engine}
+                                        onDetail={() => engine.next && setDetailTask(engine.next)}
+                                      />
+                                    ) : (
+                                      <NextActionCard result={engine} detailLabel="ดูรายละเอียด →" onDetail={() => engine.next && setDetailTask(engine.next)} />
+                                    )}
+
+                                    {/* ── TODAY TIMELINE ──
+                                        Real time-ordered view of today: recurring classes + makeup sessions.
+                                        This is the "เวลา → กิจกรรม" spine gpt proposed — wraps the schedule
+                                        data (from lib/schedule-data.ts) filtered to the current weekday.
+                                        Each row is shaded against the live BKK clock: past (dim), current
+                                        (highlight), upcoming (normal). Events keep their real start/end —
+                                        tasks (deadlines) are never forced onto this timeline. */}
+                                    <section className="today-tl">
+                                      <h2 className="sec-title">
+                                        🕐 Timeline วันนี้
+                                        <span className="cnt">{timelineRows.length} คาบ</span>
+                                        {timelineRows.length > 0 && <span className="tl-now-chip">ตอนนี้ {nowClock.toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit", hour12: false })}</span>}
+                                      </h2>
+                                      {timelineRows.length === 0 ? (
+                                        <div className="tl-empty">วันนี้ไม่มีคาบเรียน — เวลาว่าง 🎉</div>
+                                      ) : (
+                                        <div className="tl-list">
+                                          {timelineRows.map((r, i) => {
+                                            const icon = CLASS_ICONS[r.code] || r.icon;
+                                            const st = tlState(r);
+                                            return (
+                                              <div
+                                                className={"tl-row " + st + (r.kind === "makeup" ? " makeup" : "")}
+                                                key={i}
+                                                data-state={st}
+                                                style={{ "--tl-c": r.color } as CSSProperties}
+                                              >
+                                                <div className="tl-time">
+                                                  <div className="tl-h">{fmtH(r.time)}</div>
+                                                  <div className="tl-end">–{fmtH(r.end)}</div>
+                                                </div>
+                                                <div className="tl-axis">
+                                                  <span className="tl-dot" />
+                                                </div>
+                                                <div className="tl-body">
+                                                  <div className="tl-act">
+                                                    <span className="tl-emoji">{icon}</span>
+                                                    <span className="tl-name">{r.label}</span>
+                                                    {r.kind === "makeup" && <span className="tl-tag">ชดเชย</span>}
+                                                    {st === "now" && <span className="tl-badge-now">กำลังเรียน</span>}
+                                                  </div>
+                                                  <div className="tl-meta">
+                                                    <span className="tl-code">{r.code}</span>
+                                                    {r.room && <span className="tl-room">📍 {r.room}</span>}
+                                                  </div>
+                                                </div>
+                                              </div>
+                                            );
+                                          })}
+                                        </div>
+                                      )}
+                                    </section>
 
                         {/* Counts only make sense once data arrived — during load they
                                        would show a misleading 0 for everything (false affordance). */}
