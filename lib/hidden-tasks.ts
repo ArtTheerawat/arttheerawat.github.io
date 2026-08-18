@@ -198,15 +198,33 @@ export interface BriefItem {
 
 export function filterVisibleBriefItems(items: BriefItem[] | null | undefined, hiddenList: HiddenTask[]): BriefItem[] {
   if (!items) return [];
+  const norm = (s?: string) => (s || "").trim().toLowerCase();
+  // count how many distinct hidden courses share a given title — if a title is
+  // used by different classes we must not blanket-hide it.
+  const titleCourseCounts = new Map<string, Set<string>>();
+  hiddenList.forEach((h) => {
+    const t = norm(h.title);
+    if (!t) return;
+    if (!titleCourseCounts.has(t)) titleCourseCounts.set(t, new Set());
+    titleCourseCounts.get(t)!.add(norm(h.course));
+  });
+  const courseLooksAlike = (a?: string, b?: string) => {
+    const A = norm(a), B = norm(b);
+    if (!A || !B) return false;
+    return A === B || A.includes(B) || B.includes(A);
+  };
   return items.filter((it) => {
-    const t = (it.title || "").trim();
+    const t = norm(it.title);
     if (!t) return false;
+    // a hidden task matches if the title agrees AND the course is not a clear
+    // different-class conflict.
     const hidden = hiddenList.find((h) => {
-      const hTitle = (h.title || "").trim();
-      if (hTitle && hTitle !== t) return false;
-      const hCourse = (h.course || "").trim();
-      const iCourse = (it.course || "").trim();
-      if (hCourse && iCourse && !(iCourse.startsWith(hCourse) || hCourse === iCourse)) return false;
+      if (norm(h.title) !== t) return false;
+      // If this title occurs in multiple classes, require the courses to look
+      // alike (same code, or code/name substring) to avoid hiding the wrong one.
+      if ((titleCourseCounts.get(t) || new Set()).size > 1) {
+        if (!courseLooksAlike(h.course, it.course)) return false;
+      }
       return true;
     });
     return !hidden;
