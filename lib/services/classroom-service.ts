@@ -42,7 +42,19 @@ async function fetchStatic(): Promise<{ courses: CourseGroup[]; synced: string; 
 export async function loadClassroom(): Promise<ClassroomResult> {
   const db = getDb();
   const primary = await db.loadClassroom();
-  if (primary.ok && primary.courses) {
+  // Truthy check on `primary.courses` is NOT enough — an empty array [] is also
+  // truthy in JS, so it only means "the Supabase query succeeded", not "we have
+  // real data". If Supabase is healthy but classroom_tasks / classroom_announcements
+  // are empty (e.g. classroom_sync.py never fully synced), pages would render blank
+  // and never fall back to the static JSON that has real data. Only trust the backend
+  // when at least one course carries real coursework or a real announcement.
+  if (
+    primary.ok &&
+    primary.courses &&
+    primary.courses.some(
+      (c) => (c.coursework?.length || 0) > 0 || (c.announcements?.length || 0) > 0
+    )
+  ) {
     return { courses: primary.courses, synced: "", loading: false, error: null };
   }
   // Backend unavailable or errored → static JSON fallback.
