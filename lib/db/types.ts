@@ -95,3 +95,12 @@ export interface DbUser {
   email?: string;
   name?: string;
 }
+
+/** A per-assignment manual override for the "ไปที่ Classroom" deep link,
+ *  synced cross-device via Supabase (global set, owner-only writes), keyed
+ *  by the same stable task_key as HiddenTask (course|title|due). */
+export interface LinkOverride {
+  key: string;             // task_key == hidden-like stable key (course|title|due)
+  url: string;             // fully-qualified https:// URL the owner chose
+  updatedAt: string;       // ISO timestamp
+}

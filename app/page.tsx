@@ -6,6 +6,7 @@ import { ListTodo, CalendarDays, CandlestickChart, Headphones, Zap, type LucideI
 import { classifyAssignment, dataUrl, dueDiffDays, fmtMoney, nowBKKHour, todayIdxBKK, todayLabelBKK, todayStr, type Bucket } from "@/lib/data";
 import { SCHEDULE, COURSES, MAKEUP } from "@/lib/schedule-data";
 import { filterVisibleBriefItems, useHiddenTasks } from "@/lib/hidden-tasks";
+import { useLinkOverrides } from "@/lib/link-overrides";
 import { HideButton } from "@/components/HiddenTasks";
 import NextActionCard from "@/components/NextActionCard";
 import { computeNextAction, type PriorityTask } from "@/lib/priority";
@@ -155,53 +156,46 @@ export default function HomePage() {
     };
 
     /* Resolve the effective "ไปที่ Classroom" URL for the open task: manual
-       override (localStorage) wins, then deep-link to the assignment, then
-       course-level link. */
-    const taskClassroomLink = (): { href: string; editable: boolean } => {
-      if (!detailTask) return { href: "", editable: false };
-      const manual = linkOverrides[detailTask.key];
-      if (manual) return { href: manual, editable: true };
-      const nameKey =
-        (detailTask.courseName || "").trim() + "\u0001" + (detailTask.title || "").trim();
-      const cw = courseWorkMap[nameKey];
-      const gid = courseMap[detailTask.course];
-      if (cw && gid) {
-        return {
-          href: `https://classroom.google.com/u/0/c/${gid}/a/${cw.workId}`,
-          editable: true,
+           override (Supabase + local) wins, then deep-link to the assignment, then
+           course-level link. */
+        const taskClassroomLink = (): { href: string; editable: boolean } => {
+          if (!detailTask) return { href: "", editable: false };
+          const manual = linkOverride.urlFor(detailTask.key);
+          if (manual) return { href: manual, editable: true };
+          const nameKey =
+            (detailTask.courseName || "").trim() + "\u0001" + (detailTask.title || "").trim();
+          const cw = courseWorkMap[nameKey];
+          const gid = courseMap[detailTask.course];
+          if (cw && gid) {
+            return {
+              href: `https://classroom.google.com/u/0/c/${gid}/a/${cw.workId}`,
+              editable: true,
+            };
+          }
+          if (gid) return { href: `https://classroom.google.com/u/0/c/${gid}`, editable: true };
+          return { href: "", editable: false };
         };
-      }
-      if (gid) return { href: `https://classroom.google.com/u/0/c/${gid}`, editable: true };
-      return { href: "", editable: false };
-    };
-    const saveOverride = (url: string) => {
-      if (!detailTask) return;
-      const trimmed = (url || "").trim();
-      const next = { ...linkOverrides };
-      if (trimmed && /^https?:\/\//.test(trimmed)) {
-        next[detailTask.key] = trimmed;
-      } else {
-        delete next[detailTask.key];
-      }
-      setLinkOverrides(next);
-      try {
-        window.localStorage.setItem("td_link_overrides", JSON.stringify(next));
-      } catch {
-        /* ignore */
-      }
-      setEditingLink(null);
-      showToast(trimmed ? "บันทึกลิงก์แล้ว" : "คืนค่าเริ่มต้นแล้ว");
-    };
-    useEffect(() => () => { if (toastTimer.current) window.clearTimeout(toastTimer.current); }, []);
+        const saveOverride = async (url: string) => {
+          if (!detailTask) return;
+          const trimmed = (url || "").trim();
+          const res = await linkOverride.setOverride(detailTask.key, trimmed);
+          setEditingLink(null);
+          if (res.error) {
+            showToast("บันทึกลิงก์แล้ว (ถ้าไม่เห็นบนมือถือ ให้ล็อกอินเจ้าของก่อน)");
+          } else {
+            showToast(trimmed ? "บันทึกลิงก์แล้ว" : "คืนค่าเริ่มต้นแล้ว");
+          }
+        };
+        useEffect(() => () => { if (toastTimer.current) window.clearTimeout(toastTimer.current); }, []);
 
   /* Next-action detail modal (same affordance as /today) — "ดูรายละเอียด →"
      used to navigate to /today; now it opens an in-page task sheet instead. */
   const [detailTask, setDetailTask] = useState<PriorityTask | null>(null);
-      const detailModalRef = useRef<HTMLDivElement | null>(null);
-      const [courseMap, setCourseMap] = useState<Record<string, string>>({});
-      const [courseWorkMap, setCourseWorkMap] = useState<Record<string, { courseId: string; workId: string }>>({});
-      const [linkOverrides, setLinkOverrides] = useState<Record<string, string>>({});
-      const [editingLink, setEditingLink] = useState<string | null>(null);
+        const detailModalRef = useRef<HTMLDivElement | null>(null);
+        const [courseMap, setCourseMap] = useState<Record<string, string>>({});
+        const [courseWorkMap, setCourseWorkMap] = useState<Record<string, { courseId: string; workId: string }>>({});
+        const [editingLink, setEditingLink] = useState<string | null>(null);
+        const linkOverride = useLinkOverrides();
   useEffect(() => {
     if (!detailTask) return;
     const onKey = (e: KeyboardEvent) => {
@@ -248,13 +242,9 @@ export default function HomePage() {
           /* optional */
         }
       })();
-      try {
-        const saved = window.localStorage.getItem("td_link_overrides");
-        if (saved) setLinkOverrides(JSON.parse(saved));
-      } catch {
-        /* ignore */
-      }
-    }, []);
+            // Manual URL overrides come from the useLinkOverrides hook (Supabase sync
+            // + localStorage fallback), so no separate restore is needed here.
+          }, []);
 
   /* Today's date + weekday (Bangkok time — single source of truth) */
     const todayIso = todayStr();
@@ -769,7 +759,7 @@ export default function HomePage() {
                                                                                                           <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}>
                                                                                                             <input
                                                                                                               type="text"
-                                                                                                              defaultValue={linkOverrides[detailTask.key] || href}
+                                                                                                              defaultValue={linkOverride.urlFor(detailTask.key) || href}
                                                                                                               key={href}
                                                                                                               placeholder="https://classroom.google.com/..."
                                                                                                               style={{
@@ -794,7 +784,7 @@ export default function HomePage() {
                                                                                                             <button type="button" className="next-go-btn" onClick={() => setEditingLink(null)}>
                                                                                                               ยกเลิก
                                                                                                             </button>
-                                                                                                            {linkOverrides[detailTask.key] && (
+                                                                                                            {linkOverride.urlFor(detailTask.key) && (
                                                                                                               <button
                                                                                                                 type="button"
                                                                                                                 className="next-go-btn"

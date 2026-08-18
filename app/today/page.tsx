@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react"
 import { classifyAssignment, dataUrl, dueLabel, fmtDate, nowBKK, todayIdxBKK, todayLabelBKK, todayStr, type Bucket } from "@/lib/data";
 import { COURSES, MAKEUP, SCHEDULE } from "@/lib/schedule-data";
 import { filterVisibleBriefItems, useHiddenTasks } from "@/lib/hidden-tasks";
+import { useLinkOverrides } from "@/lib/link-overrides";
 import {
   ConfirmClear,
   HideButton,
@@ -155,14 +156,14 @@ export default function TodayPage() {
     // the assignment (/c/{courseId}/a/{workId}) instead of the course stream page
     // (which is what "กดเข้าแล้วหมุน" was — the stream never settles fast enough).
     const [courseWorkMap, setCourseWorkMap] = useState<Record<string, { courseId: string; workId: string }>>({});
-    // Manual per-task URL override, persisted to localStorage (no DB needed to
-    // work immediately; Supabase migration 0009 is a later nicety).
-    const [linkOverrides, setLinkOverrides] = useState<Record<string, string>>({});
     const [editingLink, setEditingLink] = useState<string | null>(null); // task key being edited
     const [toast, setToast] = useState<string | null>(null);
         const [toastError, setToastError] = useState(false);
         const toastTimer = useRef<number | null>(null);
         const { hiddenList, hide, unhide, clearAll, canEdit } = useHiddenTasks();
+        // Per-task manual URL override, synced cross-device via Supabase (with a
+        // localStorage fallback). urlFor(key) → the chosen URL, or undefined.
+        const linkOverride = useLinkOverrides();
 
       const showToast = (msg: string, isError = false) => {
         setToast(msg);
@@ -172,13 +173,13 @@ export default function TodayPage() {
       };
 
   /* Resolve the effective "ไปที่ Classroom" URL for the open task:
-       1. manual override (editable by the owner, saved to localStorage) wins,
+       1. manual override (editable by the owner, saved to Supabase + local) wins,
        2. else a deterministic deep-link to the assignment when we know the
           google courseId + workId (courseName + title match from classroom.json),
        3. else the course-level link from course_id_map.json. */
   const taskClassroomLink = (): { href: string; editable: boolean } => {
     if (!detailTask) return { href: "", editable: false };
-    const manual = linkOverrides[detailTask.key];
+    const manual = linkOverride.urlFor(detailTask.key);
     if (manual) return { href: manual, editable: true };
     const nameKey =
       (detailTask.courseName || "").trim() + "\u0001" + (detailTask.title || "").trim();
@@ -195,23 +196,16 @@ export default function TodayPage() {
     if (gid) return { href: `https://classroom.google.com/u/0/c/${gid}`, editable: true };
     return { href: "", editable: false };
   };
-  const saveOverride = (url: string) => {
+  const saveOverride = async (url: string) => {
     if (!detailTask) return;
     const trimmed = (url || "").trim();
-    const next = { ...linkOverrides };
-    if (trimmed && /^https?:\/\//.test(trimmed)) {
-      next[detailTask.key] = trimmed;
-    } else {
-      delete next[detailTask.key];
-    }
-    setLinkOverrides(next);
-    try {
-      window.localStorage.setItem("td_link_overrides", JSON.stringify(next));
-    } catch {
-      /* ignore */
-    }
+    const res = await linkOverride.setOverride(detailTask.key, trimmed);
     setEditingLink(null);
-    showToast(trimmed ? "บันทึกลิงก์แล้ว" : "คืนค่าเริ่มต้นแล้ว");
+    if (res.error) {
+      showToast("บันทึกลิงก์แล้ว (ถ้าไม่เห็นบนมือถือ ให้ล็อกอินเจ้าของก่อน)", true);
+    } else {
+      showToast(trimmed ? "บันทึกลิงก์แล้ว" : "คืนค่าเริ่มต้นแล้ว");
+    }
   };
 
   useEffect(() => {
@@ -303,13 +297,8 @@ export default function TodayPage() {
         /* optional — deep link falls back to course-level link */
       }
     })();
-    // Restore any manual link overrides saved locally for this task.
-    try {
-      const saved = window.localStorage.getItem("td_link_overrides");
-      if (saved) setLinkOverrides(JSON.parse(saved));
-    } catch {
-      /* ignore — private mode etc. */
-    }
+    // Manual URL overrides now come from the useLinkOverrides hook (Supabase
+    // sync + localStorage fallback), so no separate restore is needed here.
   }, []);
   useEffect(() => {
     if (!detailTask) return;
@@ -751,7 +740,7 @@ export default function TodayPage() {
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}>
                       <input
                         type="text"
-                        defaultValue={linkOverrides[detailTask.key] || href}
+                        defaultValue={linkOverride.urlFor(detailTask.key) || href}
                         key={href}
                         placeholder="https://classroom.google.com/..."
                         style={{
@@ -776,7 +765,7 @@ export default function TodayPage() {
                       <button type="button" className="next-go-btn" onClick={() => setEditingLink(null)}>
                         ยกเลิก
                       </button>
-                      {linkOverrides[detailTask.key] && (
+                      {linkOverride.urlFor(detailTask.key) && (
                         <button
                           type="button"
                           className="next-go-btn"

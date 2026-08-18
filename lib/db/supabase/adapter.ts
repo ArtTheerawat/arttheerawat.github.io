@@ -13,6 +13,7 @@ import type {
   Coursework,
   DbUser,
   HiddenTask,
+  LinkOverride,
   PerfDay,
   Signal,
   Trade,
@@ -83,6 +84,16 @@ function rowToHiddenTask(r: HiddenTaskRow): HiddenTask {
     custom: r.custom_reason || undefined,
     hiddenAt: r.hidden_at,
   };
+}
+
+interface LinkOverrideRow {
+  task_key: string;
+  url: string;
+  updated_at: string;
+}
+
+function rowToLinkOverride(r: LinkOverrideRow): LinkOverride {
+  return { key: r.task_key, url: r.url, updatedAt: r.updated_at };
 }
 
 function rowToTrade(r: any): Trade {
@@ -379,6 +390,49 @@ export class SupabaseAdapter implements DatabaseAdapter {
     const { error } = await sb.from("hidden_tasks").delete();
     if (error) {
       console.warn("SupabaseAdapter.clearHiddenTasks:", error.message);
+      return { ok: false, error: error.message };
+    }
+    return { ok: true };
+  }
+
+  async loadLinkOverrides(): Promise<{ ok: boolean; overrides: LinkOverride[]; error?: string }> {
+    const sb = this.client();
+    if (!sb) return { ok: false, overrides: [], error: "Supabase ยังไม่ได้ติดตั้ง" };
+    // classroom_link_overrides isn't in the generated types (migration 0009
+    // pasted via Dashboard), so treat the table as untyped.
+    const { data, error } = await (sb.from("classroom_link_overrides") as any)
+      .select("*")
+      .order("updated_at", { ascending: false });
+    if (error) {
+      // The migration may not have been applied yet — this is a soft failure:
+      // callers fall back to localStorage, so don't spam a hard error.
+      console.warn("SupabaseAdapter.loadLinkOverrides:", error.message);
+      return { ok: true, overrides: [], error: undefined };
+    }
+    return { ok: true, overrides: (data as any[] || []).map(rowToLinkOverride) };
+  }
+
+  async upsertLinkOverride(input: { key: string; url: string }): Promise<{ ok: boolean; error?: string }> {
+    const sb = this.client();
+    if (!sb) return { ok: false, error: "Supabase ยังไม่ได้ติดตั้ง" };
+    const { error } = await (sb.from("classroom_link_overrides") as any)
+      .upsert(
+        { task_key: input.key, url: input.url, updated_at: new Date().toISOString() },
+        { onConflict: "task_key" }
+      );
+    if (error) {
+      console.warn("SupabaseAdapter.upsertLinkOverride:", error.message);
+      return { ok: false, error: error.message };
+    }
+    return { ok: true };
+  }
+
+  async deleteLinkOverride(key: string): Promise<{ ok: boolean; error?: string }> {
+    const sb = this.client();
+    if (!sb) return { ok: false, error: "Supabase ยังไม่ได้ติดตั้ง" };
+    const { error } = await (sb.from("classroom_link_overrides") as any).delete().eq("task_key", key);
+    if (error) {
+      console.warn("SupabaseAdapter.deleteLinkOverride:", error.message);
       return { ok: false, error: error.message };
     }
     return { ok: true };

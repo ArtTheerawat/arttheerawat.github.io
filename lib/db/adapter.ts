@@ -15,6 +15,7 @@ import type {
   CourseGroup,
   DbUser,
   HiddenTask,
+  LinkOverride,
   PerfDay,
   Signal,
   Trade,
@@ -62,6 +63,14 @@ export interface DatabaseAdapter {
 
   /** Subscribes to hidden-task changes. Returns an unsubscribe function. */
   subscribeHiddenTasks?(onChange: HiddenChangeHandler): () => void;
+
+  // ── Classroom link overrides ──────────────────────────────────────────────
+  /** Load the GLOBAL per-assignment link overrides (supabase + localStorage
+   *  fallback merged by the hook; this reads the backend source). */
+  loadLinkOverrides(): Promise<{ ok: boolean; overrides: LinkOverride[]; error?: string }>;
+  /** Record a manual override (owner-only via RLS). Pass url="" to delete. */
+  upsertLinkOverride(input: { key: string; url: string }): Promise<{ ok: boolean; error?: string }>;
+  deleteLinkOverride(key: string): Promise<{ ok: boolean; error?: string }>;
 
   /** Current signed-in session's user id, or null. (Used to satisfy the
    *  NOT NULL user_id column in hidden_tasks; not for identity checks.) */
