@@ -50,6 +50,29 @@ interface AnnouncementRow {
 
 type Client = NonNullable<ReturnType<typeof getSupabaseBrowserClient>>;
 
+/**
+ * Module-level singleton realtime subscription for hidden_tasks.
+ *
+ * Keyed by the SAME underlying supabase client object (NOT by adapter instance).
+ * `useHiddenTasks()` is mounted by several components on one page (the nav
+ * layout's AuthStatus + the page body + ...). Each call creates a fresh
+ * SupabaseAdapter via getDb(), so keying on `this` would never share. supabase-js
+ * CACHES a realtime channel by topic name — if a 2nd caller opens the same
+ * channel and calls .on() AFTER .subscribe(), realtime-js throws
+ * "cannot add `postgres_changes` callbacks ... after `subscribe()`", which is a
+ * client-side exception that crashes the whole Next app. This map guarantees ONE
+ * channel per client, callbacks registered BEFORE subscribe, ref-counted.
+ */
+const subscribeCache = new WeakMap<
+  Client,
+  {
+    sb: Client;
+    listeners: Set<() => void | Promise<void>>;
+    channel: RealtimeChannel | null;
+  }
+>();
+const REALTIME_CHANNEL = "hidden-tasks-realtime-realtime-singleton";
+
 function rowToHiddenTask(r: HiddenTaskRow): HiddenTask {
   return {
     key: r.task_key,
@@ -364,24 +387,58 @@ export class SupabaseAdapter implements DatabaseAdapter {
   subscribeHiddenTasks(onChange: () => void | Promise<void>): () => void {
     const sb = this.client();
     if (!sb) return () => {};
-    let channel: RealtimeChannel | null = null;
-    let disposed = false;
-    const setup = () => {
-      if (disposed || !sb) return;
-      const can = sb.channel("hidden-tasks-realtime").on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "hidden_tasks" },
-        () => {
-          void onChange();
-        }
-      );
-      channel = can;
-      void can.subscribe();
-    };
-    setup();
+
+    // Singleton realtime channel PER supabase client. Multiple components on a
+    // single page all call useHiddenTasks() (the nav layout's AuthStatus + the
+    // page body + ...). supabase-js CACHES a channel by topic name, so a 2nd
+    // caller opening the same channel and calling .on() AFTER .subscribe()
+    // throws "cannot add `postgres_changes` callbacks after `subscribe()`" — a
+    // client-side exception that crashes the whole Next app. Instead: build the
+    // channel exactly once, registering the callback BEFORE subscribe, then
+    // share it. The returned unsub fn ref-counts the shared listener set and
+    // tears down the channel when the last one leaves.
+    let entry = subscribeCache.get(sb);
+    if (!entry) {
+      const listeners = new Set<() => void | Promise<void>>();
+      const entryObj = { sb, listeners, channel: null as RealtimeChannel | null };
+      try {
+        entryObj.channel = sb
+          .channel(REALTIME_CHANNEL)
+          .on(
+            "postgres_changes",
+            { event: "*", schema: "public", table: "hidden_tasks" },
+            () => {
+              listeners.forEach((l) => {
+                try {
+                  void l();
+                } catch {
+                  /* one subscriber's error must not kill the channel */
+                }
+              });
+            }
+          )
+          .subscribe();
+      } catch {
+        // If setup throws (realtime torn down etc.), never crash the app.
+        return () => {};
+      }
+      entry = entryObj;
+      subscribeCache.set(sb, entryObj);
+    }
+    const listeners = entry.listeners;
+    listeners.add(onChange);
     return () => {
-      disposed = true;
-      if (channel && sb) void sb.removeChannel(channel);
+      listeners.delete(onChange);
+      if (listeners.size === 0) {
+        if (entry!.channel) {
+          try {
+            void entry!.sb.removeChannel(entry!.channel);
+          } catch {
+            /* ignore */
+          }
+        }
+        subscribeCache.delete(entry!.sb);
+      }
     };
   }
 
