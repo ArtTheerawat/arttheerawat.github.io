@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-19T06:32:02",
+  "generated_at": "2026-08-19T06:48:03",
   "trades": [],
   "signals": [
     {
@@ -6945,6 +6945,38 @@
       "tp": "",
       "status": "ANALYZED",
       "notes": "Outside active trading session"
+    },
+    {
+      "timestamp": 46253.275034722225,
+      "symbol": "XAUUSDm",
+      "signal": "NONE",
+      "direction": "?",
+      "confidence": "",
+      "d1Trend": "?",
+      "h1Trend": "?",
+      "rsi": 50,
+      "atr": 0,
+      "entryZone": "",
+      "sl": "",
+      "tp": "",
+      "status": "ANALYZED",
+      "notes": "Outside active trading session"
+    },
+    {
+      "timestamp": 46253.27850694444,
+      "symbol": "XAUUSDm",
+      "signal": "NONE",
+      "direction": "?",
+      "confidence": "",
+      "d1Trend": "?",
+      "h1Trend": "?",
+      "rsi": 50,
+      "atr": 0,
+      "entryZone": "",
+      "sl": "",
+      "tp": "",
+      "status": "ANALYZED",
+      "notes": "Outside active trading session"
     }
   ],
   "perf": [],
@@ -6974,6 +7006,6 @@
       },
       "updated_at": "2026-08-18T15:34:37"
     },
-    "updated_at": "2026-08-19T06:32:02"
+    "updated_at": "2026-08-19T06:48:03"
   }
 }
