@@ -9,6 +9,8 @@ import {
   HideButton,
   hiddenReasonText,
 } from "@/components/HiddenTasks";
+import NextActionCard from "@/components/NextActionCard";
+import { computeNextAction } from "@/lib/priority";
 
 interface Assignment {
   title?: string;
@@ -238,20 +240,22 @@ export default function TodayPage() {
     /* Today's timeline: recurring classes + makeup sessions, merged in time order. */
     const timelineRows = useMemo(() => buildTimeline(todayIdxBKK(), todayStr()), [today]);
 
-    /* Heuristic "next" (used only when the AI brief isn't available) — same rule
-         as Home: due-today first, then longest-overdue, else nearest soon. */
-      const heuristicNext = useMemo(() => {
-        if (aiBrief) return null;
-        const pick =
-          tod[0] ||
-          over.slice().sort((p, q) => ((q.due || "") < (p.due || "") ? -1 : 1))[0] ||
-          soon.slice().sort((p, q) => ((p.due || "") < (q.due || "") ? -1 : 1))[0] ||
-          ([...over, ...tod, ...soon][0] || null);
-        return pick;
-      }, [aiBrief, over, tod, soon]);
+    /* Deterministic Priority / Next-Action engine (lib/priority.ts) — the source
+             of truth for "what to do right now", computed in code with NO AI (replaces
+             the old deadline-bucket heuristic). Time-availability reads today's weekly
+             classes + makeup. `visible` is already hidden-filtered, so we don't
+             re-filter here. */
+          const engineSessions = useMemo(
+            () => [...SCHEDULE, ...MAKEUP] as { day?: number; date?: string; start?: number; end?: number; code?: string }[],
+            []
+          );
+          const engine = useMemo(
+            () => computeNextAction(visible, quizzes, engineSessions, undefined),
+            [visible, quizzes, engineSessions]
+          );
 
-      /* Filter hidden tasks out of the AI brief (shared logic — see
-           filterVisibleBriefItems in lib/hidden-tasks.ts). */
+          /* Filter hidden tasks out of the AI brief (shared logic — see
+              filterVisibleBriefItems in lib/hidden-tasks.ts). */
         const aiVisibleItems = useMemo(
           () => (aiBrief ? filterVisibleBriefItems(aiBrief.items, hiddenList) : []),
           [aiBrief, hiddenList]
@@ -393,48 +397,15 @@ export default function TodayPage() {
                     )}
                   </section>
 
-                  {/* ── AI NEXT ACTION (brief from next_action.json, else heuristic) ── */}
-                        {aiBrief && aiVisibleItems.length > 0 ? (
-                          <section className={`next-card ${aiVisibleItems[0]?.why?.includes("เลย") ? "is-over" : aiVisibleItems[0]?.dueLabel?.includes("วันนี้") ? "is-today" : "is-soon"}`}>
-                            <div className="next-badge">⚡ ควรทำตอนนี้</div>
-                            <div className="next-body">
-                              {aiBrief.brief && <div className="next-brief-line">{aiBrief.brief}</div>}
-                              <ol className="next-ai-list">
-                                {aiVisibleItems.map((it, j) => (
-                                  <li key={j} className={j === 0 ? "top" : ""}>
-                                    <div className="nai-head">
-                                      <span className="nai-rank">{j === 0 ? "ตอนนี้" : `ถัดไป ${j}`}</span>
-                                      <span className="nai-title">{it.title}</span>
-                                    </div>
-                                    <div className="nai-meta">
-                                      {it.course && <span className="nai-course">{it.course}</span>}
-                                      {it.dueLabel && <span>⏰ {it.dueLabel}</span>}
-                                      {it.effort_hr && <span>⏱ {it.effort_hr}</span>}
-                                    </div>
-                                    {it.why && <div className="nai-why">💡 {it.why}</div>}
-                                  </li>
-                                ))}
-                              </ol>
-                            </div>
-                          </section>
-                        ) : heuristicNext ? (
-                    <section className="next-card">
-                      <div className="next-badge">
-                        {heuristicNext.bucket === "over"
-                          ? "เลยกำหนด"
-                          : heuristicNext.bucket === "today"
-                          ? "ครบวันนี้"
-                          : "ต่อไป"}
-                      </div>
-                      <div className="next-body">
-                        <div className="next-subj">{heuristicNext.courseName || heuristicNext.course || ""}</div>
-                        <div className="next-ttl">{heuristicNext.title || "งาน"}</div>
-                        <div className="next-meta">
-                          {heuristicNext.due && <span>⏰ {fmtDate(heuristicNext.due)}</span>}
+                  {/* ── NEXT ACTION (deterministic Priority Engine — no AI) ──
+                        The old AI morning brief (when fresh) is kept as a thin
+                        additive summary strip — it no longer decides priority. */}
+                      {aiBrief && aiVisibleItems.length > 0 && (
+                        <div className="next-brief-line" style={{ marginBottom: 6 }}>
+                          🧠 {aiBrief.brief || "สรุปวันนี้"}{aiBrief.model ? ` · (${aiBrief.model})` : ""}
                         </div>
-                      </div>
-                    </section>
-                  ) : null}
+                      )}
+                      <NextActionCard result={engine} detailHref="/today" detailLabel="ดูรายละเอียด →" />
 
                         {/* Counts only make sense once data arrived — during load they
                                        would show a misleading 0 for everything (false affordance). */}

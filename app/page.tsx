@@ -3,10 +3,12 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ListTodo, CalendarDays, CandlestickChart, Headphones, Zap, type LucideIcon } from "lucide-react";
-import { classifyAssignment, dataUrl, fmtDate, fmtMoney, nowBKKHour, todayIdxBKK, todayLabelBKK, todayStr, type Bucket } from "@/lib/data";
-import { SCHEDULE, COURSES } from "@/lib/schedule-data";
+import { classifyAssignment, dataUrl, dueDiffDays, fmtMoney, nowBKKHour, todayIdxBKK, todayLabelBKK, todayStr, type Bucket } from "@/lib/data";
+import { SCHEDULE, COURSES, MAKEUP } from "@/lib/schedule-data";
 import { filterVisibleBriefItems, useHiddenTasks } from "@/lib/hidden-tasks";
 import { HideButton } from "@/components/HiddenTasks";
+import NextActionCard from "@/components/NextActionCard";
+import { computeNextAction, type PriorityTask } from "@/lib/priority";
 
 /* ── Quick-access tiles ──
    Split into PRIMARY (study-critical: tasks + schedule — surface first and
@@ -120,8 +122,19 @@ function timeAgoOr(iso: string | undefined): string {
   if (mins < 60) return `${mins} นาทีที่แล้ว`;
   return `${Math.floor(mins / 60)} ชม.ที่แล้ว`;
 }
-function fmtDue(iso?: string): string {
-  return fmtDate(iso);
+/** Convert a PriorityTask into the Home page's Assignment shape so the shared
+ *  HideButton can act on the deterministic next-action pick. */
+function asHideAssignment(p: PriorityTask): Assignment {
+  const daysAway = p.due ? dueDiffDays(p.due) : null;
+  return {
+    title: p.title,
+    course: p.course,
+    courseName: p.courseName,
+    due: p.due,
+    bucket: (p.bucket || "no_due") as Bucket,
+    overdue: p.bucket === "over" ? 1 : 0,
+    daysAway: daysAway !== null && daysAway >= 0 ? daysAway : undefined,
+  };
 }
 
 export default function HomePage() {
@@ -129,7 +142,8 @@ export default function HomePage() {
   const [usageErr, setUsageErr] = useState<string | null>(null);
   const [usageLoading, setUsageLoading] = useState<boolean>(true); // true until first result
   const [assign, setAssign] = useState<Assignment[]>([]);
-      const [aiBrief, setAiBrief] = useState<NextActionBrief | null>(null);
+        const [quizzes, setQuizzes] = useState<{ date?: string; summary?: string }[]>([]);
+        const [aiBrief, setAiBrief] = useState<NextActionBrief | null>(null);
       const [toast, setToast] = useState<string | null>(null);
     const toastTimer = useRef<number | null>(null);
     const { hiddenList, hide, canEdit } = useHiddenTasks();
@@ -197,18 +211,25 @@ export default function HomePage() {
       }
     }, []);
 
-  /* Load today's assignments */
-    const loadAssign = useCallback(async () => {
-      try {
-        const r = await fetch(dataUrl("/data/assignments.json"), { cache: "no-store" });
-        if (r.ok) {
-          const j = await r.json();
-          setAssign((j.todo || []).map((a: Assignment) => ({ ...a })));
+  /* Load today's assignments + schedule quizzes (for the priority engine) */
+      const loadAssign = useCallback(async () => {
+        try {
+          const [r, s] = await Promise.all([
+            fetch(dataUrl("/data/assignments.json"), { cache: "no-store" }),
+            fetch(dataUrl("/data/schedule.json"), { cache: "no-store" }),
+          ]);
+          if (r.ok) {
+            const j = await r.json();
+            setAssign((j.todo || []).map((a: Assignment) => ({ ...a })));
+          }
+          if (s.ok) {
+            const sj = await s.json();
+            setQuizzes((sj.quizzes || []).map((q: { date?: string; summary?: string }) => ({ ...q })));
+          }
+        } catch {
+          /* assignments optional on home — don't break hero */
         }
-      } catch {
-        /* assignments optional on home — don't break hero */
-      }
-    }, []);
+      }, []);
 
     /* Load the AI NEXT-ACTION brief. Optional — the page falls back to the
        client-side heuristic (stats.next) when the file is absent or stale. A brief
@@ -259,7 +280,24 @@ export default function HomePage() {
         soon.slice().sort((p, q) => ((p.due || "") < (q.due || "") ? -1 : 1))[0] ||
         ([...over, ...tod, ...soon][0] || null);
       return { over, tod, soon, next };
-          }, [assign, hiddenList]);
+                }, [assign, hiddenList]);
+
+            /* Deterministic Priority / Next-Action engine (lib/priority.ts).
+               Replaces the crude "nearest deadline" heuristic as the source of truth
+               for the next-action card (Home + /today share this exact computation).
+               Time-availability uses today's weekly classes + makeup sessions. */
+            const sessions = useMemo(
+              () => [...SCHEDULE, ...MAKEUP] as { day?: number; date?: string; start?: number; end?: number; code?: string }[],
+              []
+            );
+            const hiddenFilter = useMemo<(k: string) => boolean>(
+              () => (k: string) => hiddenList.some((h) => h.key === k),
+              [hiddenList]
+            );
+            const engine = useMemo(
+                    () => computeNextAction(assign, quizzes, sessions, hiddenFilter),
+                    [assign, quizzes, sessions, hiddenFilter]
+                  );
 
           /* Filter hidden tasks out of the AI next-brief. The brief (next_action.json)
              is written by a morning cron that has no knowledge of the hidden_tasks set,
@@ -319,83 +357,51 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── Next action (most important piece) ── */}
-            {aiBrief && aiVisibleItems.length > 0 ? (
-              <section className={`next-card ${aiVisibleItems[0]?.why?.includes("เลย") ? "is-over" : aiVisibleItems[0]?.dueLabel?.includes("วันนี้") ? "is-today" : "is-soon"}`}>
-                <div>
-                  <div className="next-badge">⚡ ควรทำตอนนี้</div>
-                  <div className="next-brief-sub">{aiBrief.day_label || "ประจำวันนี้"} · {aiVisibleItems.length} อันดับ{aiBrief.model ? ` · ${aiBrief.model}` : ""}</div>
-                </div>
-                <div className="next-body">
-                  {aiBrief.brief && <div className="next-brief-line">{aiBrief.brief}</div>}
-                  <ol className="next-ai-list">
-                    {aiVisibleItems.map((it, i) => (
-                      <li key={i} className={i === 0 ? "top" : ""}>
-                        <div className="nai-head">
-                          <span className="nai-rank">{i === 0 ? "ตอนนี้" : `ถัดไป ${i}`}</span>
-                          <span className="nai-title">{it.title}</span>
-                          <span className="nai-go">
-                            <Link href="/today">→</Link>
-                          </span>
-                        </div>
-                        <div className="nai-meta">
-                          {it.course && <span className="nai-course">{it.course}</span>}
-                          {it.dueLabel && <span>⏰ {it.dueLabel}</span>}
-                          {it.effort_hr && <span>⏱ {it.effort_hr}</span>}
-                        </div>
-                        {it.why && <div className="nai-why">💡 {it.why}</div>}
-                      </li>
-                    ))}
-                  </ol>
-                  <div className="next-meta">
-                    <span className="next-go"><Link href="/today">ดูรายละเอียด →</Link></span>
+      {/* ── Next action (most important piece) ──
+                Source of truth = deterministic Priority Engine (lib/priority.ts),
+                computed in code, no AI. The old AI morning brief (when present &
+                fresh) is kept as a thin additive summary strip on top — it never
+                decides priority anymore. */}
+            {aiBrief && aiVisibleItems.length > 0 && (
+              <div className="next-brief-line" style={{ marginBottom: 6 }}>
+                🧠 {aiBrief.brief || "สรุปวันนี้"}{aiBrief.model ? ` · (${aiBrief.model})` : ""}
+              </div>
+            )}
+            <NextActionCard
+              result={engine}
+              detailHref="/today"
+              detailLabel="ดูรายละเอียด →"
+            />
+            {engine.state === "action" && engine.ranked.length > 1 && (
+              <div style={{ marginTop: -6 }}>
+                {engine.ranked.slice(0, 3).map((p, i) => (
+                  <div className="prio-rank" key={p.key}>
+                    <div className="prio-rank-head">
+                      <span className={"prio-dot " + (p.level === "HIGH" ? "prio-high" : p.level === "MEDIUM" ? "prio-med" : "prio-low")} />
+                      <span className="prio-rank-num">{i === 0 ? "ตอนนี้" : `ถัดไป ${i + 1}`}</span>
+                      <span className="prio-rank-title">{p.title}</span>
+                      {i === 0 ? (
+                        <HideButton
+                          compact
+                          canEdit={canEdit}
+                          assignment={asHideAssignment(p)}
+                          onHide={async (r, c) => {
+                            const ok = await hide(asHideAssignment(p), r, c);
+                            if (ok) showToast(`ซ่อน "${p.title}" แล้ว 🙈`);
+                          }}
+                        />
+                      ) : null}
+                    </div>
+                    <div className="prio-rank-meta">
+                      <span className="prio-course">{p.courseName || p.course}</span>
+                      {p.dueLabel && <span>⏰ {p.dueLabel}</span>}
+                      {p.recommendedStart && <span>🕐 {p.recommendedStart}</span>}
+                    </div>
+                    {p.reasons.length > 0 && <div className="prio-reasons">💡 {p.reasons.join(" · ")}</div>}
                   </div>
-                </div>
-              </section>
-            ) : stats.next ? (
-        <section className={`next-card ${stats.next.bucket === "over" ? "is-over" : stats.next.bucket === "today" ? "is-today" : "is-soon"}`}>
-          <div className="next-badge">
-                      {stats.next.bucket === "over"
-                        ? "เลยกำหนด"
-                        : stats.next.bucket === "today"
-                        ? "ครบวันนี้"
-                        : "ต่อไป"}
-          </div>
-          <div className="next-body">
-                        <div className="next-subj">{stats.next.courseName || stats.next.course || ""}</div>
-                        <div className="next-ttl" style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-                          <span style={{ minWidth: 0 }}>{stats.next.title || "งาน"}</span>
-                          <HideButton
-                                                                              compact
-                                                                              canEdit={canEdit}
-                                                                              assignment={stats.next}
-                                                                              onHide={async (r, c) => {
-                                                                                    const ok = await hide(stats.next, r, c);
-                                                                                    if (ok) showToast(`ซ่อน "${stats.next.title}" แล้ว 🙈`);
-                                                                                  }}
-                                                    />
-                        </div>
-                        <div className="next-meta">
-                          {stats.next.due && <span>⏰ {fmtDue(stats.next.due)}</span>}
-                          <span className="next-go">
-                            <Link href="/today">ดูรายละเอียด →</Link>
-                          </span>
-                        </div>
-                      </div>
-        </section>
-      ) : (
-        <section className="next-card empty">
-          <div className="next-badge">ชิล ๆ</div>
-          <div className="next-body">
-            <div className="next-ttl" style={{ fontSize: 15 }}>วันนี้ไม่มีงานค้าง / ครบส่ง</div>
-            <div className="next-meta">
-              <span className="next-go">
-                <Link href="/today">ดูงานหน้าต่อไป →</Link>
-              </span>
-            </div>
-          </div>
-        </section>
-      )}
+                ))}
+              </div>
+            )}
 
       {/* ── Today's classes preview ── */}
       {todayClasses.length > 0 && (
