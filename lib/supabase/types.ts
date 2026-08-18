@@ -120,6 +120,44 @@ export interface Database {
         Update: Record<string, unknown>;
         Relationships: [];
       };
+      classroom_tasks: {
+        Row: {
+          id: number;
+          task_key: string;
+          course_name: string | null;
+          course_id: string | null;
+          title: string | null;
+          due: string | null;
+          due_time: string | null;
+          state: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Record<string, unknown>;
+        Update: Record<string, unknown>;
+        Relationships: [];
+      };
+      classroom_announcements: {
+        Row: {
+          id: number;
+          ann_key: string;
+          course_name: string | null;
+          course_id: string | null;
+          text: string | null;
+          time: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Record<string, unknown>;
+        Update: Record<string, unknown>;
+        Relationships: [];
+      };
+      classroom_meta: {
+        Row: { id: number; key: string; value: string | null; created_at: string; updated_at: string };
+        Insert: Record<string, unknown>;
+        Update: Record<string, unknown>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;
