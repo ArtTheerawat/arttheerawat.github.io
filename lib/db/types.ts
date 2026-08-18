@@ -53,6 +53,8 @@ export interface Coursework {
   id?: string;
   courseName?: string;
   courseId?: string;
+  /** True when the assignment has already been turned in (TURNED_IN/RETURNED). */
+  submitted?: boolean;
 }
 
 /** A classroom announcement row. */

@@ -11,6 +11,8 @@ import {
 } from "@/lib/data";
 import type { Coursework, Announcement } from "@/lib/db/types";
 import { loadClassroom } from "@/lib/services/classroom-service";
+import { useHiddenTasks, type Hiddenable } from "@/lib/hidden-tasks";
+import { HideButton } from "@/components/HiddenTasks";
 
 interface Course {
   name?: string;
@@ -21,6 +23,8 @@ interface Course {
 
 interface FlatTask extends Coursework {
   courseName: string;
+  /** Course code/name used as the hide-task key (matches Hiddenable.course). */
+  course?: string;
   bucket?: Bucket;
   overdue?: number;
   daysAway?: number;
@@ -43,6 +47,25 @@ export default function ClassroomPage() {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [showLater, setShowLater] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+  const [msgErr, setMsgErr] = useState(false);
+
+  // Global hidden-task set (shared with Home//today//schedule). Gives the page
+  // the "ซ่อนงานนี้?" button (teacher set wrong due / already submitted, etc.)
+  // and cross-device persistence via Supabase.
+  const { hiddenList, hide, canEdit } = useHiddenTasks();
+
+  const handleHide = (a: Hiddenable, reason: string, custom?: string) => {
+    hide(a, reason, custom).then((res) => {
+      setMsgErr(!res.ok);
+      setMsg(
+        res.ok
+          ? `ซ่อน "${a.title}" แล้ว 🙈`
+          : `ซ่อนไม่สำเร็จ — ${res.error || "ยังไม่มีสิทธิ์ (ต้องการบัญชีเจ้าของ theerawat.numtang@gmail.com)"}`
+      );
+      window.setTimeout(() => setMsg(null), 2600);
+    });
+  };
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -74,7 +97,7 @@ export default function ClassroomPage() {
     for (const c of courses) {
       const cname = c.name || c.id || "";
       for (const cw of c.coursework || []) {
-        const t: FlatTask = { ...cw, courseName: cname };
+        const t: FlatTask = { ...cw, courseName: cname, course: cname, courseId: c.id };
         classifyAssignment(t);
         out.push(t);
       }
@@ -82,7 +105,20 @@ export default function ClassroomPage() {
     return out;
   }, [courses]);
 
-  const visible = useMemo(() => all.filter((a) => a.state !== "DRAFT"), [all]);
+  // Drop un-published, tasks the user already hidden, and tasks already turned
+  // in (a completed assignment is not something to remind about — before this
+  // the page showed "ส่งแล้ว" work as still pending because classroom_sync.py
+  // never fetched submission state).
+  const visible = useMemo(
+    () =>
+      all.filter((a) => {
+        if (a.state === "DRAFT") return false;
+        const key = (a.course || "") + "|" + (a.title || "") + "|" + (a.due || "");
+        if (hiddenList.some((h) => h.key === key)) return false;
+        return !a.submitted; // hide already-turned-in work from pending buckets
+      }),
+    [all, hiddenList]
+  );
 
   const buckets = useMemo(() => {
     const map: Record<string, FlatTask[]> = { over: [], today: [], soon: [], later: [], no_due: [] };
@@ -117,7 +153,14 @@ export default function ClassroomPage() {
                 <span>⏰ {fmtDate(a.due)}</span>
                 {a.dueTime && <span>· {a.dueTime}</span>}
               </div>
-              <div className="ttl">{a.title}</div>
+              <div className="ttl" style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "center" }}>
+                <span style={{ minWidth: 0 }}>{a.title}</span>
+                <HideButton
+                  assignment={a}
+                  canEdit={canEdit}
+                  onHide={(r, c) => handleHide(a, r, c)}
+                />
+              </div>
               <div className="subj">{a.courseName}</div>
             </div>
           );
@@ -138,6 +181,12 @@ export default function ClassroomPage() {
         </div>
         {synced && <div style={{ fontSize: 12, color: "var(--muted)" }}>ซิงก์ {fmtSync(synced)}</div>}
       </header>
+
+      {msg && (
+        <div className={msgErr ? "hide-toast err-toast" : "hide-toast"} role="status" aria-live="polite">
+          {msg}
+        </div>
+      )}
 
       {err && <div className="err">⚠ {err}</div>}
       {loading && !err && (
@@ -191,7 +240,14 @@ export default function ClassroomPage() {
                           <span className="badge b-soon">ครบใน {d} วัน</span>
                           <span>⏰ {fmtDate(a.due)}</span>
                         </div>
-                        <div className="ttl">{a.title}</div>
+                        <div className="ttl" style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "center" }}>
+                          <span style={{ minWidth: 0 }}>{a.title}</span>
+                          <HideButton
+                            assignment={a}
+                            canEdit={canEdit}
+                            onHide={(r, c) => handleHide(a, r, c)}
+                          />
+                        </div>
                         <div className="subj">{a.courseName}</div>
                       </div>
                     );

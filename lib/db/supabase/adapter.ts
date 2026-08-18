@@ -40,6 +40,8 @@ interface ClassroomTaskRow {
   due: string | null;
   due_time: string | null;
   state: string | null;
+  /** Present once migration 0011 (classroom_tasks.submitted) is applied. */
+  submitted?: boolean | null;
 }
 
 interface AnnouncementRow {
@@ -156,6 +158,7 @@ function rowToCoursework(r: ClassroomTaskRow): Coursework {
     id: r.task_key || undefined,
     courseName: r.course_name || undefined,
     courseId: r.course_id || undefined,
+    submitted: r.submitted ?? undefined,
   };
 }
 

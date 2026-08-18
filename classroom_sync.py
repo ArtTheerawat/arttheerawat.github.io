@@ -65,6 +65,18 @@ def fetch_classroom():
                 if d.get("year") and d.get("month") and d.get("day"):
                     due = f"{d['year']:04d}-{d['month']:02d}-{d['day']:02d}"
                 t = it.get("dueTime") or {}
+                # Per-student submission state -> does the owner already have a
+                # turn-in for this work? Used to hide "done" work from the page's
+                # pending buckets and to tag it "ส่งแล้ว ✅". Mirrors what
+                # school_sync.py does for assignments.json.
+                submitted = False
+                try:
+                    subs = svc.courses().courseWork().studentSubmissions().list(
+                        courseId=cid, courseWorkId=it["id"]).execute().get("studentSubmissions", [])
+                    s = subs[0].get("state") if subs else None
+                    submitted = s in ("TURNED_IN", "RETURNED")
+                except Exception as se:
+                    print(f"  [warn] submissions skip {cid}/{it.get('id')}: {str(se)[:80]}")
                 tasks.append({
                     "task_key": str(it.get("id")),
                     "course_name": cname,
@@ -73,6 +85,7 @@ def fetch_classroom():
                     "due": due,
                     "due_time": f"{t.get('hours',0):02d}:{t.get('minutes',0):02d}" if t else None,
                     "state": it.get("state"),
+                    "submitted": submitted,
                 })
         except Exception as e:
             print(f"  [warn] coursework skip {cid}: {str(e)[:80]}")
@@ -116,13 +129,36 @@ def _supa(method, path, payload=None, on_conflict=None):
     return r
 
 
+# Does classroom_tasks have the `submitted` column yet? (migration 0011).
+# Cached per process run so we only probe once.
+_HAS_SUBMITTED = None
+
+
+def _has_submitted_col():
+    global _HAS_SUBMITTED
+    if _HAS_SUBMITTED is not None:
+        return _HAS_SUBMITTED
+    try:
+        _supa("GET", "classroom_tasks?select=submitted&limit=1")
+        _HAS_SUBMITTED = True
+    except RuntimeError as e:
+        # PGRST204 = unknown column -> not migrated yet
+        _HAS_SUBMITTED = "PGRST204" in str(e) or "Could not find" in str(e)
+    return bool(_HAS_SUBMITTED)
+
+
 def _supa_upsert(tasks, anns):
     if not (SUPA_URL and SUPA_KEY):
         print("  (Supabase creds missing — skip Supabase, json fallback only)")
         return 0
     n = 0
     if tasks:
-        _supa("POST", "classroom_tasks", tasks, on_conflict="task_key")
+        clean_tasks = tasks
+        if not _has_submitted_col():
+            # Migration 0011 not applied yet — drop the new column so the upsert
+            # doesn't 400 (the field still flows into the static JSON fallback).
+            clean_tasks = [{k: v for k, v in t.items() if k != "submitted"} for t in tasks]
+        _supa("POST", "classroom_tasks", clean_tasks, on_conflict="task_key")
         n += len(tasks)
     if anns:
         _supa("POST", "classroom_announcements", anns, on_conflict="ann_key")
@@ -219,6 +255,7 @@ def _courses_json_from_tasks(tasks, anns):
         names[t["course_id"]]["coursework"].append({
             "title": t["title"], "due": t["due"], "dueTime": t["due_time"],
             "state": t["state"], "id": t["task_key"],
+            "submitted": t.get("submitted", False),
         })
     return list(names.values())
 
