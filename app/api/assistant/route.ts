@@ -33,16 +33,60 @@ function readJson<T>(p: string): T | null {
   }
 }
 
-function loadAssistantData(): AssistantData {
+// Stable task key for hidden-set matching (mirrors lib/hidden-tasks.ts taskKey:
+// course | title | due). Center on the same source of truth the app uses.
+function taskKey(course: string | undefined, title: string | undefined, due: string | null | undefined): string {
+  return [(course || "").trim(), (title || "").trim(), (due || "").trim()].join("|");
+}
+
+// Reads `hidden_tasks` via the SAME server Supabase client the auth gate uses.
+// The hidden set is GLOBAL (public read RLS), so no session is needed to read
+// it. Best-effort: if the fetch fails the route must not crash — hidden tasks
+// simply won't be filtered (matches the app's resilience posture).
+async function loadHiddenKeys(): Promise<Set<string>> {
+  const keys = new Set<string>();
+  try {
+    const sb = getSupabaseServerClient();
+    const { data, error } = await sb.from("hidden_tasks").select("task_key");
+    if (error) {
+      console.warn("assistant: loadHiddenTasks failed", error.message);
+      return keys;
+    }
+    for (const row of data || []) {
+      if (row?.task_key) keys.add(row.task_key);
+    }
+  } catch (e) {
+    console.warn("assistant: loadHiddenTasks threw", e instanceof Error ? e.message : String(e));
+  }
+  return keys;
+}
+
+async function loadAssistantData(): Promise<AssistantData> {
   const assign = readJson<any>("assignments.json");
   const schedule = readJson<any>("schedule.json");
   const classroom = readJson<any>("classroom.json");
+
+  const hiddenKeys = await loadHiddenKeys();
+  const isHidden = (a: any) =>
+    hiddenKeys.has(taskKey(a?.course, a?.title, a?.due));
+
+  const todo = (assign?.todo || [])
+    .filter((a: any) => !isHidden(a))
+    .map((a: any) => ({
+      title: a?.title,
+      course: a?.course,
+      courseName: a?.courseName,
+      due: a?.due ?? null,
+      workType: a?.workType,
+      points: a?.points ?? null,
+    }));
 
   const courseworkByCourse: Record<string, { title?: string; due?: string; dueTime?: string; state?: string }[]> = {};
   for (const c of classroom?.courses || []) {
     const key = c?.name || c?.id || "";
     if (!key || !Array.isArray(c?.coursework)) continue;
-    courseworkByCourse[key] = c.coursework.map((w: any) => ({
+    const visible = (c.coursework as any[]).filter((w: any) => !isHidden(w));
+    courseworkByCourse[key] = visible.map((w: any) => ({
       title: w?.title,
       due: w?.due,
       dueTime: w?.dueTime,
@@ -51,14 +95,7 @@ function loadAssistantData(): AssistantData {
   }
 
   return {
-    todo: (assign?.todo || []).map((a: any) => ({
-      title: a?.title,
-      course: a?.course,
-      courseName: a?.courseName,
-      due: a?.due ?? null,
-      workType: a?.workType,
-      points: a?.points ?? null,
-    })),
+    todo,
     quizzes: (schedule?.quizzes || []).map((q: any) => ({ date: q?.date, summary: q?.summary })),
     courseNames: assign?.courseNames || {},
     courseworkByCourse,
@@ -147,7 +184,7 @@ export async function POST(req: Request) {
   }
 
   // 3) Intent routing → build compact context from REAL data.
-  const data = loadAssistantData();
+  const data = await loadAssistantData();
   const { intent, term } = detectIntent(rawQ);
   const context = buildContext(intent, term, data);
 
