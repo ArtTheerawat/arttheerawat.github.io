@@ -636,3 +636,29 @@ table.sched td.cl.overlay .cl-btn{font-style:italic}
 .gs-footer{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:9px 16px; border-top:1px solid var(--border); color:var(--muted); font-size:11px}
 .gs-footer-hint{display:inline-flex; align-items:center; gap:4px}
 .gs-footer-ico{width:12px; height:12px}
+
+/* ── AI Study Assistant (SYSTEM 8) ── */
+.assistant-wrap{display:flex; flex-direction:column; gap:14px}
+.assistant-quick{display:flex; gap:8px; flex-wrap:wrap}
+.assistant-chip{background:var(--card2); border:1px solid var(--border); color:var(--txt); font:inherit; font-size:12.5px; font-weight:600; padding:8px 14px; border-radius:999px; cursor:pointer; transition:.12s}
+.assistant-chip:hover{border-color:var(--accent); filter:brightness(1.12)}
+.assistant-chip:disabled{opacity:.5; cursor:not-allowed}
+.assistant-chat{display:flex; flex-direction:column; gap:10px; max-height:60vh; overflow-y:auto; padding:16px; background:var(--card); border:1px solid var(--border); border-radius:14px}
+.assistant-msg{display:flex}
+.assistant-msg.user{justify-content:flex-end}
+.assistant-msg.ai{justify-content:flex-start}
+.assistant-msg .bubble{max-width:82%; padding:10px 14px; border-radius:14px; font-size:13.5px; line-height:1.55; white-space:pre-wrap; word-break:break-word}
+.assistant-msg.user .bubble{background:var(--accent); color:#fff; border-bottom-right-radius:4px}
+.assistant-msg.ai .bubble{background:var(--card2); border:1px solid var(--border); border-bottom-left-radius:4px}
+.assistant-msg.ai .typing{color:var(--muted)}
+.assistant-input{display:flex; gap:8px}
+.assistant-input input{flex:1; min-width:0; background:var(--card); border:1px solid var(--border); color:var(--txt); font:inherit; font-size:14px; padding:11px 14px; border-radius:12px; outline:none}
+.assistant-input input:focus{border-color:var(--accent)}
+.assistant-input input::placeholder{color:var(--muted)}
+.assistant-input button{flex:none; background:var(--accent); border:none; color:#fff; font:inherit; font-size:13.5px; font-weight:700; padding:0 18px; border-radius:12px; cursor:pointer}
+.assistant-input button:hover{filter:brightness(1.1)}
+.assistant-input button:disabled{opacity:.5; cursor:not-allowed}
+@media(max-width:560px){
+  .assistant-chat{max-height:52vh}
+  .assistant-msg .bubble{max-width:92%}
+}

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Layers, ListTodo, CalendarDays, CandlestickChart, Headphones, BookOpen, Activity, type LucideIcon } from "lucide-react";
+import { Layers, ListTodo, CalendarDays, CandlestickChart, Headphones, BookOpen, Activity, Bot, type LucideIcon } from "lucide-react";
 import AuthStatus from "./AuthStatus";
 import NotificationCenter from "./NotificationCenter";
 import GlobalSearch from "./GlobalSearch";
@@ -13,6 +13,7 @@ const LINKS: NavLink[] = [
   { href: "/", label: "TheeDeck", Icon: Layers },
   { href: "/today", label: "งานวันนี้", Icon: ListTodo },
   { href: "/classroom", label: "คลาสรูม", Icon: BookOpen },
+  { href: "/assistant", label: "ผู้ช่วย", Icon: Bot },
   { href: "/schedule", label: "ตาราง", Icon: CalendarDays },
   { href: "/trading", label: "เทรด", Icon: CandlestickChart },
   { href: "/dictation", label: "ฝึกฟัง", Icon: Headphones },
