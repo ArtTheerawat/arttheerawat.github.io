@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-18T09:42:49",
+  "generated_at": "2026-08-18T09:58:49",
   "trades": [],
   "signals": [
     {
@@ -6129,6 +6129,54 @@
       "tp": "",
       "status": "ANALYZED",
       "notes": "scalp: no RSI-overextension at EMA20"
+    },
+    {
+      "timestamp": 46252.40681712963,
+      "symbol": "XAUUSDm",
+      "signal": "NONE",
+      "direction": "?",
+      "confidence": "",
+      "d1Trend": "-",
+      "h1Trend": "-",
+      "rsi": 31.3,
+      "atr": 17.16,
+      "entryZone": "",
+      "sl": "",
+      "tp": "",
+      "status": "ANALYZED",
+      "notes": "scalp: no RSI-overextension at EMA20"
+    },
+    {
+      "timestamp": 46252.41030092593,
+      "symbol": "XAUUSDm",
+      "signal": "NONE",
+      "direction": "?",
+      "confidence": "",
+      "d1Trend": "-",
+      "h1Trend": "-",
+      "rsi": 33.1,
+      "atr": 17.16,
+      "entryZone": "",
+      "sl": "",
+      "tp": "",
+      "status": "ANALYZED",
+      "notes": "scalp: no RSI-overextension at EMA20"
+    },
+    {
+      "timestamp": 46252.413773148146,
+      "symbol": "XAUUSDm",
+      "signal": "NONE",
+      "direction": "?",
+      "confidence": "",
+      "d1Trend": "-",
+      "h1Trend": "-",
+      "rsi": 35,
+      "atr": 17.16,
+      "entryZone": "",
+      "sl": "",
+      "tp": "",
+      "status": "ANALYZED",
+      "notes": "scalp: no RSI-overextension at EMA20"
     }
   ],
   "perf": [],
@@ -6151,6 +6199,6 @@
       },
       "updated_at": "2026-08-17T17:10:48"
     },
-    "updated_at": "2026-08-18T09:42:49"
+    "updated_at": "2026-08-18T09:58:49"
   }
 }
