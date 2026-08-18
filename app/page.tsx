@@ -69,6 +69,20 @@ interface Assignment {
   daysAway?: number;
 }
 
+/* AI-generated NEXT ACTION brief (from generate_next_action.py). */
+interface NextActionItem {
+  title?: string;
+  course?: string;
+  dueLabel?: string;
+  effort_hr?: string;
+  why?: string;
+}
+interface NextActionBrief {
+  generated_at?: string;
+  brief?: string;
+  items?: NextActionItem[];
+}
+
 /** 2 fixed 9arm model slots shown on the card (keep even if a model is unused). */
 const NINE_MODELS: { id: string; label: string }[] = [
   { id: "qwen3.8-27b-fp8", label: "qwen3.8-27b-fp8" },
@@ -113,7 +127,8 @@ export default function HomePage() {
   const [usageErr, setUsageErr] = useState<string | null>(null);
   const [usageLoading, setUsageLoading] = useState<boolean>(true); // true until first result
   const [assign, setAssign] = useState<Assignment[]>([]);
-    const [toast, setToast] = useState<string | null>(null);
+      const [aiBrief, setAiBrief] = useState<NextActionBrief | null>(null);
+      const [toast, setToast] = useState<string | null>(null);
     const toastTimer = useRef<number | null>(null);
     const { hiddenList, hide, canEdit } = useHiddenTasks();
 
@@ -181,27 +196,45 @@ export default function HomePage() {
     }, []);
 
   /* Load today's assignments */
-  const loadAssign = useCallback(async () => {
-    try {
-      const r = await fetch(dataUrl("/data/assignments.json"), { cache: "no-store" });
-      if (r.ok) {
-        const j = await r.json();
-        setAssign((j.todo || []).map((a: Assignment) => ({ ...a })));
+    const loadAssign = useCallback(async () => {
+      try {
+        const r = await fetch(dataUrl("/data/assignments.json"), { cache: "no-store" });
+        if (r.ok) {
+          const j = await r.json();
+          setAssign((j.todo || []).map((a: Assignment) => ({ ...a })));
+        }
+      } catch {
+        /* assignments optional on home — don't break hero */
       }
-    } catch {
-      /* assignments optional on home — don't break hero */
-    }
-  }, []);
+    }, []);
+
+    /* Load the AI NEXT-ACTION brief. Optional — the page falls back to the
+       client-side heuristic (stats.next) when the file is absent or stale. A brief
+       is considered fresh for ~36h (so a Monday briefer shows through the weekend). */
+    const loadAiBrief = useCallback(async () => {
+      try {
+        const r = await fetch(dataUrl("/data/next_action.json"), { cache: "no-store" });
+        if (!r.ok) return;
+        const j: NextActionBrief = await r.json();
+        if (!j.items || j.items.length === 0) return;
+        const t = j.generated_at ? new Date(j.generated_at).getTime() : 0;
+        if (isNaN(t) || Date.now() - t > 36 * 3600 * 1000) return; // stale
+        setAiBrief(j);
+      } catch {
+        /* keep heuristic fallback */
+      }
+    }, []);
 
   useEffect(() => {
-      load();
-      loadAssign();
-      // Usage is secondary data — poll every 5 min instead of every 60s to cut
-      // needless OpenRouter calls from the dashboard (primary info is schedule/
-      // assignments, which load on page open).
-      const t = setInterval(load, 5 * 60 * 1000);
-      return () => clearInterval(t);
-    }, [load, loadAssign]);
+        load();
+        loadAssign();
+        loadAiBrief();
+        // Usage is secondary data — poll every 5 min instead of every 60s to cut
+        // needless OpenRouter calls from the dashboard (primary info is schedule/
+        // assignments, which load on page open).
+        const t = setInterval(load, 5 * 60 * 1000);
+        return () => clearInterval(t);
+      }, [load, loadAssign, loadAiBrief]);
 
   /* Deadline stats from today's perspective (classify writes bucket back so
          the "what's next" card colours/flag correctly). */
@@ -275,7 +308,39 @@ export default function HomePage() {
       </section>
 
       {/* ── Next action (most important piece) ── */}
-      {stats.next ? (
+            {aiBrief ? (
+              <section className={`next-card ${aiBrief.items![0]?.why?.includes("เลย") ? "is-over" : aiBrief.items![0]?.dueLabel?.includes("วันนี้") ? "is-today" : "is-soon"}`}>
+                <div>
+                  <div className="next-badge">⚡ ควรทำตอนนี้</div>
+                  <div className="next-brief-sub">AI จัดลำดับประจำวัน · {aiBrief.items!.length} อันดับ</div>
+                </div>
+                <div className="next-body">
+                  {aiBrief.brief && <div className="next-brief-line">{aiBrief.brief}</div>}
+                  <ol className="next-ai-list">
+                    {aiBrief.items!.map((it, i) => (
+                      <li key={i} className={i === 0 ? "top" : ""}>
+                        <div className="nai-head">
+                          <span className="nai-rank">{i === 0 ? "ตอนนี้" : `ถัดไป ${i}`}</span>
+                          <span className="nai-title">{it.title}</span>
+                          <span className="nai-go">
+                            <Link href="/today">→</Link>
+                          </span>
+                        </div>
+                        <div className="nai-meta">
+                          {it.course && <span className="nai-course">{it.course}</span>}
+                          {it.dueLabel && <span>⏰ {it.dueLabel}</span>}
+                          {it.effort_hr && <span>⏱ {it.effort_hr}</span>}
+                        </div>
+                        {it.why && <div className="nai-why">💡 {it.why}</div>}
+                      </li>
+                    ))}
+                  </ol>
+                  <div className="next-meta">
+                    <span className="next-go"><Link href="/today">ดูรายละเอียด →</Link></span>
+                  </div>
+                </div>
+              </section>
+            ) : stats.next ? (
         <section className={`next-card ${stats.next.bucket === "over" ? "is-over" : stats.next.bucket === "today" ? "is-today" : "is-soon"}`}>
           <div className="next-badge">
                       {stats.next.bucket === "over"
