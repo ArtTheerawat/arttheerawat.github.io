@@ -399,8 +399,8 @@ export default function HomePage() {
     const timeGreet = hourBKK < 12 ? "สวัสดีตอนเช้า" : hourBKK < 17 ? "สวัสดีตอนบ่าย" : "สวัสดีตอนเย็น";
 
   return (
-    <div className="wrap">
-      {/* ── Hero: personal command center ── */}
+    <div className="wrap" id="main">
+          {/* ── Hero: personal command center ── */}
       <div className="hero">
         <div className="logo">🎛️</div>
         <div>

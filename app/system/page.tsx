@@ -93,7 +93,7 @@ export default function SystemHealthPage() {
   const unknownCount = services.filter((s) => s.status === "unknown").length;
 
   return (
-    <div className="wrap">
+    <div className="wrap" id="main">
       <header className="today-head">
         <div>
           <h1>

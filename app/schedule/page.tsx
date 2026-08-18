@@ -212,7 +212,7 @@ export default function SchedulePage() {
         : null;
 
   return (
-    <div className="wrap">
+    <div className="wrap" id="main">
       <header>
         <div>
           <h1>

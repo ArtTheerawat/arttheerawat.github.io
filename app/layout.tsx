@@ -20,6 +20,7 @@ export default function RootLayout({
   return (
     <html lang="th">
       <body>
+        <a href="#main" className="skip-link">ข้ามไปเนื้อหา</a>
         <Nav />
         {children}
       </body>

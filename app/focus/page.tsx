@@ -537,7 +537,7 @@ function FocusPageInner() {
     : 0;
 
   return (
-    <div className="wrap focus">
+    <div className="wrap focus" id="main">
       <header style={{ display: "flex", alignItems: "center", gap: 10 }}>
         <Link href="/today" className="next-go-btn" style={{ display: "inline-flex", alignItems: "center", gap: 4 }} aria-label="กลับไปงานวันนี้">
           <ArrowLeft size={16} aria-hidden="true" /> กลับ

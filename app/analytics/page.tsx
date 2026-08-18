@@ -78,7 +78,7 @@ export default function AnalyticsPage() {
   const hasCompletionHistory = (hiddenList || []).some((h) => h.reason === "already-submitted");
 
   return (
-    <div className="wrap">
+    <div className="wrap" id="main">
       <header style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 2 }}>
         <h1 className="sec-title" style={{ margin: 0 }}>
           <BarChart3 aria-hidden="true" /> สถิติการทำงาน

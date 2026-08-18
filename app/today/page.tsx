@@ -427,7 +427,7 @@ export default function TodayPage() {
     ) : null;
 
   return (
-    <div className="wrap">
+    <div className="wrap" id="main">
       <header className="today-head">
         <div>
           <h1>

@@ -243,7 +243,7 @@ export default function DictationPage() {
         : { text: "💪 สู้ๆ ครับ! ลองฝึกทบทวนเสียงลงท้าย -s, -ed และฝึกฟังอีกรอบนะ", color: "var(--accent)" };
 
   return (
-    <div className="dict-container">
+    <div className="dict-container" id="main">
       {screen === "topics" && (
         <>
           <div className="dict-header">

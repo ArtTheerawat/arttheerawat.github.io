@@ -95,7 +95,7 @@ export default function TradingPage() {
   const signalRows = useMemo(() => data.signals.slice().reverse().slice(0, 25), [data.signals]);
 
   return (
-    <div className="wrap">
+    <div className="wrap" id="main">
       <header>
         <div>
           <h1>

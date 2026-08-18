@@ -80,7 +80,7 @@ export default function AssistantPage() {
   };
 
   return (
-    <div className="wrap assistant-wrap">
+    <div className="wrap assistant-wrap" id="main">
       <header>
         <div>
           <h1>
