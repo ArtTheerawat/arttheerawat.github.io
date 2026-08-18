@@ -179,6 +179,41 @@ export function canonicalAssignment(a: Hiddenable, list: HiddenTask[]): {
 }
 
 /* ──────────────────────────────────────────────────────────────────────────
+ * Brief-item filtering for AI "next action" cards (Home /today).
+ *
+ * next_action.json is written by a morning cron that has NO knowledge of the
+ * hidden_tasks set, so its items must be cross-checked against hiddenList or a
+ * user-hidden task would still surface as "should do now". We match by title
+ * (the brief carries no raw `due`, and its course is "code + name" while the
+ * hidden key's course is the bare code), cross-checked that the course agrees
+ * so a same-named task in a different class is not wrongly dropped.
+ * ────────────────────────────────────────────────────────────────────────── */
+export interface BriefItem {
+  title?: string;
+  course?: string;
+  dueLabel?: string;
+  effort_hr?: string;
+  why?: string;
+}
+
+export function filterVisibleBriefItems(items: BriefItem[] | null | undefined, hiddenList: HiddenTask[]): BriefItem[] {
+  if (!items) return [];
+  return items.filter((it) => {
+    const t = (it.title || "").trim();
+    if (!t) return false;
+    const hidden = hiddenList.find((h) => {
+      const hTitle = (h.title || "").trim();
+      if (hTitle && hTitle !== t) return false;
+      const hCourse = (h.course || "").trim();
+      const iCourse = (it.course || "").trim();
+      if (hCourse && iCourse && !(iCourse.startsWith(hCourse) || hCourse === iCourse)) return false;
+      return true;
+    });
+    return !hidden;
+  });
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
  * useHiddenTasks — the hook every page uses (GLOBAL model).
  *
  * Returns { user, status, hiddenList, canEdit, isHidden, hide, unhide,

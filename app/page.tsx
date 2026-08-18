@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ListTodo, CalendarDays, CandlestickChart, Headphones, Zap, type LucideIcon } from "lucide-react";
 import { classifyAssignment, dataUrl, fmtDate, fmtMoney, nowBKKHour, todayIdxBKK, todayLabelBKK, todayStr, type Bucket } from "@/lib/data";
 import { SCHEDULE, COURSES } from "@/lib/schedule-data";
-import { useHiddenTasks } from "@/lib/hidden-tasks";
+import { filterVisibleBriefItems, useHiddenTasks } from "@/lib/hidden-tasks";
 import { HideButton } from "@/components/HiddenTasks";
 
 /* ── Quick-access tiles ──
@@ -259,7 +259,17 @@ export default function HomePage() {
         soon.slice().sort((p, q) => ((p.due || "") < (q.due || "") ? -1 : 1))[0] ||
         ([...over, ...tod, ...soon][0] || null);
       return { over, tod, soon, next };
-    }, [assign, hiddenList]);
+          }, [assign, hiddenList]);
+
+          /* Filter hidden tasks out of the AI next-brief. The brief (next_action.json)
+             is written by a morning cron that has no knowledge of the hidden_tasks set,
+             so we must cross-check its items against hiddenList here. Match by title
+             (the brief has no raw due; its course is "code + name" while the hidden
+             key's course is the bare code), cross-checked that the course agrees. */
+        const aiVisibleItems = useMemo(
+            () => (aiBrief ? filterVisibleBriefItems(aiBrief.items, hiddenList) : []),
+            [aiBrief, hiddenList]
+          );
 
   const or = usage?.openrouter;
   const n9 = usage?.["9arm"];
@@ -310,16 +320,16 @@ export default function HomePage() {
       </section>
 
       {/* ── Next action (most important piece) ── */}
-            {aiBrief ? (
-              <section className={`next-card ${aiBrief.items![0]?.why?.includes("เลย") ? "is-over" : aiBrief.items![0]?.dueLabel?.includes("วันนี้") ? "is-today" : "is-soon"}`}>
+            {aiBrief && aiVisibleItems.length > 0 ? (
+              <section className={`next-card ${aiVisibleItems[0]?.why?.includes("เลย") ? "is-over" : aiVisibleItems[0]?.dueLabel?.includes("วันนี้") ? "is-today" : "is-soon"}`}>
                 <div>
-                                  <div className="next-badge">⚡ ควรทำตอนนี้</div>
-                                  <div className="next-brief-sub">{aiBrief.day_label || "ประจำวันนี้"} · {aiBrief.items!.length} อันดับ{aiBrief.model ? ` · ${aiBrief.model}` : ""}</div>
-                                </div>
+                  <div className="next-badge">⚡ ควรทำตอนนี้</div>
+                  <div className="next-brief-sub">{aiBrief.day_label || "ประจำวันนี้"} · {aiVisibleItems.length} อันดับ{aiBrief.model ? ` · ${aiBrief.model}` : ""}</div>
+                </div>
                 <div className="next-body">
                   {aiBrief.brief && <div className="next-brief-line">{aiBrief.brief}</div>}
                   <ol className="next-ai-list">
-                    {aiBrief.items!.map((it, i) => (
+                    {aiVisibleItems.map((it, i) => (
                       <li key={i} className={i === 0 ? "top" : ""}>
                         <div className="nai-head">
                           <span className="nai-rank">{i === 0 ? "ตอนนี้" : `ถัดไป ${i}`}</span>
