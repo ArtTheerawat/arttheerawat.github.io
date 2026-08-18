@@ -150,6 +150,7 @@ export default function TodayPage() {
     const [confirmClear, setConfirmClear] = useState(false);
     const [detailTask, setDetailTask] = useState<PriorityTask | null>(null);
     const detailModalRef = useRef<HTMLDivElement | null>(null);
+    const [courseMap, setCourseMap] = useState<Record<string, string>>({});
     const [toast, setToast] = useState<string | null>(null);
         const [toastError, setToastError] = useState(false);
         const toastTimer = useRef<number | null>(null);
@@ -213,7 +214,23 @@ export default function TodayPage() {
               })();
             }, []);
 
-  // Detail modal: Esc closes; focus the sheet for a11y.
+  // Course-id map for the "ไป classroom" deep link (code -> Google courseId).
+  useEffect(() => {
+    (async () => {
+      try {
+        const r = await fetch(dataUrl("/data/course_id_map.json", { cache: true }), { cache: "force-cache" });
+        if (r.ok) {
+          const m: Record<string, string> = await r.json();
+          // file shape: { googleCourseId: courseCode } — invert to code -> googleId
+          const inv: Record<string, string> = {};
+          for (const [gid, code] of Object.entries(m)) inv[code] = gid;
+          setCourseMap(inv);
+        }
+      } catch {
+        /* optional — button simply won't show for unknown courses */
+      }
+    })();
+  }, []);
   useEffect(() => {
     if (!detailTask) return;
     const onKey = (e: KeyboardEvent) => {
@@ -622,6 +639,17 @@ export default function TodayPage() {
                 <span className="badge b-soon">🕐 {detailTask.recommendedStart}</span>
               )}
             </div>
+            {courseMap[detailTask.course] && (
+              <a
+                className="next-go-btn"
+                href={`https://classroom.google.com/u/0/c/${courseMap[detailTask.course]}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ display: "inline-block", marginTop: 16, textDecoration: "none" }}
+              >
+                📚 ไปที่ Classroom ({detailTask.courseName || detailTask.course})
+              </a>
+            )}
           </div>
         </div>
       )}

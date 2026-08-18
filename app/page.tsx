@@ -158,7 +158,8 @@ export default function HomePage() {
   /* Next-action detail modal (same affordance as /today) — "ดูรายละเอียด →"
      used to navigate to /today; now it opens an in-page task sheet instead. */
   const [detailTask, setDetailTask] = useState<PriorityTask | null>(null);
-  const detailModalRef = useRef<HTMLDivElement | null>(null);
+    const detailModalRef = useRef<HTMLDivElement | null>(null);
+    const [courseMap, setCourseMap] = useState<Record<string, string>>({});
   useEffect(() => {
     if (!detailTask) return;
     const onKey = (e: KeyboardEvent) => {
@@ -167,6 +168,23 @@ export default function HomePage() {
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, [detailTask]);
+
+  // Course-id map for the "ไป classroom" deep link (code -> Google courseId).
+  useEffect(() => {
+    (async () => {
+      try {
+        const r = await fetch(dataUrl("/data/course_id_map.json", { cache: true }), { cache: "force-cache" });
+        if (r.ok) {
+          const m: Record<string, string> = await r.json();
+          const inv: Record<string, string> = {};
+          for (const [gid, code] of Object.entries(m)) inv[code] = gid;
+          setCourseMap(inv);
+        }
+      } catch {
+        /* optional — button simply won't show for unknown courses */
+      }
+    })();
+  }, []);
 
   /* Today's date + weekday (Bangkok time — single source of truth) */
     const todayIso = todayStr();
@@ -645,12 +663,23 @@ export default function HomePage() {
                                   <span className="badge b-soon">⏱ {detailTask.effortHr}</span>
                                 )}
                                 {detailTask.recommendedStart && (
-                                  <span className="badge b-soon">🕐 {detailTask.recommendedStart}</span>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        )}
+                                                      <span className="badge b-soon">🕐 {detailTask.recommendedStart}</span>
+                                                    )}
+                                                  </div>
+                                                  {courseMap[detailTask.course] && (
+                                                    <a
+                                                      className="next-go-btn"
+                                                      href={`https://classroom.google.com/u/0/c/${courseMap[detailTask.course]}`}
+                                                      target="_blank"
+                                                      rel="noopener noreferrer"
+                                                      style={{ display: "inline-block", marginTop: 16, textDecoration: "none" }}
+                                                    >
+                                                      📚 ไปที่ Classroom ({detailTask.courseName || detailTask.course})
+                                                    </a>
+                                                  )}
+                                                </div>
+                                              </div>
+                                            )}
                       </div>
                     );
                   }
