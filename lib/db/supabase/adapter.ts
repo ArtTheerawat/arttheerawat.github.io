@@ -14,6 +14,7 @@ import type {
   DbUser,
   HiddenTask,
   LinkOverride,
+  NotificationRead,
   PerfDay,
   Signal,
   Trade,
@@ -94,6 +95,16 @@ interface LinkOverrideRow {
 
 function rowToLinkOverride(r: LinkOverrideRow): LinkOverride {
   return { key: r.task_key, url: r.url, updatedAt: r.updated_at };
+}
+
+interface NotificationReadRow {
+  notif_key: string;
+  read: boolean;
+  read_at: string;
+}
+
+function rowToNotificationRead(r: NotificationReadRow): NotificationRead {
+  return { key: r.notif_key, read: r.read, readAt: r.read_at };
 }
 
 function rowToTrade(r: any): Trade {
@@ -533,6 +544,57 @@ export class SupabaseAdapter implements DatabaseAdapter {
     });
     if (error) {
       console.warn("SupabaseAdapter.signInWithGoogle:", error.message);
+      return { ok: false, error: error.message };
+    }
+    return { ok: true };
+  }
+
+  // ── Notification read-state ────────────────────────────────────────────────
+
+  /** Load persisted read-state. `notifications` may not exist yet (migration
+   *  0010 pasted later), so a table-missing error is a SOFT failure: callers
+   *  fall back to localStorage, exactly like link-overrides (0009). */
+  async loadNotificationReads(): Promise<{
+    ok: boolean;
+    reads: NotificationRead[];
+    error?: string;
+  }> {
+    const sb = this.client();
+    if (!sb) return { ok: false, reads: [], error: "Supabase ยังไม่ได้ติดตั้ง" };
+    const { data, error } = await (sb.from("notifications") as any)
+      .select("*")
+      .order("read_at", { ascending: false });
+    if (error) {
+      console.warn("SupabaseAdapter.loadNotificationReads:", error.message);
+      return { ok: true, reads: [], error: undefined };
+    }
+    return { ok: true, reads: (data as any[] || []).map(rowToNotificationRead) };
+  }
+
+  async upsertNotificationRead(key: string, read: boolean): Promise<{ ok: boolean; error?: string }> {
+    const sb = this.client();
+    if (!sb) return { ok: false, error: "Supabase ยังไม่ได้ติดตั้ง" };
+    const { error } = await (sb.from("notifications") as any).upsert(
+      { notif_key: key, read, read_at: new Date().toISOString() },
+      { onConflict: "notif_key" }
+    );
+    if (error) {
+      console.warn("SupabaseAdapter.upsertNotificationRead:", error.message);
+      return { ok: false, error: error.message };
+    }
+    return { ok: true };
+  }
+
+  async markAllNotificationsRead(keys: string[]): Promise<{ ok: boolean; error?: string }> {
+    const sb = this.client();
+    if (!sb) return { ok: false, error: "Supabase ยังไม่ได้ติดตั้ง" };
+    if (keys.length === 0) return { ok: true };
+    const { error } = await (sb.from("notifications") as any).upsert(
+      keys.map((k) => ({ notif_key: k, read: true, read_at: new Date().toISOString() })),
+      { onConflict: "notif_key" }
+    );
+    if (error) {
+      console.warn("SupabaseAdapter.markAllNotificationsRead:", error.message);
       return { ok: false, error: error.message };
     }
     return { ok: true };

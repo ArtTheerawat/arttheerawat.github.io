@@ -38,6 +38,62 @@ footer{color:var(--muted); font-size:11px; text-align:center; margin-top:26px}
 .app-nav a.on .nav-ico{opacity:1}
 .app-nav a.on{background:var(--accent); border-color:var(--accent)}
 
+/* ── Notification Center (SYSTEM 5): bell + dropdown panel ── */
+.notif-wrap{position:relative; display:inline-flex; align-items:center}
+.notif-bell{
+  position:relative; cursor:pointer;
+  display:inline-flex; align-items:center; justify-content:center;
+  width:34px; height:34px; border-radius:999px;
+  background:var(--card); border:1px solid var(--border); color:var(--txt);
+  transition:filter .12s;
+}
+.notif-bell:hover{filter:brightness(1.12); border-color:var(--accent)}
+.notif-bell:focus-visible{outline:2px solid var(--accent); outline-offset:1px}
+.notif-ico{width:17px; height:17px; opacity:.9}
+.notif-wrap:hover .notif-ico{opacity:1}
+.notif-dot{
+  position:absolute; top:-4px; right:-4px;
+  min-width:17px; height:17px; padding:0 4px; box-sizing:border-box;
+  border-radius:999px; background:var(--down); color:#fff;
+  font-size:10px; font-weight:800; line-height:17px; text-align:center;
+  border:2px solid var(--bg);
+}
+.notif-panel{
+  position:absolute; top:calc(100% + 8px); right:0;
+  width:min(360px, calc(100vw - 32px));
+  max-height:min(440px, 70vh);
+  overflow-y:auto;
+  background:var(--card2); border:1px solid var(--border); border-radius:14px;
+  box-shadow:0 12px 32px rgba(0,0,0,.45);
+  z-index:60;
+}
+.notif-head{display:flex; align-items:center; justify-content:space-between; gap:8px;
+  padding:12px 16px; border-bottom:1px solid var(--border);
+  position:sticky; top:0; background:var(--card2);}
+.notif-title{font-size:13px; font-weight:700; color:var(--txt)}
+.notif-markall{display:inline-flex; align-items:center; gap:5px; cursor:pointer;
+  background:none; border:none; color:var(--accent2); font-size:12px; font-weight:600;
+  padding:4px 8px; border-radius:8px; font-family:inherit;}
+.notif-markall:hover{background:rgba(34,211,238,.1)}
+.notif-markall-ico{width:14px; height:14px}
+.notif-state{color:var(--muted); font-size:13px; text-align:center; padding:22px 16px}
+.notif-err{color:#fca5a5}
+.notif-list{list-style:none; margin:0; padding:6px 0}
+.notif-list li{padding:0 8px}
+.notif-list a{display:flex; align-items:flex-start; gap:10px; padding:10px; border-radius:10px; color:var(--txt); text-decoration:none}
+.notif-list a:hover{background:var(--card)}
+.notif-kind{font-size:14px; line-height:1.3; flex:none}
+.notif-body{display:flex; flex-direction:column; gap:2px; min-width:0; flex:1}
+.notif-item-title{font-size:13px; font-weight:600; line-height:1.35}
+.notif-item-body{font-size:11.5px; color:var(--muted); line-height:1.4}
+.notif-unread-dot{flex:none; width:8px; height:8px; border-radius:50%; background:var(--accent2); margin-top:6px}
+.notif-list li.unread a{background:rgba(99,102,241,.08)}
+.notif-list li.unread .notif-item-title{color:#fff}
+/* Panel right-edge safe on small screens inside the sticky nav */
+@media(max-width:560px){
+  .notif-panel{position:fixed; top:52px; right:10px; left:auto}
+}
+
 /* ── Index hub cards ── */
 .cards{display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:16px; margin-top:8px}
 .tile{background:linear-gradient(180deg,var(--card),var(--card2)); border:1px solid var(--border); border-radius:14px; padding:20px; transition:.15s; display:block}

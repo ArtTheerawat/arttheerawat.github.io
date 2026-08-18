@@ -16,6 +16,7 @@ import type {
   DbUser,
   HiddenTask,
   LinkOverride,
+  NotificationRead,
   PerfDay,
   Signal,
   Trade,
@@ -86,4 +87,13 @@ export interface DatabaseAdapter {
 
   /** Sign in with Google (provider-specific). Used by UI log-in button. */
   signInWithGoogle(redirectTo: string): Promise<{ ok: boolean; error?: string }>;
+
+  // ── Notification read-state ────────────────────────────────────────────────
+  /** Load the persisted read-state set for notification keys. Returns [] when
+   *  the backend is unset/errored so the UI can fall back to localStorage. */
+  loadNotificationReads(): Promise<{ ok: boolean; reads: NotificationRead[]; error?: string }>;
+  /** Mark a single notification key as read/unread (owner-only via RLS). */
+  upsertNotificationRead(key: string, read: boolean): Promise<{ ok: boolean; error?: string }>;
+  /** Mark all current notification keys as read (owner-only via RLS). */
+  markAllNotificationsRead(keys: string[]): Promise<{ ok: boolean; error?: string }>;
 }

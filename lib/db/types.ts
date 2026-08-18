@@ -104,3 +104,24 @@ export interface LinkOverride {
   url: string;             // fully-qualified https:// URL the owner chose
   updatedAt: string;       // ISO timestamp
 }
+
+/** A single notification generated deterministically by lib/notifications.ts.
+ *  Notifications are *derived* data (computed in the browser from the same
+ *  data files the pages read), so the table only stores READ STATE keyed by a
+ *  stable notif_key for cross-device dedup; the notification body is always
+ *  recomputed fresh. */
+export interface NotificationItem {
+  key: string;             // stable dedup key, e.g. taskKey|over, quiz|date|summary
+  kind: "overdue" | "due-today" | "due-soon" | "quiz" | "announcement" | "system";
+  title: string;           // short Thai title
+  body: string;            // Thai detail line
+  href?: string;           // where the notification navigates when clicked
+  order: number;           // sort weight (higher = more urgent)
+}
+
+/** Persisted read-state for a notification key. `read` true → not shown as unread. */
+export interface NotificationRead {
+  key: string;
+  read: boolean;
+  readAt: string;          // ISO timestamp
+}

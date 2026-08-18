@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Layers, ListTodo, CalendarDays, CandlestickChart, Headphones, BookOpen, type LucideIcon } from "lucide-react";
 import AuthStatus from "./AuthStatus";
+import NotificationCenter from "./NotificationCenter";
 
 type NavLink = { href: string; label: string; Icon: LucideIcon };
 
@@ -32,8 +33,9 @@ export default function Nav() {
           );
         })}
         <span className="nav-auth">
-          <AuthStatus />
-        </span>
+                  <NotificationCenter />
+                  <AuthStatus />
+                </span>
       </div>
     </nav>
   );
