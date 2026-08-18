@@ -10,7 +10,7 @@ import {
   hiddenReasonText,
 } from "@/components/HiddenTasks";
 import NextActionCard from "@/components/NextActionCard";
-import { computeNextAction } from "@/lib/priority";
+import { computeNextAction, type PriorityTask } from "@/lib/priority";
 
 interface Assignment {
   title?: string;
@@ -148,6 +148,8 @@ export default function TodayPage() {
   const [showLater, setShowLater] = useState(false);
     const [showHidden, setShowHidden] = useState(false);
     const [confirmClear, setConfirmClear] = useState(false);
+    const [detailTask, setDetailTask] = useState<PriorityTask | null>(null);
+    const detailModalRef = useRef<HTMLDivElement | null>(null);
     const [toast, setToast] = useState<string | null>(null);
         const [toastError, setToastError] = useState(false);
         const toastTimer = useRef<number | null>(null);
@@ -210,6 +212,16 @@ export default function TodayPage() {
                 }
               })();
             }, []);
+
+  // Detail modal: Esc closes; focus the sheet for a11y.
+  useEffect(() => {
+    if (!detailTask) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setDetailTask(null);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [detailTask]);
 
   // Always filter hidden assignments out of every bucket BEFORE computing stats.
     const visible = useMemo(() => {
@@ -405,7 +417,7 @@ export default function TodayPage() {
                           🧠 {aiBrief.brief || "สรุปวันนี้"}{aiBrief.model ? ` · (${aiBrief.model})` : ""}
                         </div>
                       )}
-                      <NextActionCard result={engine} detailHref="/today" detailLabel="ดูรายละเอียด →" />
+                      <NextActionCard result={engine} detailLabel="ดูรายละเอียด →" onDetail={() => engine.next && setDetailTask(engine.next)} />
 
                         {/* Counts only make sense once data arrived — during load they
                                        would show a misleading 0 for everything (false affordance). */}
@@ -571,6 +583,47 @@ export default function TodayPage() {
 
       {confirmClear && (
         <ConfirmClear onConfirm={handleClear} onClose={() => setConfirmClear(false)} />
+      )}
+
+      {detailTask && (
+        <div
+          ref={detailModalRef}
+          className="detail-modal open"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="today-detail-title"
+          onClick={(e) => e.target === e.currentTarget && setDetailTask(null)}
+        >
+          <div className="sheet">
+            <div className="hh">
+              <div>
+                <h2 id="today-detail-title">{detailTask.title}</h2>
+                <div className="when">
+                  {detailTask.courseName || detailTask.course || ""}
+                </div>
+              </div>
+              <button
+                className="close"
+                onClick={() => setDetailTask(null)}
+                aria-label="ปิดหน้าต่าง"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="prio-reasons" style={{ marginTop: 10 }}>
+              💡 {detailTask.reasons.join(" · ") || "ไม่มีกำหนดส่งด่วน"}
+            </div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 12 }}>
+              {detailTask.dueLabel && (
+                <span className="badge b-soon">⏰ {detailTask.dueLabel}</span>
+              )}
+              {detailTask.effortHr && <span className="badge b-soon">⏱ {detailTask.effortHr}</span>}
+              {detailTask.recommendedStart && (
+                <span className="badge b-soon">🕐 {detailTask.recommendedStart}</span>
+              )}
+            </div>
+          </div>
+        </div>
       )}
 
       {toast && (

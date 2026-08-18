@@ -155,6 +155,19 @@ export default function HomePage() {
   };
   useEffect(() => () => { if (toastTimer.current) window.clearTimeout(toastTimer.current); }, []);
 
+  /* Next-action detail modal (same affordance as /today) — "ดูรายละเอียด →"
+     used to navigate to /today; now it opens an in-page task sheet instead. */
+  const [detailTask, setDetailTask] = useState<PriorityTask | null>(null);
+  const detailModalRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (!detailTask) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setDetailTask(null);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [detailTask]);
+
   /* Today's date + weekday (Bangkok time — single source of truth) */
     const todayIso = todayStr();
     const dayIdx = todayIdxBKK(); // 1=Mon..7=Sun
@@ -368,10 +381,11 @@ export default function HomePage() {
               </div>
             )}
             <NextActionCard
-              result={engine}
-              detailHref="/today"
-              detailLabel="ดูรายละเอียด →"
-            />
+                          result={engine}
+                          detailHref="/today"
+                          detailLabel="ดูรายละเอียด →"
+                          onDetail={() => engine.next && setDetailTask(engine.next)}
+                        />
             {engine.state === "action" && engine.ranked.length > 1 && (
               <div style={{ marginTop: -6 }}>
                 {engine.ranked.slice(0, 3).map((p, i) => (
@@ -594,6 +608,49 @@ export default function HomePage() {
 
       <footer>Auto-generated · ข้อมูลเรียนเชื่อม Google Classroom + Calendar</footer>
             {toast && <div className="hide-toast">{toast}</div>}
-          </div>
-        );
-      }
+
+                        {detailTask && (
+                          <div
+                            ref={detailModalRef}
+                            className="detail-modal open"
+                            role="dialog"
+                            aria-modal="true"
+                            aria-labelledby="home-detail-title"
+                            onClick={(e) => e.target === e.currentTarget && setDetailTask(null)}
+                          >
+                            <div className="sheet">
+                              <div className="hh">
+                                <div>
+                                  <h2 id="home-detail-title">{detailTask.title}</h2>
+                                  <div className="when">
+                                    {detailTask.courseName || detailTask.course || ""}
+                                  </div>
+                                </div>
+                                <button
+                                  className="close"
+                                  onClick={() => setDetailTask(null)}
+                                  aria-label="ปิดหน้าต่าง"
+                                >
+                                  ✕
+                                </button>
+                              </div>
+                              <div className="prio-reasons" style={{ marginTop: 10 }}>
+                                💡 {detailTask.reasons.join(" · ") || "ไม่มีกำหนดส่งด่วน"}
+                              </div>
+                              <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 12 }}>
+                                {detailTask.dueLabel && (
+                                  <span className="badge b-soon">⏰ {detailTask.dueLabel}</span>
+                                )}
+                                {detailTask.effortHr && (
+                                  <span className="badge b-soon">⏱ {detailTask.effortHr}</span>
+                                )}
+                                {detailTask.recommendedStart && (
+                                  <span className="badge b-soon">🕐 {detailTask.recommendedStart}</span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  }

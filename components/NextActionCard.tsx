@@ -67,12 +67,46 @@ interface NextActionCardProps {
   /** Optional extra tail action (e.g. "ดูรายละเอียด →" rendered by the page). */
   detailHref?: string;
   detailLabel?: string;
+  /** When provided, renders the tail action as a button that opens an
+    in-page detail affordance (e.g. a modal) instead of navigating. Takes
+    precedence over detailHref. */
+  onDetail?: () => void;
+}
+
+/** Tail action renderer: button (opens detail modal) if onDetail provided,
+    otherwise a plain <Link> (existing navigation fallback). */
+function DetailAction({
+  href,
+  label,
+  onDetail,
+}: {
+  href?: string;
+  label: string;
+  onDetail?: () => void;
+}) {
+  if (onDetail) {
+    return (
+      <button
+        type="button"
+        className="next-go-btn"
+        onClick={onDetail}
+        aria-label={label}
+      >
+        {label}
+      </button>
+    );
+  }
+  if (href) {
+    return <Link href={href}>{label}</Link>;
+  }
+  return null;
 }
 
 export default function NextActionCard({
   result,
   detailHref = "/today",
   detailLabel = "ดูรายละเอียด →",
+  onDetail,
 }: NextActionCardProps) {
   if (result.state === "idle" || !result.next) {
     return (
@@ -86,9 +120,9 @@ export default function NextActionCard({
             {result.ranked.length > 0 && (
               <span>หางานล่าสุด {result.ranked.length} รายการ · ยังไม่มีกำหนดส่งกดดัน</span>
             )}
-            {detailHref && (
+            {detailLabel && (
               <span className="next-go">
-                <Link href={detailHref}>{detailLabel}</Link>
+                <DetailAction href={detailHref} label={detailLabel} onDetail={onDetail} />
               </span>
             )}
           </div>
@@ -115,10 +149,10 @@ export default function NextActionCard({
         {p.reasons.length > 0 && (
           <div className="prio-reasons">💡 {p.reasons.join(" · ")}</div>
         )}
-        {detailHref && (
+        {detailLabel && (
           <div className="next-meta" style={{ marginTop: 10 }}>
             <span className="next-go">
-              <Link href={detailHref}>{detailLabel}</Link>
+              <DetailAction href={detailHref} label={detailLabel} onDetail={onDetail} />
             </span>
           </div>
         )}
