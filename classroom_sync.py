@@ -247,9 +247,12 @@ def main():
 def _courses_json_from_tasks(tasks, anns):
     names = {}
     for t in tasks:
-        names.setdefault(t["course_id"], {"name": t["course_name"], "coursework": [], "announcements": []})
+        # Each course object must carry the google course `id` — the client
+        # (/today + Home courseWorkMap) reads `c.id` to build the per-assignment
+        # "ไปที่ Classroom" deep link. Omitting it silently disabled that link.
+        names.setdefault(t["course_id"], {"id": t["course_id"], "name": t["course_name"], "coursework": [], "announcements": []})
     for a in anns:
-        names.setdefault(a["course_id"], {"name": a["course_name"], "coursework": [], "announcements": []})
+        names.setdefault(a["course_id"], {"id": a["course_id"], "name": a["course_name"], "coursework": [], "announcements": []})
         names[a["course_id"]]["announcements"].append({"text": a["text"], "time": _iso(a["time"]), "id": a["ann_key"]})
     for t in tasks:
         names[t["course_id"]]["coursework"].append({

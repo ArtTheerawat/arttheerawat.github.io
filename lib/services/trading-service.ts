@@ -71,7 +71,18 @@ async function fetchStatic(): Promise<{ data: TradingData; label: string; error:
 export async function loadTrading(): Promise<TradingResult> {
   const db = getDb();
   const primary = await db.loadTrading();
-  if (primary.ok) {
+  // Only trust the backend when it returned at least one meaningful row.
+  // primary.ok only means "the Supabase query succeeded" — if the trades /
+  // signals / trading_daily tables are empty (e.g. the sync never ran), an
+  // unguarded check would render a "● live · Supabase" page with zero rows and
+  // NEVER fall back to public/data.json, which may hold real trades. This is
+  // the same empty-array-is-truthy trap loadClassroom() was hardened against.
+  const hasRows =
+    (primary.trades?.length || 0) +
+    (primary.signals?.length || 0) +
+    (primary.perf?.length || 0) >
+    0;
+  if (primary.ok && hasRows) {
     return {
       data: { trades: primary.trades, signals: primary.signals, perf: primary.perf },
       source: { ok: true, label: "Supabase (auto sync)" },
