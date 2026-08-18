@@ -51,6 +51,13 @@ BASE_URL = _ENV.get("9ARM_BASE_URL") or "https://gateway.9arm.co/v1"
 MODEL = _ENV.get("9ARM_MODEL") or "qwen3.8-27b-fp8"
 # Cheap, short single-task call — flash is plenty for "pick the top task".
 MODEL_FLASH = "deepseek-v4-flash-0731"
+MODEL_FALLBACK = _ENV.get("9ARM_MODEL") or "qwen3.8-27b-fp8"
+# Chain order for resilience: preferred first, fallback second (both on 9arm —
+# never OpenRouter, per house rule). If DeepSeek Flash is unavailable/revoked,
+# we still produce a brief instead of failing — mirrors GPT's fallback advice.
+MODEL_CHAIN = [MODEL_FLASH, MODEL_FALLBACK]
+# De-dupe in case they resolve to the same value.
+MODEL_CHAIN = list(dict.fromkeys(MODEL_CHAIN))
 
 
 def _load_assignments():
@@ -116,10 +123,14 @@ def _relevant(assignments, quiz_events):
     return rows, q
 
 
-def _call_llm(rows, q):
-    """One cheap flash call -> JSON {brief, items:[...]}."""
+def _call_llm(rows, q, model):
+    """One call to a specific model -> (JSON dict, model) or (None, model) on failure."""
+    today_d = datetime.date.today()
+    # Thai-ish weekday label so the model can say "พรุ่งนี้/สัปดาห์หน้า" correctly.
+    wd = ["จันทร์","อังคาร","พุธ","พฤหัส","ศุกร์","เสาร์","อาทิตย์"][today_d.weekday()]
     payload = {
-        "today": datetime.date.today().isoformat(),
+        "today": today_d.isoformat(),
+        "today_is_weekday": wd,
         "todo": rows,
         "soon_exams": q,
     }
@@ -128,10 +139,10 @@ def _call_llm(rows, q):
         "รับข้อมูลงาน/สอบ แล้วเลือก 'สิ่งที่ควรทำตอนนี้' 1-3 อันดับ พร้อมเหตุผลไทยสั้นๆ ในแง่ deadline+ความยาก/เวลาที่ต้องใช้. "
         "ตอบเป็น JSON เท่านั้น ห้ามมีข้อความนอก JSON. โครงสร้าง: "
         '{"brief":"บรรทัดเดียวสรุปประเด็นหลัก","items":[{"title":...,"course":...,"dueLabel":"เช่น ส่งพรุ่งนี้ 23:59","effort_hr":"เช่น ~2 ชม.","why":"ทำไมต้องทำตอนนี้ สั้น 1-2 วลี"}]}'
-        "items[0] = งานที่ควรทำก่อนที่สุด. effort_hr ใช้ตัวเลขอัตนัยสมเหตุสมผลตามชื่องาน/จำนวนคะแนน. why อธิบายว่า deadline ใกล้ หรือใช้เวลานาน หรือยาก."
+        "items[0] = งานที่ควรทำก่อนที่สุด. dueLabel ใช้ภาษาไทยบอกกำหนดส่ง เช่น 'ส่งวันนี้'/'ส่งพรุ่งนี้'/'ส่งใน 3 วัน' (เทียบกับวันที่ today + weekday ที่ให้) และใส่เวลาใกล้เคียงจริงถ้ารู้. effort_hr ใช้ตัวเลขอัตนัยสมเหตุสมผลตามชื่องาน/จำนวนคะแนน. why อธิบายว่า deadline ใกล้ หรือใช้เวลานาน หรือยาก."
     )
     body = {
-        "model": MODEL_FLASH,
+        "model": model,
         "messages": [
             {"role": "system", "content": sys_},
             {"role": "user", "content": json.dumps(payload, ensure_ascii=False)},
@@ -151,10 +162,10 @@ def _call_llm(rows, q):
     try:
         data = json.loads(proc.stdout)
     except json.JSONDecodeError:
-        print("next_action: API non-JSON:", (proc.stdout or proc.stderr)[:200])
+        print(f"next_action: [{model}] API non-JSON:", (proc.stdout or proc.stderr)[:200])
         return None
     if data.get("error"):
-        print("next_action: API ERROR:", data["error"][:200])
+        print(f"next_action: [{model}] API ERROR:", data["error"][:200])
         return None
     ch = data.get("choices", [{}])[0].get("message", {})
     content = (ch.get("content") or "").strip()
@@ -164,14 +175,14 @@ def _call_llm(rows, q):
         content = content[4:].strip()
     # accumulate usage so the Home usage card reflects this call
     u = data.get("usage", {})
-    _accumulate_usage(MODEL_FLASH, u)
+    _accumulate_usage(model, u)
     try:
         parsed = json.loads(content)
     except Exception:
-        print("next_action: model returned non-JSON:", content[:200])
+        print(f"next_action: [{model}] model returned non-JSON:", content[:200])
         return None
     if not isinstance(parsed, dict) or not isinstance(parsed.get("items"), list):
-        print("next_action: bad shape:", content[:200])
+        print(f"next_action: [{model}] bad shape:", content[:200])
         return None
     return parsed
 
@@ -238,10 +249,23 @@ def main():
         print("next_action: no urgent task — nothing to brief (page shows 'ชิล ๆ')")
         return 0
 
-    parsed = _call_llm(rows, q)
+    parsed = None
+    used_model = None
+    for m in MODEL_CHAIN:
+        parsed = _call_llm(rows, q, m)
+        if parsed:
+            used_model = m
+            break
+        print(f"next_action: [{m}] failed, trying fallback" if m != MODEL_CHAIN[-1]
+              else f"next_action: all {len(MODEL_CHAIN)} models failed")
     if not parsed:
         print("next_action: LLM failed — keep old brief, page falls back to heuristic")
         return 1
+
+    # Daily morning-brief feel: which day this brief is "for".
+    today_d = datetime.date.today()
+    th_months = ["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."]
+    day_label = f"ประจำวัน {today_d.day} {th_months[today_d.month-1]}"
 
     # normalize: keep only fields the page needs; guard length
     def clean(it):
@@ -255,6 +279,8 @@ def main():
     items = [clean(it) for it in parsed.get("items", [])][:3]
     data = {
         "generated_at": datetime.datetime.now().isoformat(timespec="seconds"),
+        "day_label": day_label,
+        "model": used_model,
         "brief": str(parsed.get("brief", ""))[:160],
         "items": items,
     }

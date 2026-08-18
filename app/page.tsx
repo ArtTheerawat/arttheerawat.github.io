@@ -79,6 +79,8 @@ interface NextActionItem {
 }
 interface NextActionBrief {
   generated_at?: string;
+  day_label?: string;
+  model?: string;
   brief?: string;
   items?: NextActionItem[];
 }
@@ -311,9 +313,9 @@ export default function HomePage() {
             {aiBrief ? (
               <section className={`next-card ${aiBrief.items![0]?.why?.includes("เลย") ? "is-over" : aiBrief.items![0]?.dueLabel?.includes("วันนี้") ? "is-today" : "is-soon"}`}>
                 <div>
-                  <div className="next-badge">⚡ ควรทำตอนนี้</div>
-                  <div className="next-brief-sub">AI จัดลำดับประจำวัน · {aiBrief.items!.length} อันดับ</div>
-                </div>
+                                  <div className="next-badge">⚡ ควรทำตอนนี้</div>
+                                  <div className="next-brief-sub">{aiBrief.day_label || "ประจำวันนี้"} · {aiBrief.items!.length} อันดับ{aiBrief.model ? ` · ${aiBrief.model}` : ""}</div>
+                                </div>
                 <div className="next-body">
                   {aiBrief.brief && <div className="next-brief-line">{aiBrief.brief}</div>}
                   <ol className="next-ai-list">
