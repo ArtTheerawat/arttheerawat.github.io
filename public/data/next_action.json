@@ -1,0 +1,27 @@
+{
+  "generated_at": "2026-08-18T15:11:31",
+  "brief": "มีงานค้างเก่าเกินกำหนดหลายรายการ และงานใหม่ใกล้ deadline ต้องจัดลำดับให้ทัน",
+  "items": [
+    {
+      "title": "ใบงานที่ 6",
+      "course": "G2 User Interface Design and Development",
+      "dueLabel": "ส่งใน 6 วัน",
+      "effort_hr": "~3 ชม.",
+      "why": "deadline ใกล้และเป็นคะแนน 10 ควรทำก่อนงานอื่นที่ยังไม่ถึงกำหนด"
+    },
+    {
+      "title": "Week 6: File",
+      "course": "Softdev2026 G2",
+      "dueLabel": "ส่งใน 6 วัน",
+      "effort_hr": "~4 ชม.",
+      "why": "คะแนนสูง 100 และเนื้อหาอาจซับซ้อน ต้องใช้เวลาทำความเข้าใจ"
+    },
+    {
+      "title": "Vector Stack Queue",
+      "course": "88622065 Data Structures and Algorithms",
+      "dueLabel": "เลยกำหนด 4 วัน",
+      "effort_hr": "~2 ชม.",
+      "why": "งานค้างเก่า ควรเคลียร์เพื่อไม่ให้สะสม แต่ให้ความสำคัญกับงานใหม่ก่อน"
+    }
+  ]
+}
