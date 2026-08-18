@@ -472,9 +472,10 @@ export default function TodayPage() {
                                         brief={aiBrief}
                                         engine={engine}
                                         onDetail={() => engine.next && setDetailTask(engine.next)}
+                                        focusHref={engine.next ? `/focus?key=${encodeURIComponent(engine.next.key)}` : undefined}
                                       />
                                     ) : (
-                                      <NextActionCard result={engine} detailLabel="ดูรายละเอียด →" onDetail={() => engine.next && setDetailTask(engine.next)} />
+                                      <NextActionCard result={engine} detailLabel="ดูรายละเอียด →" onDetail={() => engine.next && setDetailTask(engine.next)} focusHref={engine.next ? `/focus?key=${encodeURIComponent(engine.next.key)}` : undefined} />
                                     )}
 
                                     {/* ── TODAY TIMELINE ──

@@ -71,6 +71,10 @@ interface NextActionCardProps {
     in-page detail affordance (e.g. a modal) instead of navigating. Takes
     precedence over detailHref. */
   onDetail?: () => void;
+  /** When provided on an actionable card, renders a "Start Focus" button that
+    deep-links the chosen task into Focus Mode (/focus?key=<stable taskKey>).
+    Only shown when there is a task to focus (action state). */
+  focusHref?: string;
 }
 
 /** Tail action renderer: button (opens detail modal) if onDetail provided,
@@ -107,6 +111,7 @@ export default function NextActionCard({
   detailHref = "/today",
   detailLabel = "ดูรายละเอียด →",
   onDetail,
+  focusHref,
 }: NextActionCardProps) {
   if (result.state === "idle" || !result.next) {
     return (
@@ -150,10 +155,17 @@ export default function NextActionCard({
           <div className="prio-reasons">💡 {p.reasons.join(" · ")}</div>
         )}
         {detailLabel && (
-          <div className="next-meta" style={{ marginTop: 10 }}>
+          <div className="next-meta" style={{ marginTop: 10, display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center" }}>
             <span className="next-go">
               <DetailAction href={detailHref} label={detailLabel} onDetail={onDetail} />
             </span>
+            {focusHref && (
+              <span className="next-go">
+                <Link href={focusHref} className="focus-chip" aria-label="เปิดโฟกัสโมดสำหรับงานนี้">
+                  🎯 Start Focus
+                </Link>
+              </span>
+            )}
           </div>
         )}
       </div>

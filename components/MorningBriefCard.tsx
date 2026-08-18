@@ -15,6 +15,7 @@
 
 import type { MorningBrief } from "@/lib/brief";
 import type { NextActionResult } from "@/lib/priority";
+import Link from "next/link";
 import { useMemo } from "react";
 
 function levelClass(l?: string): string {
@@ -46,9 +47,12 @@ interface MorningBriefCardProps {
   engine: NextActionResult;
   /** When provided, the tail action opens an in-page detail modal. */
   onDetail?: () => void;
+  /** When provided on an actionable card, renders a "Start Focus" button that
+    deep-links the chosen task into Focus Mode (/focus?key=<stable taskKey>). */
+  focusHref?: string;
 }
 
-export default function MorningBriefCard({ brief, engine, onDetail }: MorningBriefCardProps) {
+export default function MorningBriefCard({ brief, engine, onDetail, focusHref }: MorningBriefCardProps) {
   const warnings = useMemo(
     () => (Array.isArray(brief.warnings) ? brief.warnings : []),
     [brief.warnings]
@@ -96,6 +100,11 @@ export default function MorningBriefCard({ brief, engine, onDetail }: MorningBri
               <button type="button" className="next-go-btn mb-go" onClick={onDetail}>
                 ดูรายละเอียด →
               </button>
+            )}
+            {focusHref && (
+              <Link href={focusHref} className="focus-chip" aria-label="เปิดโฟกัสโมดสำหรับงานนี้">
+                🎯 Start Focus
+              </Link>
             )}
           </div>
         ) : (

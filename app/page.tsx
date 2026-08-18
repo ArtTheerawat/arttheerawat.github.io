@@ -446,19 +446,21 @@ export default function HomePage() {
                       action + generated time); otherwise we fall back to the plain
                       deterministic NextActionCard so the page still works with no AI. */}
                   {aiBrief && aiVisibleItems.length > 0 ? (
-                    <MorningBriefCard
-                      brief={aiBrief}
-                      engine={engine}
-                      onDetail={() => engine.next && setDetailTask(engine.next)}
-                    />
-                  ) : (
-                    <NextActionCard
-                      result={engine}
-                      detailHref="/today"
-                      detailLabel="ดูรายละเอียด →"
-                      onDetail={() => engine.next && setDetailTask(engine.next)}
-                    />
-                  )}
+                                      <MorningBriefCard
+                                        brief={aiBrief}
+                                        engine={engine}
+                                        onDetail={() => engine.next && setDetailTask(engine.next)}
+                                        focusHref={engine.next ? `/focus?key=${encodeURIComponent(engine.next.key)}` : undefined}
+                                      />
+                                    ) : (
+                                      <NextActionCard
+                                        result={engine}
+                                        detailHref="/today"
+                                        detailLabel="ดูรายละเอียด →"
+                                        onDetail={() => engine.next && setDetailTask(engine.next)}
+                                        focusHref={engine.next ? `/focus?key=${encodeURIComponent(engine.next.key)}` : undefined}
+                                      />
+                                    )}
             {engine.state === "action" && engine.ranked.length > 1 && (
               <div style={{ marginTop: -6 }}>
                 {engine.ranked.slice(0, 3).map((p, i) => (

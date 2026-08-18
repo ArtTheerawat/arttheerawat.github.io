@@ -458,3 +458,53 @@ table.sched td.cl.overlay .cl-btn{font-style:italic}
   .cards-sec table.tbl.desk-only{display:none}
   .mob-trades{display:block}
 }
+
+/* ── Focus Mode ───────────────────────────────────────────────────────────
+   Minimal single-task working surface. Reuses existing design tokens (no new
+   palette) and keeps the layout far simpler than Home: one card for the task,
+   a big wall-clock timer, and a Complete action. */
+.focus-chip{
+  display:inline-flex; align-items:center; gap:5px;
+  background:var(--accent); color:#fff;
+  border-radius:999px; padding:5px 13px; font-size:12px; font-weight:800;
+  white-space:nowrap; cursor:pointer; text-decoration:none;
+  transition:filter .15s;
+}
+.focus-chip:hover{filter:brightness(1.1); text-decoration:none}
+
+.focus-body{display:flex; flex-direction:column; gap:14px}
+
+.focus-timer-card{
+  background:linear-gradient(180deg,var(--card2),var(--card));
+  border:1px solid var(--border); border-radius:16px;
+  padding:22px 20px; text-align:center;
+}
+.focus-elapsed{
+  font-size:52px; font-weight:800; line-height:1; letter-spacing:2px;
+  font-variant-numeric:tabular-nums; color:var(--txt);
+  margin-bottom:8px;
+}
+.focus-sub{font-size:13px; color:var(--muted); margin-bottom:16px}
+.focus-total{color:var(--accent2)}
+
+.focus-ctrl{display:flex; gap:10px; justify-content:center; flex-wrap:wrap}
+.focus-btn{
+  display:inline-flex; align-items:center; justify-content:center; gap:7px;
+  font:inherit; font-weight:700; font-size:14px;
+  border-radius:999px; padding:11px 22px; cursor:pointer;
+  border:1px solid var(--border); background:var(--card2); color:var(--txt);
+  transition:.15s;
+}
+.focus-btn:hover:not(:disabled){filter:brightness(1.1)}
+.focus-btn:disabled{opacity:.5; cursor:not-allowed}
+.focus-btn.primary{background:var(--accent); border-color:var(--accent); color:#fff}
+.focus-btn.ghost{background:none}
+.focus-btn.complete{background:var(--up); border-color:var(--up); color:#06120b; width:100%}
+
+.focus-done{display:flex; flex-direction:column; gap:8px}
+.focus-done-hint{font-size:12px; color:var(--muted); text-align:center}
+
+@media(max-width:560px){
+  .focus-elapsed{font-size:42px}
+  .focus-btn{flex:1; padding:12px 10px}
+}
