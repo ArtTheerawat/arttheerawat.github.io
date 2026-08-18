@@ -13,16 +13,23 @@ client-side heuristic fallback if the file is stale/absent).  Keep KISS.
 Silent (empty stdout) when nothing meaningfully changed, so the no_agent cron
 watchdog stays quiet.
 
-Output next_action.json shape (AI-produced):
+Output next_action.json shape (AI-produced, see lib/brief.ts for the shared type):
   {
     "generated_at": "2026-08-19T06:05:00",
-    "brief": "สายสรุป WHY — บรรทัดเดียว",
+    "date": "2026-08-19",
+    "day_label": "ประจำวัน 19 ส.ค.",
+    "model": "deepseek-v4-flash-0731",
+    "source_version": "3194f9af7788",
+    "brief": "สรุปภาพรวม+สำคัญสุด 1-2 บรรทัด",
+    "warnings": [ {"text": "…", "level": "danger|warn|info"} ],
     "items": [
-      {"title","course","courseName","due","dueLabel","effort_hr","why"},
+      {"title","course","dueLabel","effort_hr","why"},
       ...
     ]
   }
-Where items[0] is THE next action the user should do now.
+Where items[0] is THE next action the user should do now, warnings is never
+invented (empty [] when no data supports it), and source_version is a stable
+hash of the assignments/schedule inputs so the page can flag stale briefs.
 """
 import datetime, hashlib, json, os, subprocess, sys
 from pathlib import Path
@@ -76,6 +83,25 @@ def _load_quiz_events():
     import json as j
     data = j.loads(p.read_text(encoding="utf-8"))
     return data.get("quizzes", []) or []
+
+
+def _source_version():
+    """Stable hash of the exact source inputs this brief was built from, so the
+    client (and the user) can see when it was generated on stale data. Combines
+    assignments.json todo + schedule.json quizzes; ignores volatile fields
+    (generated_at/updated) so an unchanged source yields the same version."""
+    import json as j
+    blob = {}
+    p = BASE / "public" / "data" / "assignments.json"
+    if p.exists():
+        d = j.loads(p.read_text(encoding="utf-8"))
+        blob["todo"] = d.get("todo", [])
+    q = BASE / "public" / "data" / "schedule.json"
+    if q.exists():
+        d = j.loads(q.read_text(encoding="utf-8"))
+        blob["quizzes"] = d.get("quizzes", [])
+    raw = j.dumps(blob, sort_keys=True, ensure_ascii=False)
+    return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:12]
 
 
 def _relevant(assignments, quiz_events):
@@ -136,10 +162,18 @@ def _call_llm(rows, q, model):
     }
     sys_ = (
         "คุณเป็นผู้ช่วยวางแผนเรียนของนักศึกษาไทย ป.ตรี สาขา CS. "
-        "รับข้อมูลงาน/สอบ แล้วเลือก 'สิ่งที่ควรทำตอนนี้' 1-3 อันดับ พร้อมเหตุผลไทยสั้นๆ ในแง่ deadline+ความยาก/เวลาที่ต้องใช้. "
+        "รับข้อมูลงาน/สอบ แล้วเขียน 'Morning Brief' สรุปสั้นๆ เป็นภาษาไทยธรรมชาติ ที่ตอบ 4 โจทย์: "
+        "1) วันนี้ภาพรวมเป็นยังไง 2) อะไรสำคัญที่สุด 3) ควรทำอะไรก่อน 4) มีคำเตือน (warning) ไหม. "
+        "ข้อมูลทั้งหมดถูกกรองมาแล้ว (เฉพาะ overdue/ครบวันนี้/ภายในระยะ) — ใช้เท่าที่ให้เท่านั้น. "
+        "ห้ามเดา/สร้าง deadline, วันสอบ, วิชา, หรือสถานะงานที่ไม่อยู่ในข้อมูล; ถ้าข้อมูลอะไรไม่มี ให้บอกว่า 'ไม่มีข้อมูล' แทนการมโน. "
         "ตอบเป็น JSON เท่านั้น ห้ามมีข้อความนอก JSON. โครงสร้าง: "
-        '{"brief":"บรรทัดเดียวสรุปประเด็นหลัก","items":[{"title":...,"course":...,"dueLabel":"เช่น ส่งพรุ่งนี้ 23:59","effort_hr":"เช่น ~2 ชม.","why":"ทำไมต้องทำตอนนี้ สั้น 1-2 วลี"}]}'
-        "items[0] = งานที่ควรทำก่อนที่สุด. dueLabel ใช้ภาษาไทยบอกกำหนดส่ง เช่น 'ส่งวันนี้'/'ส่งพรุ่งนี้'/'ส่งใน 3 วัน' (เทียบกับวันที่ today + weekday ที่ให้) และใส่เวลาใกล้เคียงจริงถ้ารู้. effort_hr ใช้ตัวเลขอัตนัยสมเหตุสมผลตามชื่องาน/จำนวนคะแนน. why อธิบายว่า deadline ใกล้ หรือใช้เวลานาน หรือยาก."
+        '{\"brief\":\"1-2 บรรทัดสรุปภาพรวม+สิ่งที่สำคัญที่สุด (กระชับ ภาษาไทยธรรมชาติ ไม่เว่อร์)\",'
+        '\"warnings\":[{\"text\":\"คำเตือนสั้นๆ เช่น มีงานเลยกำหนด 2 รายการ อาจใช้เวลารีบเคลียร์\",\"level\":\"danger|warn|info\"}],'
+        '\"items\":[{\"title\":...,\"course\":...,\"dueLabel\":\"เช่น ส่งพรุ่งนี้ 23:59\",\"effort_hr\":\"เช่น ~2 ชม.\",\"why\":\"ทำไมต้องทำตอนนี้ สั้น 1-2 วลี\"}]}'
+        "warnings ห้ามมโน — ใส่เฉพาะเมื่อข้อมูลจริงรองรับ (มีงาน overdue เยอะ, สอบใกล้, กำหนดส่งซ้อนกัน); ถ้าไม่มีคำเตือน ให้ [] ว่าง. "
+        "items = งานสำคัญ 1-3 รายการ เรียงตามความเร่งด่วนจริงที่เห็นในข้อมูล. items[0] = งานที่ควรทำก่อนที่สุด. "
+        "dueLabel ใช้ภาษาไทยบอกกำหนดส่ง เช่น 'ส่งวันนี้'/'ส่งพรุ่งนี้'/'ส่งใน 3 วัน' (เทียบกับวันที่ today + weekday ที่ให้) และใส่เวลาใกล้เคียงจริงถ้ารู้. "
+        "effort_hr ใช้ตัวเลขอัตนัยสมเหตุสมผลตามชื่องาน/จำนวนคะแนน. why อธิบายว่า deadline ใกล้ หรือใช้เวลานาน หรือยาก."
     )
     body = {
         "model": model,
@@ -277,11 +311,28 @@ def main():
             "why": str(it.get("why", ""))[:160],
         }
     items = [clean(it) for it in parsed.get("items", [])][:3]
+
+    # warnings — only keep well-formed, non-empty entries (never invent).
+    def clean_warn(w):
+        if not isinstance(w, dict):
+            return None
+        text = str(w.get("text", "")).strip()[:140]
+        if not text:
+            return None
+        lvl = str(w.get("level", "")).strip().lower()
+        if lvl not in ("danger", "warn", "info"):
+            lvl = "warn"
+        return {"text": text, "level": lvl}
+    warnings = [cw for cw in (clean_warn(w) for w in (parsed.get("warnings") or [])) if cw][:3]
+
     data = {
         "generated_at": datetime.datetime.now().isoformat(timespec="seconds"),
+        "date": today_d.isoformat(),
         "day_label": day_label,
         "model": used_model,
-        "brief": str(parsed.get("brief", ""))[:160],
+        "source_version": _source_version(),
+        "brief": str(parsed.get("brief", ""))[:240],
+        "warnings": warnings,
         "items": items,
     }
 

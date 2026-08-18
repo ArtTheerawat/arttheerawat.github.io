@@ -11,6 +11,8 @@ import {
   hiddenReasonText,
 } from "@/components/HiddenTasks";
 import NextActionCard from "@/components/NextActionCard";
+import MorningBriefCard from "@/components/MorningBriefCard";
+import type { MorningBrief } from "@/lib/brief";
 import { computeNextAction, type PriorityTask } from "@/lib/priority";
 
 interface Assignment {
@@ -39,22 +41,9 @@ interface SchedData {
   updated?: string;
 }
 
-/* AI-generated NEXT ACTION brief (from generate_next_action.py). Same shape
-   as Home reads — the Today page surfaces it under the timeline. */
-interface NextActionItem {
-  title?: string;
-  course?: string;
-  dueLabel?: string;
-  effort_hr?: string;
-  why?: string;
-}
-interface NextActionBrief {
-  generated_at?: string;
-  day_label?: string;
-  model?: string;
-  brief?: string;
-  items?: NextActionItem[];
-}
+/* AI-generated next-action brief (from generate_next_action.py). Same shape as
+   Home reads — centralised type in lib/brief.ts so both pages + the card agree. */
+type NextActionBrief = MorningBrief;
 
 /* A single row on the Today timeline. Sources are merged in time order:
    recurring weekly classes (SCHEDULE) + one-off makeup sessions (MAKEUP). */
@@ -495,15 +484,21 @@ export default function TodayPage() {
                     )}
                   </section>
 
-                  {/* ── NEXT ACTION (deterministic Priority Engine — no AI) ──
-                        The old AI morning brief (when fresh) is kept as a thin
-                        additive summary strip — it no longer decides priority. */}
-                      {aiBrief && aiVisibleItems.length > 0 && (
-                        <div className="next-brief-line" style={{ marginBottom: 6 }}>
-                          🧠 {aiBrief.brief || "สรุปวันนี้"}{aiBrief.model ? ` · (${aiBrief.model})` : ""}
-                        </div>
-                      )}
-                      <NextActionCard result={engine} detailLabel="ดูรายละเอียด →" onDetail={() => engine.next && setDetailTask(engine.next)} />
+                  {/* ── MORNING BRIEF + NEXT ACTION ──
+                        Priority is decided by the deterministic Priority Engine
+                        (lib/priority.ts), never AI — `engine` above. When a fresh
+                        AI brief exists we show the merged MorningBriefCard (AI
+                        summary + deterministic next + generated time); otherwise we
+                        fall back to the plain deterministic NextActionCard. */}
+                  {aiBrief && aiVisibleItems.length > 0 ? (
+                    <MorningBriefCard
+                      brief={aiBrief}
+                      engine={engine}
+                      onDetail={() => engine.next && setDetailTask(engine.next)}
+                    />
+                  ) : (
+                    <NextActionCard result={engine} detailLabel="ดูรายละเอียด →" onDetail={() => engine.next && setDetailTask(engine.next)} />
+                  )}
 
                         {/* Counts only make sense once data arrived — during load they
                                        would show a misleading 0 for everything (false affordance). */}
