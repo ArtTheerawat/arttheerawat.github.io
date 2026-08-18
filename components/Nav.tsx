@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Layers, ListTodo, CalendarDays, CandlestickChart, Headphones, type LucideIcon } from "lucide-react";
+import { Layers, ListTodo, CalendarDays, CandlestickChart, Headphones, BookOpen, type LucideIcon } from "lucide-react";
 import AuthStatus from "./AuthStatus";
 
 type NavLink = { href: string; label: string; Icon: LucideIcon };
@@ -10,6 +10,7 @@ type NavLink = { href: string; label: string; Icon: LucideIcon };
 const LINKS: NavLink[] = [
   { href: "/", label: "TheeDeck", Icon: Layers },
   { href: "/today", label: "งานวันนี้", Icon: ListTodo },
+  { href: "/classroom", label: "คลาสรูม", Icon: BookOpen },
   { href: "/schedule", label: "ตาราง", Icon: CalendarDays },
   { href: "/trading", label: "เทรด", Icon: CandlestickChart },
   { href: "/dictation", label: "ฝึกฟัง", Icon: Headphones },
