@@ -565,7 +565,63 @@ table.sched td.cl.overlay .cl-btn{font-style:italic}
   .focus-btn{flex:1; padding:12px 10px}
 }
 
-/* ── System Health (สถานะระบบ) ─────────────────────────────────────────── */
+/* ── Focus Mode · Pomodoro ────────────────────────────────────────────
+   Fixed focus/break intervals. Reuses the focus design tokens; adds the
+   mode tabs, phase chip, round dots and a slim phase-progress bar. */
+.focus-modes{
+  display:flex; gap:6px; padding:4px;
+  background:var(--card); border:1px solid var(--border);
+  border-radius:999px; align-self:center;
+}
+.focus-mode{
+  display:inline-flex; align-items:center; gap:6px;
+  font:inherit; font-weight:700; font-size:13px;
+  border:none; background:none; color:var(--muted);
+  border-radius:999px; padding:7px 16px; cursor:pointer; transition:.15s;
+}
+.focus-mode.active{background:var(--accent); color:#fff}
+.focus-mode:hover:not(.active){color:var(--txt)}
+
+.pm-phase{display:flex; justify-content:center; margin-bottom:10px}
+.pm-phase-tag{
+  display:inline-flex; align-items:center; gap:6px;
+  border-radius:999px; padding:4px 12px; font-size:12px; font-weight:800;
+  letter-spacing:.2px;
+}
+.pm-phase-tag.focus{background:var(--accent); color:#fff}
+.pm-phase-tag.break{background:var(--up); color:#06120b}
+.pm-phase-tag.idle{background:var(--card2); color:var(--muted)}
+
+.pm-rounds{display:flex; align-items:center; justify-content:center; gap:6px; margin-bottom:12px}
+.pm-dot{
+  width:9px; height:9px; border-radius:50%;
+  background:var(--border); transition:.2s;
+}
+.pm-dot.fill{background:var(--accent)}
+.pm-dot.done{background:var(--up)}
+.pm-rounds-txt{font-size:12px; color:var(--muted); margin-left:4px}
+
+.pm-progress{
+  height:6px; border-radius:999px; background:var(--card2);
+  overflow:hidden; margin-bottom:18px;
+}
+.pm-progress-bar{height:100%; border-radius:999px; transition:width .25s linear}
+.pm-progress-bar.focus{background:var(--accent)}
+.pm-progress-bar.break{background:var(--up)}
+
+.pm-presets{display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin-bottom:14px}
+.pm-presets.small{margin-bottom:0; margin-top:6px}
+.pm-preset{
+  display:flex; flex-direction:column; align-items:center; gap:2px;
+  font:inherit; font-weight:800; font-size:14px;
+  border:1px solid var(--border); background:var(--card2); color:var(--txt);
+  border-radius:14px; padding:10px 14px; cursor:pointer; transition:.15s;
+}
+.pm-preset:hover{border-color:var(--accent); color:var(--accent)}
+.pm-preset-min{font-size:10px; font-weight:600; color:var(--muted); white-space:nowrap}
+.pm-presets.small .pm-preset{flex-direction:row; font-size:12px; padding:7px 12px}
+
+/* ── System Health (สถานะระบบ) ─────────────────────────────────────── */
 .h-agg{display:flex; align-items:center; gap:14px; flex-wrap:wrap;
   background:var(--card); border:1px solid var(--border); border-radius:14px;
   padding:14px 16px; margin-bottom:16px; box-shadow:0 1px 0 rgba(255,255,255,.03)}
