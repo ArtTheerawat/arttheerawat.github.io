@@ -293,3 +293,122 @@ export function buildContext(intent: Intent, term: string | undefined, data: Ass
 
   return sections.join("\n");
 }
+
+/* ──────────────────────────────────────────────────────────────────────────
+ * Deterministic natural-language answers (no AI, 0 tokens).
+ *
+ * These compose a friendly Thai reply straight from the REAL data the app
+ * already computed (classes, counts, priority top task). They back the
+ * route's /api/assistant deterministic fast-path so the assistant still
+ * answers common study questions even with no AI key configured. Never
+ * fabricates: classes/tasks/dates are pulled only from loaded data.
+ * ────────────────────────────────────────────────────────────────────────── */
+
+/** "HH:MM" from a class start (e.g. 8 -> "08:00", 13.5 -> "13:30"). */
+function fmtHour(h: number): string {
+  const whole = Math.floor(h);
+  const min = Math.round((h - whole) * 60);
+  return `${String(whole).padStart(2, "0")}:${String(min).padStart(2, "0")}`;
+}
+
+/** Deterministic Thai answer for "ช่องวางแผนวันนี้" (plan_day). */
+function planDayAnswer(data: AssistantData): string {
+  const dayIdx = todayIdxBKK();
+  const classes = todayClasses(dayIdx);
+  const counts = taskCounts(data.todo);
+  const top = topTaskText(data.todo, data.quizzes);
+
+  const lines: string[] = [`วัน${DAY[dayIdx - 1]} (${todayStr()}) แล้วครับ`];
+
+  // Classes with their time windows.
+  if (classes.length) {
+    const cl = classes.map(
+      (c) => `${fmtHour(c.start)}–${fmtHour(c.end)} ${c.name}${c.room ? ` (${c.room})` : ""}`
+    );
+    lines.push("คาบเรียนวันนี้:");
+    lines.push(cl.map((s) => `- ${s}`).join("\n"));
+  } else {
+    lines.push("วันนี้ไม่มีคาบเรียนตามตาราง");
+  }
+
+  // Workload overview.
+  const workBits: string[] = [];
+  if (counts.over > 0) workBits.push(`${counts.over} งานเลยกำหนด`);
+  if (counts.today > 0) workBits.push(`${counts.today} งานครบวันนี้`);
+  if (counts.soon > 0) workBits.push(`${counts.soon} งานใกล้ถึง (5 วัน)`);
+  if (workBits.length) {
+    lines.push("ภาระงานวันนี้: " + workBits.join(" · "));
+  } else {
+    lines.push("วันนี้ไม่มีการบ้านเร่งด่วน (ตามกำหนดส่ง)");
+  }
+
+  // Priority suggestion (deterministic engine).
+  if (top) {
+    lines.push(
+      `ถ้าจะเริ่มเลย แนะนำงาน ${top.title} [${top.courseName}] (${top.dueLabel}) เพราะ ${top.reasons.join(" และ ") || "เป็นงานที่ระบบจัดลำดับความสำคัญไว้ก่อน"}`
+    );
+  } else if (counts.over === 0) {
+    lines.push("ไม่มีงานเร่งด่วน — ถ้าอยาก productive ก็เก็บงานที่ครบกำหนดไกลออกไปก่อนได้ครับ");
+  }
+
+  return lines.join("\n");
+}
+
+/** Deterministic Thai answer for "วันนี้มีอะไร" (what_today). */
+function whatTodayAnswer(data: AssistantData): string {
+  const dayIdx = todayIdxBKK();
+  const classes = todayClasses(dayIdx);
+  const counts = taskCounts(data.todo);
+  const top = topTaskText(data.todo, data.quizzes);
+
+  const lines: string[] = [`วัน${DAY[dayIdx - 1]} (${todayStr()}) ครับ`];
+
+  if (classes.length) {
+    lines.push("คาบเรียน: " + classes.map((c) => `${c.name} (${fmtHour(c.start)})`).join(" | "));
+  } else {
+    lines.push("คาบเรียน: ไม่มีคาบในตารางวันนี้");
+  }
+
+  lines.push(`งาน: เลยกำหนด ${counts.over} · ครบวันนี้ ${counts.today} · ใกล้ถึง (5 วัน) ${counts.soon}`);
+  if (top) {
+    lines.push(`ที่ควรทำก่อน: "${top.title}" [${top.courseName}] — ${top.dueLabel}`);
+  } else {
+    lines.push("ไม่มีงานเร่งด่วนที่ต้องทำตอนนี้");
+  }
+  return lines.join("\n");
+}
+
+/** Deterministic Thai answer for "งานไหนควรทำก่อน" (what_first). */
+function whatFirstAnswer(data: AssistantData): string {
+  const top = topTaskText(data.todo, data.quizzes);
+  if (!top) {
+    return "ตอนนี้ไม่มีงานเร่งด่วนที่ระบบจัดลำดับไว้เป็นอันดับหนึ่งครับ (เลขกำหนดส่ง/คะแนนยังไม่สูงพอ หรืองานครบทั้งหมดแล้ว)";
+  }
+  return `งานที่ควรทำก่อนที่สุดคือ "${top.title}" [${top.courseName}] (${top.dueLabel}) เพราะ ${top.reasons.join(" และ ") || "ระบบจัดลำดับความสำคัญไว้ก่อน"}`;
+}
+
+/** Compose a deterministic answer for the given intent, or null when the
+ *  intent is not deterministically answerable (wants AI). */
+export function buildDeterministicAnswer(
+  intent: Intent,
+  term: string | undefined,
+  data: AssistantData
+): string | null {
+  switch (intent) {
+    case "what_today":
+      return whatTodayAnswer(data);
+    case "what_first":
+      return whatFirstAnswer(data);
+    case "plan_day":
+      return planDayAnswer(data);
+    case "task_detail":
+      // Only answer deterministically when a concrete term is given; without
+      // one we can't know what they mean, so prompt for a term (no AI needed).
+      return term
+        ? buildContext("task_detail", term, data).replace(/^วันนี้[^\n]*\n/, "").trim()
+        : "ขอระบุชื่องาน/คำค้นหน่อยนะครับ เช่น \"Lab 5\" หรือ \"ใบงานที่ 6\"";
+    case "unknown":
+    default:
+      return null;
+  }
+}

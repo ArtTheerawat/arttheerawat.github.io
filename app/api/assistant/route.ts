@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { readFileSync } from "fs";
 import { join } from "path";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
-import { buildContext, detectIntent, type AssistantData, type Intent } from "@/lib/assistant/context";
+import { buildContext, buildDeterministicAnswer, detectIntent, type AssistantData } from "@/lib/assistant/context";
 
 // lib/assistant/route logic lives here (server-only: reads public/data JSON,
 // calls the project's configured 9arm model when a key is present, and always
@@ -102,20 +102,6 @@ async function loadAssistantData(): Promise<AssistantData> {
   };
 }
 
-// ── Deterministic answer path (no AI, no tokens) for common direct questions. ──
-function deterministicAnswer(intent: Intent, term: string | undefined, data: AssistantData): string | null {
-  const ctx = buildContext(intent, term, data);
-  // For what_first / what_today, the deterministic engine already yields the
-  // full answer — return it verbatim (always true, zero tokens).
-  if (intent === "what_first" || intent === "what_today") {
-    return ctx.replace(/^วันนี้[^\n]*\n/, "").trim();
-  }
-  // task_detail without a term has nothing useful to say deterministically.
-  if (intent === "task_detail" && !term) return "ขอระบุชื่องาน/คำค้นหน่อยนะครับ เช่น \"Lab 5\" หรือ \"ใบงานที่ 6\"";
-  // For plan_day / unknown / term-less detail we still want AI, or explicit "ไม่มีข้อมูล".
-  return null;
-}
-
 // ── 9arm chat call (mirrors generate_next_action.py's provider/model chain). ──
 const MODEL = process.env.ASSISTANT_MODEL || "deepseek-v4-flash-0731";
 const FALLBACK_MODEL = process.env.ASSISTANT_FALLBACK_MODEL || "qwen3.8-27b-fp8";
@@ -189,14 +175,15 @@ export async function POST(req: Request) {
   const context = buildContext(intent, term, data);
 
   // 4) Deterministic fast-path (zero tokens) when code can answer fully.
-  const direct = deterministicAnswer(intent, term, data);
+  const direct = buildDeterministicAnswer(intent, term, data);
   if (direct && !process.env.ASSISTANT_API_KEY) {
     return NextResponse.json({ status: "ok", answer: direct, mode: "deterministic" });
   }
-  // Even with a key, what_first/what_today are fully known by code — prefer
-  // deterministic (token-optimized, per the brief). Only fall back to AI when
-  // the answer truly needs natural-language reasoning.
-  if (direct && (intent === "what_first" || intent === "what_today")) {
+  // Even with a key, what_first / what_today / plan_day / term'd task_detail
+  // are fully known by code — prefer deterministic (token-optimized, per the
+  // brief). Only fall back to AI when the answer truly needs natural-language
+  // reasoning (unknown queries, vague task questions, open planning nuance).
+  if (direct && (intent === "what_first" || intent === "what_today" || intent === "plan_day")) {
     return NextResponse.json({ status: "ok", answer: direct, mode: "deterministic" });
   }
 
