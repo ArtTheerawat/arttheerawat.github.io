@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { classifyAssignment, dataUrl, dueLabel, fmtDate, nowBKK, todayLabelBKK, todayStr, type Bucket } from "@/lib/data";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { classifyAssignment, dataUrl, dueLabel, fmtDate, nowBKK, todayIdxBKK, todayLabelBKK, todayStr, type Bucket } from "@/lib/data";
+import { COURSES, MAKEUP, SCHEDULE } from "@/lib/schedule-data";
 import { useHiddenTasks } from "@/lib/hidden-tasks";
 import {
   ConfirmClear,
@@ -35,6 +36,36 @@ interface SchedData {
   updated?: string;
 }
 
+/* AI-generated NEXT ACTION brief (from generate_next_action.py). Same shape
+   as Home reads — the Today page surfaces it under the timeline. */
+interface NextActionItem {
+  title?: string;
+  course?: string;
+  dueLabel?: string;
+  effort_hr?: string;
+  why?: string;
+}
+interface NextActionBrief {
+  generated_at?: string;
+  day_label?: string;
+  model?: string;
+  brief?: string;
+  items?: NextActionItem[];
+}
+
+/* A single row on the Today timeline. Sources are merged in time order:
+   recurring weekly classes (SCHEDULE) + one-off makeup sessions (MAKEUP). */
+interface TimelineRow {
+  time: number;       // start hour, e.g. 10.0 / 11.84
+  end: number;
+  label: string;      // course name / session name
+  code: string;
+  room?: string;
+  color: string;      // course accent color
+  kind: "class" | "makeup";
+  icon: string;       // emoji for the row
+}
+
 // (classify + badge logic live in lib/data so every page agrees.)
 
 function fmtSync(iso?: string): string {
@@ -48,13 +79,70 @@ function fmtSync(iso?: string): string {
   });
 }
 
+/* ── Today timeline helpers ──
+   Merge the day's recurring classes (SCHEDULE) + one-off makeup sessions
+   (MAKEUP) into a single time-ordered list. Repeated weekly sessions share the
+   same course → same accent color + a study emoji; makeup sessions get a
+   distinct lookup cue. This turns a wall of deadline buckets into a real
+   "เวลา → กิจกรรม" view. */
+function fmtH(h: number): string {
+  const hh = String(Math.floor(h)).padStart(2, "0");
+  const mm = h % 1 ? "30" : "00";
+  return `${hh}:${mm}`;
+}
+
+function buildTimeline(dayIdx: number, isoToday: string): TimelineRow[] {
+  const rows: TimelineRow[] = [];
+
+  // 1) Recurring weekly classes for today.
+  SCHEDULE.filter((s) => s.day === dayIdx).forEach((s) => {
+    rows.push({
+      time: s.start,
+      end: s.end,
+      label: COURSES[s.code]?.name || s.code,
+      code: s.code,
+      room: s.room,
+      color: COURSES[s.code]?.color || "#22d3ee",
+      kind: "class",
+      icon: "📚",
+    });
+  });
+
+  // 2) One-off makeup / compensation classes dated today.
+  MAKEUP.filter((m) => m.date === isoToday).forEach((m) => {
+    rows.push({
+      time: m.start,
+      end: m.end,
+      label: COURSES[m.code]?.name || m.code,
+      code: m.code,
+      room: m.room,
+      color: COURSES[m.code]?.color || "#22d3ee",
+      kind: "makeup",
+      icon: "⚡",
+    });
+  });
+
+  return rows.sort((a, b) => a.time - b.time);
+}
+
+const CLASS_ICONS: Record<string, string> = {
+  "88622065": "🗂️", // Data Structures
+  "88624065": "🗄️", // Relational Database
+  "88624165": "🎨", // UI Design
+  "88634065": "💻", // Software Dev
+  "89520664": "🇬🇧", // Experiential English
+  "89520864": "🗣️", // Thai Language
+  "73101469": "❤️", // Sexual Literacy
+};
+
 export default function TodayPage() {
   const [all, setAll] = useState<Assignment[]>([]);
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [synced, setSynced] = useState("");
   const [loading, setLoading] = useState(true);
-  const [err, setErr] = useState<string | null>(null);
-  const [quizError, setQuizError] = useState<string | null>(null);
+    const [err, setErr] = useState<string | null>(null);
+    const [quizError, setQuizError] = useState<string | null>(null);
+    const [aiBrief, setAiBrief] = useState<NextActionBrief | null>(null);
   const [showLater, setShowLater] = useState(false);
     const [showHidden, setShowHidden] = useState(false);
     const [confirmClear, setConfirmClear] = useState(false);
@@ -100,10 +188,26 @@ export default function TodayPage() {
           const qj: SchedData = await q.json();
           setQuizzes(qj.quizzes || []);
         } catch (e) {
-          setQuizError("โหลดรายการสอบ/กิจกรรมไม่ได้: " + (e instanceof Error ? e.message : String(e)));
-        }
-      })();
-    }, []);
+                  setQuizError("โหลดรายการสอบ/กิจกรรมไม่ได้: " + (e instanceof Error ? e.message : String(e)));
+                }
+                // AI NEXT-ACTION brief is optional — the page keeps its heuristic next
+                // card when the file is absent or older than ~36h (same freshness rule as Home).
+                try {
+                  const b = await fetch(dataUrl("/data/next_action.json"), { cache: "no-store" });
+                  if (b.ok) {
+                    const bj: NextActionBrief = await b.json();
+                    if (bj.items && bj.items.length) {
+                      const t = bj.generated_at ? new Date(bj.generated_at).getTime() : 0;
+                      if (!isNaN(t) && Date.now() - t <= 36 * 3600 * 1000) {
+                        setAiBrief(bj);
+                      }
+                    }
+                  }
+                } catch {
+                  /* keep the deadline-bucket "next" heuristic below as fallback */
+                }
+              })();
+            }, []);
 
   // Always filter hidden assignments out of every bucket BEFORE computing stats.
     const visible = useMemo(() => {
@@ -128,8 +232,48 @@ export default function TodayPage() {
     }, [visible]);
 
   const now = nowBKK();
-    const today = todayStr();
-    const dayLabel = todayLabelBKK();
+      const today = todayStr();
+      const dayLabel = todayLabelBKK();
+
+    /* Today's timeline: recurring classes + makeup sessions, merged in time order. */
+    const timelineRows = useMemo(() => buildTimeline(todayIdxBKK(), todayStr()), [today]);
+
+    /* Heuristic "next" (used only when the AI brief isn't available) — same rule
+         as Home: due-today first, then longest-overdue, else nearest soon. */
+      const heuristicNext = useMemo(() => {
+        if (aiBrief) return null;
+        const pick =
+          tod[0] ||
+          over.slice().sort((p, q) => ((q.due || "") < (p.due || "") ? -1 : 1))[0] ||
+          soon.slice().sort((p, q) => ((p.due || "") < (q.due || "") ? -1 : 1))[0] ||
+          ([...over, ...tod, ...soon][0] || null);
+        return pick;
+      }, [aiBrief, over, tod, soon]);
+
+      /* Filter hidden tasks out of the AI brief. next_action.json is generated by a
+         morning cron that doesn't know about the hidden_tasks set, so an item the
+         user has hidden in Supabase would otherwise still show as "should do now".
+         Match by title (AI brief has no raw due; its course is "code + name" while
+         the hidden key course is the bare code), cross-checked with course being a
+         prefix so a same-named task in a different class isn't wrongly dropped. */
+      const aiVisibleItems = useMemo(() => {
+        if (!aiBrief?.items) return [];
+        const hidden = hiddenList; // {key, course, title, due,...}
+        return aiBrief.items.filter((it) => {
+          const t = (it.title || "").trim();
+          if (!t) return false;
+          const hit = hidden.find((h) => {
+            const hTitle = (h.title || "").trim();
+            if (hTitle && hTitle !== t) return false; // different task name
+            const hCourse = (h.course || "").trim();
+            const iCourse = (it.course || "").trim();
+            // Course must agree (hidden code is a prefix of the brief's "code name").
+            if (hCourse && iCourse && !(iCourse.startsWith(hCourse) || hCourse === iCourse)) return false;
+            return true;
+          });
+          return !hit; // keep items that are NOT hidden
+        });
+      }, [aiBrief, hiddenList]);
 
   const handleHide = (a: Assignment, reason: string, custom?: string) => {
         hide(a, reason, custom).then((res) => {
@@ -217,13 +361,101 @@ export default function TodayPage() {
             )}
 
             {!loading && quizError && (
-              <div className="err" role="alert">
-                ⚠ {quizError}
-              </div>
-            )}
+                          <div className="err" role="alert">
+                            ⚠ {quizError}
+                          </div>
+                        )}
 
-            {/* Counts only make sense once data arrived — during load they
-                           would show a misleading 0 for everything (false affordance). */}
+                  {/* ── TODAY TIMELINE ──
+                      Real time-ordered view of today: recurring classes + makeup sessions.
+                      This is the "เวลา → กิจกรรม" spine gpt proposed — wraps the schedule
+                      data (from lib/schedule-data.ts) filtered to the current weekday. */}
+                  <section className="today-tl">
+                    <h2 className="sec-title">
+                      🕐 Timeline วันนี้ <span className="cnt">{timelineRows.length} คาบ</span>
+                    </h2>
+                    {timelineRows.length === 0 ? (
+                      <div className="tl-empty">วันนี้ไม่มีคาบเรียน — เวลาว่าง 🎉</div>
+                    ) : (
+                      <div className="tl-list">
+                        {timelineRows.map((r, i) => {
+                          const icon = CLASS_ICONS[r.code] || r.icon;
+                          return (
+                            <div
+                              className={"tl-row" + (r.kind === "makeup" ? " makeup" : "")}
+                              key={i}
+                              style={{ "--tl-c": r.color } as CSSProperties}
+                            >
+                              <div className="tl-time">
+                                <div className="tl-h">{fmtH(r.time)}</div>
+                                <div className="tl-end">–{fmtH(r.end)}</div>
+                              </div>
+                              <div className="tl-axis">
+                                <span className="tl-dot" />
+                              </div>
+                              <div className="tl-body">
+                                <div className="tl-act">
+                                  <span className="tl-emoji">{icon}</span>
+                                  <span className="tl-name">{r.label}</span>
+                                  {r.kind === "makeup" && <span className="tl-tag">ชดเชย</span>}
+                                </div>
+                                <div className="tl-meta">
+                                  <span className="tl-code">{r.code}</span>
+                                  {r.room && <span className="tl-room">📍 {r.room}</span>}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </section>
+
+                  {/* ── AI NEXT ACTION (brief from next_action.json, else heuristic) ── */}
+                        {aiBrief && aiVisibleItems.length > 0 ? (
+                          <section className={`next-card ${aiVisibleItems[0]?.why?.includes("เลย") ? "is-over" : aiVisibleItems[0]?.dueLabel?.includes("วันนี้") ? "is-today" : "is-soon"}`}>
+                            <div className="next-badge">⚡ ควรทำตอนนี้</div>
+                            <div className="next-body">
+                              {aiBrief.brief && <div className="next-brief-line">{aiBrief.brief}</div>}
+                              <ol className="next-ai-list">
+                                {aiVisibleItems.map((it, j) => (
+                                  <li key={j} className={j === 0 ? "top" : ""}>
+                                    <div className="nai-head">
+                                      <span className="nai-rank">{j === 0 ? "ตอนนี้" : `ถัดไป ${j}`}</span>
+                                      <span className="nai-title">{it.title}</span>
+                                    </div>
+                                    <div className="nai-meta">
+                                      {it.course && <span className="nai-course">{it.course}</span>}
+                                      {it.dueLabel && <span>⏰ {it.dueLabel}</span>}
+                                      {it.effort_hr && <span>⏱ {it.effort_hr}</span>}
+                                    </div>
+                                    {it.why && <div className="nai-why">💡 {it.why}</div>}
+                                  </li>
+                                ))}
+                              </ol>
+                            </div>
+                          </section>
+                        ) : heuristicNext ? (
+                    <section className="next-card">
+                      <div className="next-badge">
+                        {heuristicNext.bucket === "over"
+                          ? "เลยกำหนด"
+                          : heuristicNext.bucket === "today"
+                          ? "ครบวันนี้"
+                          : "ต่อไป"}
+                      </div>
+                      <div className="next-body">
+                        <div className="next-subj">{heuristicNext.courseName || heuristicNext.course || ""}</div>
+                        <div className="next-ttl">{heuristicNext.title || "งาน"}</div>
+                        <div className="next-meta">
+                          {heuristicNext.due && <span>⏰ {fmtDate(heuristicNext.due)}</span>}
+                        </div>
+                      </div>
+                    </section>
+                  ) : null}
+
+                        {/* Counts only make sense once data arrived — during load they
+                                       would show a misleading 0 for everything (false affordance). */}
                         {!loading && (
                         <div className="counts">
                           <div className="c">

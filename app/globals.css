@@ -92,6 +92,34 @@ td .sig{font-weight:700}
 /* ── Today ── */
 .dayhead{display:flex; align-items:baseline; gap:12px; margin-bottom:18px; flex-wrap:wrap}
 .dayhead .d{font-size:15px; color:var(--muted)}
+
+/* ── Today timeline (เวลา → กิจกรรม) ── */
+.today-tl{background:var(--card); border:1px solid var(--border); border-radius:14px; padding:18px; margin-bottom:16px}
+.today-tl .sec-title{margin-bottom:14px}
+.tl-list{display:flex; flex-direction:column; gap:0}
+.tl-row{display:grid; grid-template-columns:58px 22px 1fr; gap:10px; align-items:center; padding:10px 2px; border-bottom:1px dashed var(--border)}
+.tl-row:last-child{border-bottom:none}
+.tl-time{text-align:right}
+.tl-h{font-size:13px; font-weight:700; color:var(--txt); font-variant-numeric:tabular-nums}
+.tl-end{font-size:11px; color:var(--muted); font-variant-numeric:tabular-nums}
+.tl-axis{display:flex; justify-content:center; position:relative}
+.tl-axis::before{content:""; position:absolute; top:-10px; bottom:-10px; width:2px; background:var(--border)}
+.tl-row:first-child .tl-axis::before{top:0}
+.tl-row:last-child .tl-axis::before{bottom:50%}
+.tl-dot{width:12px; height:12px; border-radius:50%; background:var(--tl-c, var(--accent2)); box-shadow:0 0 0 3px rgba(34,211,238,.12); position:relative; z-index:1}
+.tl-body{min-width:0}
+.tl-act{display:flex; align-items:center; gap:8px; flex-wrap:wrap}
+.tl-emoji{font-size:15px; flex-shrink:0}
+.tl-name{font-size:14px; font-weight:700; color:var(--txt)}
+.tl-tag{font-size:10px; font-weight:700; padding:2px 8px; border-radius:999px; background:rgba(217,70,239,.18); color:#f0abfc}
+.tl-meta{display:flex; gap:12px; flex-wrap:wrap; font-size:11px; color:var(--muted); margin-top:3px}
+.tl-code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.tl-room{color:var(--accent2)}
+.tl-row.makeup .tl-name{color:#f0abfc}
+.tl-row.makeup .tl-dot{background:#d946ef; box-shadow:0 0 0 3px rgba(217,70,239,.15)}
+.tl-empty{color:var(--muted); font-size:13px; text-align:center; padding:16px}
+
+/* ── Today: keep all legacy layout intact below ── */
 .quizban{background:linear-gradient(90deg,rgba(217,70,239,.16),rgba(99,102,241,.1)); border:1px solid rgba(217,70,239,.4); border-radius:12px; padding:14px 16px; margin-bottom:18px}
 .quizban h3{font-size:14px; color:#f0abfc; margin-bottom:8px}
 .quizban .q{display:flex; justify-content:space-between; gap:10px; align-items:center; font-size:13px; padding:6px 0; border-bottom:1px dashed rgba(217,70,239,.25)}
