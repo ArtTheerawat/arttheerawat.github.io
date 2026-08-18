@@ -3,36 +3,20 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   classifyAssignment,
-  dataUrl,
   dueLabel,
   fmtDate,
   todayLabelBKK,
   todayStr,
   type Bucket,
 } from "@/lib/data";
-import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import type { Coursework, Announcement } from "@/lib/db/types";
+import { loadClassroom } from "@/lib/services/classroom-service";
 
-interface Coursework {
-  title?: string;
-  due?: string;
-  dueTime?: string;
-  state?: string;
-  id?: string;
-}
-interface Announcement {
-  text?: string;
-  time?: string;
-  id?: string;
-}
 interface Course {
   name?: string;
   id?: string;
   coursework?: Coursework[];
   announcements?: Announcement[];
-}
-interface ClassroomData {
-  generated_at?: string;
-  courses?: Course[];
 }
 
 interface FlatTask extends Coursework {
@@ -53,17 +37,6 @@ function fmtSync(iso?: string): string {
   });
 }
 
-/** Map a Supabase classroom_tasks row → component coursework shape. */
-function sbTaskToCoursework(r: any): Coursework {
-  return {
-    title: r.title || undefined,
-    due: r.due || undefined,
-    dueTime: r.due_time || undefined,
-    state: r.state || undefined,
-    id: r.task_key || undefined,
-  };
-}
-
 export default function ClassroomPage() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [synced, setSynced] = useState("");
@@ -75,56 +48,14 @@ export default function ClassroomPage() {
     setLoading(true);
     setErr(null);
     try {
-      // ── Primary source: Supabase ─────────────────────────────────────────
-      const sb = getSupabaseBrowserClient();
-      if (sb) {
-        try {
-          const [tRes, aRes] = await Promise.all([
-            sb.from("classroom_tasks").select("*").order("due", { ascending: true }),
-            sb.from("classroom_announcements").select("*").order("time", { ascending: false }),
-          ]);
-          if (!tRes.error && Array.isArray(tRes.data)) {
-            // Group tasks + announcements per course.
-            const byCourse = new Map<string, { name: string; coursework: Coursework[]; announcements: Announcement[] }>();
-            const getCourse = (id?: string, name?: string) => {
-              const key = id || name || "unknown";
-              if (!byCourse.has(key))
-                byCourse.set(key, { name: name || id || "unknown", coursework: [], announcements: [] });
-              return byCourse.get(key)!;
-            };
-            for (const r of (tRes.data as any[])) {
-              getCourse(r.course_id, r.course_name).coursework.push(sbTaskToCoursework(r));
-            }
-            for (const r of (aRes.data as any[])) {
-              const row: Announcement = {
-                text: r.text || undefined,
-                time: r.time || undefined,
-                id: r.ann_key || undefined,
-              };
-              getCourse(r.course_id, r.course_name).announcements.push(row);
-            }
-            setCourses(Array.from(byCourse.values()));
-            setSynced("");
-            setLoading(false);
-            return;
-          }
-          if (tRes.error) {
-            setErr("Supabase: " + (tRes.error.message || "query failed") + " — แสดงจาก classroom.json แทน");
-          }
-        } catch (e) {
-          setErr("Supabase error: " + (e instanceof Error ? e.message : String(e)) + " — แสดงจาก classroom.json แทน");
-        }
-      }
-      // ── Fallback: classroom.json ─────────────────────────────────────────
-      const res = await fetch(dataUrl("/data/classroom.json"), { cache: "no-store" });
-      if (res.ok) {
-        const j: ClassroomData = await res.json();
-        setCourses(j.courses || []);
-        setSynced(j.generated_at || "");
-      } else {
-        setErr("โหลดข้อมูลคลาสรูมไม่ได้ (HTTP " + res.status + ") — รอ cron ซิงก์แล้วลองใหม่");
-      }
+      const result = await loadClassroom();
+      setCourses((result.courses as Course[]) || []);
+      setSynced(result.synced);
+      setErr(result.error);
     } catch (e) {
+      // loadClassroom already catches its own errors, but guard anyway.
+      setCourses([]);
+      setSynced("");
       setErr("โหลดข้อมูลล้มเหลว: " + (e instanceof Error ? e.message : String(e)));
     } finally {
       setLoading(false);

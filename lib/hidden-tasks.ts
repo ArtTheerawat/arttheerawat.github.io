@@ -12,9 +12,17 @@
 // a professor CHANGES the due date the key changes too, so the task re-appears
 // as a "new" task (guard against genuinely missing a real deadline).
 
-import { useEffect, useRef, useState, useCallback } from "react";
-import { getSupabaseBrowserClient } from "./supabase/client";
-import type { RealtimeChannel } from "@supabase/supabase-js";
+import { useEffect, useState, useCallback } from "react";
+import {
+  loadHiddenTasks as serviceLoadHiddenTasks,
+  hideTask as serviceHideTask,
+  unhideTask as serviceUnhideTask,
+  clearHiddenTasks as serviceClearHiddenTasks,
+  subscribeHiddenTasks,
+  subscribeAuthState,
+  getCurrentUser,
+  signInWithGoogle as serviceSignInWithGoogle,
+} from "./services/hidden-tasks-service";
 
 export interface HiddenTask {
   key: string;
@@ -54,115 +62,31 @@ export function reasonLabel(id: string): string {
 }
 
 /* ──────────────────────────────────────────────────────────────────────────
- * Row mapping helpers (Supabase row <-> HiddenTask)
- * ────────────────────────────────────────────────────────────────────────── */
-interface HiddenTaskRow {
-  id: string;
-  user_id: string | null; // nullable now — kept for back-compat with pre-global rows
-  task_key: string;
-  course: string;
-  title: string;
-  due: string | null;
-  reason: string;
-  custom_reason: string | null;
-  hidden_at: string;
-}
-
-function rowToHiddenTask(r: HiddenTaskRow): HiddenTask {
-  return {
-    key: r.task_key,
-    course: r.course || "",
-    title: r.title || "",
-    due: r.due || undefined,
-    reason: r.reason,
-    custom: r.custom_reason || undefined,
-    hiddenAt: r.hidden_at,
-  };
-}
-
-/* ──────────────────────────────────────────────────────────────────────────
- * Low-level Supabase calls (all async). Used by the hook below and directly
- * by the tables when an explicit imperative call is needed.
+ * Data access — delegated to the hidden-tasks service (and through it, the
+ * DatabaseAdapter). Kept as thin re-exports so callers / tables keep the same
+ * signatures; the actual backend reads/writes live in the service layer.
  * ────────────────────────────────────────────────────────────────────────── */
 
 /** Load the GLOBAL hidden-task set. Everyone (signed in or not) can read it,
- *  so no auth check is required here. Returns [] when Supabase isn't set up. */
-export async function loadHiddenTasks(): Promise<HiddenTask[]> {
-  const sb = getSupabaseBrowserClient();
-  if (!sb) return [];
-  const { data, error } = await sb
-    .from("hidden_tasks")
-    .select("*")
-    .order("hidden_at", { ascending: false });
-  if (error || !data) {
-    console.warn("loadHiddenTasks:", error?.message);
-    return [];
-  }
-  return (data as HiddenTaskRow[]).map(rowToHiddenTask);
-}
+ *  so no auth check is required here. Returns [] when the backend is unset. */
+export const loadHiddenTasks = serviceLoadHiddenTasks;
 
 /** Hide an assignment globally. RLS enforces owner-only writes server-side.
- *  Returns the real Supabase error message on failure so the UI can show the
- *  exact reason (RLS, missing grant, or conflict) instead of a generic toast.
- *
- *  `user_id` is deliberately included: the live table still has `user_id`
- *  NOT NULL (migrations 0002/0003 that try to `drop not null` were never fully
- *  applied), so an upsert without it fails with a not-null violation. Setting it
- *  to the logged-in user's id satisfies the constraint and is harmless to the
- *  global model (reads are global via select_public; writes are owner-gated by
- *  email). If the migration is applied later, the column is merely populated. */
+ *  Returns the real backend error message on failure so the UI can show the
+ *  exact reason (RLS, missing grant, or conflict) instead of a generic toast. */
 export async function hideTask(
   a: Hiddenable,
   reason: string,
   custom?: string
 ): Promise<{ ok: boolean; error?: string }> {
-  const sb = getSupabaseBrowserClient();
-  if (!sb) return { ok: false, error: "Supabase ยังไม่ได้ติดตั้ง (ไม่พบ env)" };
-  const key = taskKey(a);
-  // Read the current user id so we can satisfy the NOT NULL user_id column.
-  const { data: sess } = await sb.auth.getSession();
-  const uid = sess?.session?.user?.id ?? null;
-  const payload = {
-    task_key: key,
-    user_id: uid,
-    course: (a.course || "").trim(),
-    title: (a.title || "").trim(),
-    due: (a.due || "").trim() || null,
-    reason,
-    custom_reason: reason === "other" ? (custom || "").trim() : null,
-  };
-  // Upsert keyed on task_key — idempotent re-hide (global, so unique).
-  const { error } = await sb.from("hidden_tasks").upsert(payload, { onConflict: "task_key" });
-  if (error) {
-    console.warn("hideTask:", error.message);
-    return { ok: false, error: error.message };
-  }
-  return { ok: true };
+  return serviceHideTask({ key: taskKey(a), course: a.course, title: a.title, due: a.due }, reason, custom);
 }
 
 /** Un-hide (restore) an assignment globally. Owner-only via RLS. */
-export async function unhideTask(key: string): Promise<{ ok: boolean; error?: string }> {
-  const sb = getSupabaseBrowserClient();
-  if (!sb) return { ok: false, error: "Supabase ยังไม่ได้ติดตั้ง (ไม่พบ env)" };
-  const { error } = await sb.from("hidden_tasks").delete().eq("task_key", key);
-  if (error) {
-    console.warn("unhideTask:", error.message);
-    return { ok: false, error: error.message };
-  }
-  return { ok: true };
-}
+export const unhideTask = serviceUnhideTask;
 
 /** Remove every hidden entry (global). Owner-only via RLS. */
-export async function clearHiddenTasks(): Promise<{ ok: boolean; error?: string }> {
-  const sb = getSupabaseBrowserClient();
-  if (!sb) return { ok: false, error: "Supabase ยังไม่ได้ติดตั้ง (ไม่พบ env)" };
-  const { error } = await sb.from("hidden_tasks").delete();
-  if (error) {
-    console.warn("clearHiddenTasks:", error.message);
-    return { ok: false, error: error.message };
-  }
-  return { ok: true };
-}
+export const clearHiddenTasks = serviceClearHiddenTasks;
 
 /** Is the given assignment currently hidden? (pure — call with the live list) */
 export function isTaskHidden(a: Hiddenable, list: HiddenTask[]): boolean {
@@ -270,121 +194,57 @@ export function useHiddenTasks() {
   const [user, setUser] = useState<{ id: string; email?: string; name?: string } | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
   const [hiddenList, setHiddenList] = useState<HiddenTask[]>([]);
-  const channelRef = useRef<RealtimeChannel | null>(null);
 
   const canEdit = !!user && isOwnerEmail(user.email);
 
-  // (Re)build the sorted list from rows whenever payloads tick in.
-  const applyRows = useCallback((rows: HiddenTaskRow[] | null) => {
-    setHiddenList(
-      (rows || [])
-        .map(rowToHiddenTask)
-        .sort((a, b) => (a.hiddenAt < b.hiddenAt ? 1 : -1))
-    );
-  }, []);
-
   const refresh = useCallback(async () => {
-    const sb = getSupabaseBrowserClient();
-    if (!sb) {
-      setUser(null);
-      setHiddenList([]);
-      setStatus("ready");
-      return;
-    }
     try {
-      const {
-        data: { user: u },
-      } = await sb.auth.getUser();
+      const u = await getCurrentUser();
       // Track the signed-in user (for owner detection + login UI), but the
       // hidden list itself is global and loads regardless.
-      setUser(u ? { id: u.id, email: u.email ?? undefined, name: u.user_metadata?.full_name ?? undefined } : null);
-      if (u) {
-        // Signed in — full read via authed client.
-        const { data, error } = await sb
-          .from("hidden_tasks")
-          .select("*")
-          .order("hidden_at", { ascending: false });
-        if (error) {
-          setStatus("error");
-          return;
-        }
-        applyRows((data as HiddenTaskRow[]) || []);
-      } else {
-        // Guest — still read the global set (SELECT is open to anon).
-        const { data, error } = await sb
-          .from("hidden_tasks")
-          .select("*")
-          .order("hidden_at", { ascending: false });
-        if (error) {
-          setStatus("error");
-          return;
-        }
-        applyRows((data as HiddenTaskRow[]) || []);
-      }
+      setUser(u);
+      const rows = await serviceLoadHiddenTasks();
+      setHiddenList(rows.slice().sort((a, b) => (a.hiddenAt < b.hiddenAt ? 1 : -1)));
       setStatus("ready");
     } catch (e) {
       setStatus("error");
     }
-  }, [applyRows]);
+  }, []);
 
   // Realtime + auth-change wiring (no per-user filter — global set).
   useEffect(() => {
-    const sb = getSupabaseBrowserClient();
-    if (!sb) {
-      setUser(null);
-      setHiddenList([]);
-      setStatus("ready");
-      return;
-    }
+    let disposed = false;
+    const unsubs: Array<() => void> = [];
 
-    const setupChannel = async () => {
-      // Clear any previous channel.
-      if (channelRef.current) {
-        await sb.removeChannel(channelRef.current);
-        channelRef.current = null;
-      }
-      channelRef.current = sb
-        .channel("hidden-tasks-realtime")
-        .on(
-          "postgres_changes",
-          {
-            event: "*",
-            schema: "public",
-            table: "hidden_tasks",
-          },
-          async () => {
-            // Refetch the full list on any change (simplest correct sync).
-            await refresh();
-          }
-        )
-        .subscribe();
-    };
+    // Refetch the full list on any change (simplest correct sync).
+    unsubs.push(subscribeHiddenTasks(() => {
+      if (!disposed) void refresh();
+    }));
+    // Re-trigger refresh on auth change too.
+    unsubs.push(subscribeAuthState(() => {
+      if (!disposed) void refresh();
+    }));
 
-    refresh();
-    setupChannel();
-
-    const { data: sub } = sb.auth.onAuthStateChange((event) => {
-      if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED") {
-        refresh();
-        setupChannel();
-      }
-    });
+    void refresh();
 
     // Cross-tab safety net: also refetch when the tab is focused again.
-    const onFocus = () => refresh();
+    const onFocus = () => void refresh();
     window.addEventListener("focus", onFocus);
 
     return () => {
-      sub.subscription.unsubscribe();
+      disposed = true;
+      unsubs.forEach((u) => u());
       window.removeEventListener("focus", onFocus);
-      if (channelRef.current) sb.removeChannel(channelRef.current);
-      channelRef.current = null;
     };
   }, [refresh]);
 
   const hide = useCallback(
     async (a: Hiddenable, reason: string, custom?: string): Promise<{ ok: boolean; error?: string }> => {
-      const res = await hideTask(a, reason, custom);
+      const res = await serviceHideTask(
+        { key: taskKey(a), course: a.course, title: a.title, due: a.due },
+        reason,
+        custom
+      );
       if (res.ok) await refresh();
       return res;
     },
@@ -393,7 +253,7 @@ export function useHiddenTasks() {
 
   const unhide = useCallback(
     async (key: string): Promise<{ ok: boolean; error?: string }> => {
-      const res = await unhideTask(key);
+      const res = await serviceUnhideTask(key);
       if (res.ok) await refresh();
       return res;
     },
@@ -402,7 +262,7 @@ export function useHiddenTasks() {
 
   const clearAll = useCallback(
     async (): Promise<{ ok: boolean; error?: string }> => {
-      const res = await clearHiddenTasks();
+      const res = await serviceClearHiddenTasks();
       if (res.ok) await refresh();
       return res;
     },
@@ -410,15 +270,9 @@ export function useHiddenTasks() {
   );
 
   const signInWithGoogle = useCallback(async () => {
-    const sb = getSupabaseBrowserClient();
-    if (!sb) return;
-    const { error } = await sb.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(window.location.pathname)}`,
-      },
-    });
-    if (error) console.warn("signInWithGoogle:", error.message);
+    await serviceSignInWithGoogle(
+      `${window.location.origin}/auth/callback?next=${encodeURIComponent(window.location.pathname)}`
+    );
   }, []);
 
   return {

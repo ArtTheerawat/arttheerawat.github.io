@@ -2,43 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { BarChart3, Activity, ShoppingCart, Radio } from "lucide-react";
-import { dataUrl, fmtMoney, fmtTimestamp, num } from "@/lib/data";
-import { getSupabaseBrowserClient } from "@/lib/supabase/client";
-
-interface Trade {
-  timestamp?: unknown;
-  symbol?: string;
-  type?: string;
-  direction?: string;
-  volume?: unknown;
-  entry?: string;
-  tp?: string;
-  sl?: string;
-  netPnl?: unknown;
-  status?: string;
-}
-
-interface Signal {
-  timestamp?: unknown;
-  symbol?: string;
-  signal?: string;
-  direction?: string;
-  confidence?: string;
-  d1Trend?: string;
-  h1Trend?: string;
-  entryZone?: string;
-  status?: string;
-}
-
-interface PerfDay {
-  date?: string;
-  totalTrades?: unknown;
-  wins?: unknown;
-  losses?: unknown;
-  winrate?: unknown;
-  netPnl?: unknown;
-  balance?: unknown;
-}
+import { fmtMoney, fmtTimestamp, num } from "@/lib/data";
+import { loadTrading, EMPTY_TRADING, EMPTY_TRADING_MSG } from "@/lib/services/trading-service";
+import type { Trade, Signal, PerfDay } from "@/lib/db/types";
 
 interface TradeData {
   trades: Trade[];
@@ -46,55 +12,8 @@ interface TradeData {
   perf: PerfDay[];
 }
 
-const EMPTY: TradeData = { trades: [], signals: [], perf: [] };
-const EMPTY_MSG = "ยังไม่มีข้อมูล — รอ data.json ซิงก์เข้ามา";
-
-function dataSynced(ok: boolean, extra: string) {
-  return { ok, extra };
-}
-
-/** Map a Supabase trades row → the component's Trade interface. */
-function sbTradeToView(r: any): Trade {
-  return {
-    timestamp: r.timestamp,
-    symbol: r.symbol,
-    direction: r.direction,
-    volume: r.volume,
-    entry: r.entry != null ? String(r.entry) : undefined,
-    tp: r.tp != null ? String(r.tp) : undefined,
-    sl: r.sl != null ? String(r.sl) : undefined,
-    netPnl: r.net_pnl,
-    status: r.status,
-  };
-}
-
-/** Map a Supabase signals row → the component's Signal interface. */
-function sbSignalToView(r: any): Signal {
-  return {
-    timestamp: r.timestamp,
-    symbol: r.symbol,
-    signal: r.signal,
-    direction: r.direction,
-    confidence: r.confidence,
-    d1Trend: r.d1_trend,
-    h1Trend: r.h1_trend,
-    entryZone: r.entry_zone,
-    status: r.status,
-  };
-}
-
-/** Map a Supabase trading_daily row → the component's PerfDay interface. */
-function sbPerfToView(r: any): PerfDay {
-  return {
-    date: r.date,
-    totalTrades: r.total_trades,
-    wins: r.wins,
-    losses: r.losses,
-    winrate: r.winrate,
-    netPnl: r.net_pnl,
-    balance: r.balance,
-  };
-}
+const EMPTY: TradeData = EMPTY_TRADING;
+const EMPTY_MSG = EMPTY_TRADING_MSG;
 
 function statusBadge(status?: string): { cls: string; txt: string } {
   const st = (status || "OPEN").toUpperCase();
@@ -114,69 +33,22 @@ export default function TradingPage() {
   const [err, setErr] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-        setLoading(true);
-        setErr(null);
-        try {
-          // ── Primary source: Supabase (source of truth for trading) ─────────
-          const sb = getSupabaseBrowserClient();
-          if (sb) {
-            try {
-              const [tRes, sRes, pRes] = await Promise.all([
-                sb.from("trades").select("*").order("timestamp", { ascending: false }).limit(300),
-                sb.from("signals").select("*").order("timestamp", { ascending: false }).limit(200),
-                sb.from("trading_daily").select("*").order("date", { ascending: false }).limit(60),
-              ]);
-              if (!tRes.error && tRes.data && tRes.data.length >= 0) {
-                setData({
-                  trades: tRes.data.map(sbTradeToView),
-                  signals: (sRes.data || []).map(sbSignalToView),
-                  perf: (pRes.data || []).map(sbPerfToView),
-                });
-                setSource({ ok: true, label: "Supabase (auto sync)" });
-                setLoading(false);
-                return;
-              }
-              // Supabase connected but query errored → fall through to data.json
-              if (tRes.error) {
-                setErr("Supabase: " + (tRes.error.message || "query failed") + " — แสดงข้อมูลจาก data.json แทน");
-              }
-            } catch (e) {
-              setErr("Supabase error: " + (e instanceof Error ? e.message : String(e)) + " — แสดงข้อมูลจาก data.json แทน");
-            }
-          }
-          // ── Fallback: data.json (static export, Google Sheets auto-sync) ──
-          const res = await fetch(dataUrl("/data.json"), { cache: "no-store" });
-          if (res.ok) {
-            const j = await res.json();
-            // Accept both a bare {trades: [...]} payload and a {data: {...}} wrapper.
-            const root = j && (j.trades ? j : j.data);
-            if (root && Array.isArray(root.trades)) {
-              setData({
-                trades: root.trades || [],
-                signals: root.signals || [],
-                perf: root.perf || [],
-              });
-              setSource({ ok: true, label: "Google Sheets (fallback)" });
-            } else {
-              // 200 but the shape isn't what we expect → invalid schema, not a network failure.
-              setData(EMPTY);
-              setErr("รูปแบบข้อมูล (schema) เปลี่ยนไป — กรุณาตรวจ data.json / สคริปต์ซิงก์");
-              setSource({ ok: false, label: "schema mismatch" });
-            }
-          } else {
-            // offline fallback — distinguish real HTTP failure from empty-but-valid.
+          setLoading(true);
+          setErr(null);
+          try {
+            const result = await loadTrading();
+            setData(result.data);
+            setSource(result.source);
+            setErr(result.error);
+          } catch (e) {
+            // loadTrading already catches its own errors, but guard anyway.
             setData(EMPTY);
-            setErr("โหลดข้อมูลไม่ได้ (HTTP " + res.status + ") — รอ cron ซิงก์แล้วลองใหม่");
-            setSource({ ok: false, label: "offline · HTTP " + res.status });
+            setErr("โหลดข้อมูลล้มเหลว: " + (e instanceof Error ? e.message : String(e)));
+            setSource({ ok: false, label: "error" });
+          } finally {
+            setLoading(false);
           }
-        } catch (e) {
-          setData(EMPTY);
-          setErr("โหลดข้อมูลล้มเหลว: " + (e instanceof Error ? e.message : String(e)));
-          setSource({ ok: false, label: "error" });
-        } finally {
-          setLoading(false);
-        }
-      }, []);
+        }, []);
 
   useEffect(() => {
     load();
