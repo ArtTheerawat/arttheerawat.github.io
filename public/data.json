@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-18T08:22:45",
+  "generated_at": "2026-08-18T08:38:45",
   "trades": [],
   "signals": [
     {
@@ -5873,6 +5873,54 @@
       "tp": "",
       "status": "ANALYZED",
       "notes": "Outside active trading session"
+    },
+    {
+      "timestamp": 46252.35121527778,
+      "symbol": "XAUUSDm",
+      "signal": "NONE",
+      "direction": "?",
+      "confidence": "",
+      "d1Trend": "",
+      "h1Trend": "",
+      "rsi": 50,
+      "atr": 0,
+      "entryZone": "",
+      "sl": "",
+      "tp": "",
+      "status": "ANALYZED",
+      "notes": "Outside active trading session"
+    },
+    {
+      "timestamp": 46252.35469907407,
+      "symbol": "XAUUSDm",
+      "signal": "NONE",
+      "direction": "?",
+      "confidence": "",
+      "d1Trend": "",
+      "h1Trend": "",
+      "rsi": 50,
+      "atr": 0,
+      "entryZone": "",
+      "sl": "",
+      "tp": "",
+      "status": "ANALYZED",
+      "notes": "Outside active trading session"
+    },
+    {
+      "timestamp": 46252.3581712963,
+      "symbol": "XAUUSDm",
+      "signal": "NONE",
+      "direction": "?",
+      "confidence": "",
+      "d1Trend": "",
+      "h1Trend": "",
+      "rsi": 50,
+      "atr": 0,
+      "entryZone": "",
+      "sl": "",
+      "tp": "",
+      "status": "ANALYZED",
+      "notes": "Outside active trading session"
     }
   ],
   "perf": [],
@@ -5895,6 +5943,6 @@
       },
       "updated_at": "2026-08-17T17:10:48"
     },
-    "updated_at": "2026-08-18T08:22:45"
+    "updated_at": "2026-08-18T08:38:45"
   }
 }
