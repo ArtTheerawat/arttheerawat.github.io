@@ -564,3 +564,37 @@ table.sched td.cl.overlay .cl-btn{font-style:italic}
   .focus-elapsed{font-size:42px}
   .focus-btn{flex:1; padding:12px 10px}
 }
+
+/* ── System Health (สถานะระบบ) ─────────────────────────────────────────── */
+.h-agg{display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+  background:var(--card); border:1px solid var(--border); border-radius:14px;
+  padding:14px 16px; margin-bottom:16px; box-shadow:0 1px 0 rgba(255,255,255,.03)}
+.h-badge{display:inline-flex; align-items:center; gap:7px; padding:4px 11px;
+  border-radius:999px; font-size:12px; font-weight:700; letter-spacing:.2px}
+.h-dot{font-size:13px}
+.h-agg-badge{font-size:13px}
+.h-agg-meta{font-size:12px; color:var(--muted)}
+.h-healthy{background:rgba(34,197,94,.15); border:1px solid rgba(34,197,94,.4); color:#86efac}
+.h-stale{background:rgba(245,158,11,.15); border:1px solid rgba(245,158,11,.45); color:#fcd34d}
+.h-error{background:rgba(239,68,68,.15); border:1px solid rgba(239,68,68,.45); color:#fca5a5}
+.h-unknown{background:rgba(139,152,179,.15); border:1px solid rgba(139,152,179,.4); color:var(--muted)}
+
+.h-list{display:flex; flex-direction:column; gap:10px}
+.h-row{display:flex; gap:12px; align-items:flex-start;
+  background:var(--card); border:1px solid var(--border); border-radius:14px;
+  padding:14px 16px}
+.h-ico{font-size:22px; flex:none; line-height:1.2}
+.h-main{min-width:0; flex:1}
+.h-name{display:flex; align-items:center; gap:8px; font-size:15px; font-weight:700; color:var(--txt)}
+.h-link{color:var(--accent2); font-size:13px; text-decoration:none}
+.h-link:hover{filter:brightness(1.2)}
+.h-detail{display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-top:7px}
+.h-fresh{font-size:12.5px; color:var(--muted)}
+.h-meta{display:flex; gap:14px; flex-wrap:wrap; font-size:11.5px; color:var(--muted); margin-top:6px}
+.h-note{font-size:11.5px; color:var(--muted); margin-top:18px; line-height:1.6}
+
+@media(max-width:560px){
+  .h-agg{flex-direction:column; align-items:flex-start; gap:8px}
+  .h-dot{font-size:12px}
+  .h-badge{font-size:12px}
+}
