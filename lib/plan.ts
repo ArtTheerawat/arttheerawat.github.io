@@ -80,7 +80,12 @@ const MIN_SLOT_H = 20 / 60; // drop gaps shorter than ~20 min (too tight to use)
  *  defaults, NOT the user's personal schedule: if the day has a class, the
  *  actual class start/end bound the window instead. */
 const DEFAULT_DAY_START = 9.0;
-const DEFAULT_DAY_END = 21.0;
+// End of the planning working-day. The boss genuinely works until ~midnight
+// (not 21:00), so a 21:00 cap wrongly said "ไม่มีช่วงว่าง" at 21:09 every night
+// even when urgent overdue work still deserved an evening slot. 23.0 leaves a
+// real evening block (e.g. 22:00–23:00) without scheduling work at his
+// wind-down hour. Keep in sync: test/plan-engine.spec.mjs asserts the boundary.
+const DEFAULT_DAY_END = 23.0;
 
 /* ── BKK helpers (self-contained; mirrors lib/data so the page needn't know) */
 function bkkNow(): Date {
@@ -175,7 +180,7 @@ export function dayWindow(fixed: PlannedEvent[]): { start: number; end: number }
   const starts = fixed.map((f) => f.start);
   const ends = fixed.map((f) => f.end);
   // The working window spans the day the REAL fixed events occupy, but is never
-  // truncated to the last class's end: the neutral default day-end (21:00) also
+  // truncated to the last class's end: the neutral default day-end (23:00) also
   // applies to a school day, so the evening AFTER the final class genuinely
   // counts as available free time (same NEUTRAL_DAY reschedule.ts re-uses). A
   // "gap" after the last class is only ever surfaced when no fixed event is

@@ -100,7 +100,7 @@ console.log("▸ proposeBlock derives a REAL start, never fake");
 // A day with NO fixed classes → one big free window in the neutral working day.
 const freeFull = computeFreeSlots([], 9);
 ok("no-class day yields a usable free window (inside working day)",
-  freeFull.length >= 1 && freeFull.every((s) => s.start >= 9.0 && s.end <= 21.0));
+  freeFull.length >= 1 && freeFull.every((s) => s.start >= 9.0 && s.end <= 23.0));
 const fakeTask = {
   key: "K", title: "T", course: "C", courseName: "C",
   score: 80, level: "HIGH", dueLabel: "due today", reasons: [], actionTarget: "t",
@@ -155,7 +155,7 @@ ok("late nowHour leaves no free slots before now",
 // Insufficient free time: a day fully occupied → no free slot.
 const busyFixed = [
   { start: 9, end: 12, label: "A", code: "X", color: "#fff", kind: "class", icon: "📚" },
-  { start: 12, end: 21, label: "B", code: "Y", color: "#fff", kind: "class", icon: "📚" },
+  { start: 12, end: 23, label: "B", code: "Y", color: "#fff", kind: "class", icon: "📚" },
 ];
 const busyFree = computeFreeSlots(busyFixed, 9);
 ok("fully-occupied day yields no usable free window", busyFree.length === 0);

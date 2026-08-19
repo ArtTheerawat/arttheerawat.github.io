@@ -52,7 +52,7 @@ import {
    unchanged — the only relaxation is the day-end boundary, which re-uses the
    platform's own constant, never an invented slot. */
 const NEUTRAL_DAY = (() => {
-  const w = dayWindow([]); // classless day → {start:9, end:21} (DEFAULT_* constants)
+  const w = dayWindow([]); // classless day → {start:9, end:23} (DEFAULT_* constants)
   return { start: w.start, end: w.end };
 })();
 
