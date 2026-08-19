@@ -1,7 +1,8 @@
 {
-  "generated_at": "2026-08-19T04:28:43",
+  "generated_at": "2026-08-19T10:57:38",
   "courses": [
     {
+      "id": "868669476199",
       "name": "G2  User Interface Design and Development",
       "coursework": [
         {
@@ -107,6 +108,7 @@
       ]
     },
     {
+      "id": "855445031194",
       "name": "Softdev2026 G2",
       "coursework": [
         {
@@ -169,6 +171,7 @@
       "announcements": []
     },
     {
+      "id": "870253538466",
       "name": "88622065\tData Structures and Algorithms",
       "coursework": [
         {
@@ -237,6 +240,7 @@
       ]
     },
     {
+      "id": "837125422406",
       "name": "Com ORG 68/2",
       "coursework": [
         {
@@ -287,6 +291,7 @@
       ]
     },
     {
+      "id": "767930117622",
       "name": "กระบวนการคิด",
       "coursework": [
         {
@@ -464,6 +469,7 @@
       ]
     },
     {
+      "id": "787579027767",
       "name": "89510564\tการบริหารสุขภาวะทางจิต",
       "coursework": [],
       "announcements": [
