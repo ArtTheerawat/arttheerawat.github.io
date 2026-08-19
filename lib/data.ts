@@ -194,7 +194,7 @@ export function parseIsoDateLocal(due?: string | null): number | null {
 export function dueDiffDays(due?: string | null): number | null {
   const t = parseIsoDateLocal(due);
   if (t === null) return null;
-  const now = new Date();
+  const now = nowBKK();
   const todayMid = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
   return Math.round((t - todayMid) / 86400000);
 }

@@ -253,6 +253,12 @@ export class SupabaseAdapter implements DatabaseAdapter {
           error: "Supabase: " + (tRes.error.message || "query failed"),
         };
       }
+      if (sRes.error) {
+        console.warn("SupabaseAdapter.loadTrading (signals):", sRes.error.message);
+      }
+      if (pRes.error) {
+        console.warn("SupabaseAdapter.loadTrading (trading_daily):", pRes.error.message);
+      }
       return {
         ok: true,
         trades: (tRes.data || []).map(rowToTrade),
