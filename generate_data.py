@@ -54,29 +54,33 @@ def main():
             spreadsheetId=SHEET_ID, range="Trades!A1:S1"
         ).execute().get("values", [[]])[0]
         L = build_lookup(hdr)
+        def rc(r, key):
+            # column-safe read: '' if row shorter than header col (Google trims trailing empties)
+            i = L.get(key)
+            return r[i] if i is not None and i < len(r) else ""
         for r in tv:
             if not any(str(c).strip() for c in r):
                 continue
             trades.append({
-                "timestamp": r[L["Timestamp"]],
-                "type": r[L["Type"]],
-                "symbol": r[L["Symbol"]],
-                "direction": r[L["Direction"]],
-                "volume": r[L["Volume"]],
-                "entry": r[L["Entry"]],
-                "sl": r[L["SL"]],
-                "tp": r[L["TP"]],
-                "exit": r[L["Exit"]],
-                "profit": r[L["Profit"]],
-                "swap": r[L["Swap"]],
-                "commission": r[L["Commission"]],
-                "netPnl": r[L["Net P&L"]],
-                "status": r[L["Status"]],
-                "signalReason": r[L["Signal Reason"]],
-                "strategy": r[L["Strategy"]],
-                "risk": r[L["Risk %"]],
-                "balance": r[L["Account Balance"]],
-                "notes": r[L["Notes"]],
+                "timestamp": rc(r, "Timestamp"),
+                "type": rc(r, "Type"),
+                "symbol": rc(r, "Symbol"),
+                "direction": rc(r, "Direction"),
+                "volume": rc(r, "Volume"),
+                "entry": rc(r, "Entry"),
+                "sl": rc(r, "SL"),
+                "tp": rc(r, "TP"),
+                "exit": rc(r, "Exit"),
+                "profit": rc(r, "Profit"),
+                "swap": rc(r, "Swap"),
+                "commission": rc(r, "Commission"),
+                "netPnl": rc(r, "Net P&L"),
+                "status": rc(r, "Status"),
+                "signalReason": rc(r, "Signal Reason"),
+                "strategy": rc(r, "Strategy"),
+                "risk": rc(r, "Risk %"),
+                "balance": rc(r, "Account Balance"),
+                "notes": rc(r, "Notes"),
             })
 
     # ---- Signals ----
@@ -90,21 +94,24 @@ def main():
         for r in sv2:
             if not any(str(c).strip() for c in r):
                 continue
+            def rc(r, key):
+                i = L.get(key)
+                return r[i] if i is not None and i < len(r) else ""
             signals.append({
-                "timestamp": r[L["Timestamp"]],
-                "symbol": r[L["Symbol"]],
-                "signal": r[L["Signal"]],
-                "direction": r[L["Direction"]],
-                "confidence": r[L["Confidence"]],
-                "d1Trend": r[L["D1 Trend"]],
-                "h1Trend": r[L["H1 Trend"]],
-                "rsi": r[L["RSI"]],
-                "atr": r[L["ATR"]],
-                "entryZone": r[L["Entry Zone"]],
-                "sl": r[L["SL"]],
-                "tp": r[L["TP"]],
-                "status": r[L["Status"]],
-                "notes": r[L["Notes"]],
+                "timestamp": rc(r, "Timestamp"),
+                "symbol": rc(r, "Symbol"),
+                "signal": rc(r, "Signal"),
+                "direction": rc(r, "Direction"),
+                "confidence": rc(r, "Confidence"),
+                "d1Trend": rc(r, "D1 Trend"),
+                "h1Trend": rc(r, "H1 Trend"),
+                "rsi": rc(r, "RSI"),
+                "atr": rc(r, "ATR"),
+                "entryZone": rc(r, "Entry Zone"),
+                "sl": rc(r, "SL"),
+                "tp": rc(r, "TP"),
+                "status": rc(r, "Status"),
+                "notes": rc(r, "Notes"),
             })
 
     # ---- Performance ----
@@ -118,18 +125,21 @@ def main():
         for r in pv:
             if not any(str(c).strip() for c in r):
                 continue
+            def rc(r, key):
+                i = L.get(key)
+                return r[i] if i is not None and i < len(r) else ""
             perf.append({
-                "date": r[L["Date"]],
-                "totalTrades": r[L["Total Trades"]],
-                "wins": r[L["Wins"]],
-                "losses": r[L["Losses"]],
-                "winrate": r[L["Winrate %"]],
-                "netPnl": r[L["Net P&L"]],
-                "maxDrawdown": r[L["Max Drawdown"]],
-                "avgRr": r[L["Avg RR"]],
-                "balance": r[L["Balance"]],
-                "equityPeak": r[L["Equity Peak"]],
-                "equityLow": r[L["Equity Low"]],
+                "date": rc(r, "Date"),
+                "totalTrades": rc(r, "Total Trades"),
+                "wins": rc(r, "Wins"),
+                "losses": rc(r, "Losses"),
+                "winrate": rc(r, "Winrate %"),
+                "netPnl": rc(r, "Net P&L"),
+                "maxDrawdown": rc(r, "Max Drawdown"),
+                "avgRr": rc(r, "Avg RR"),
+                "balance": rc(r, "Balance"),
+                "equityPeak": rc(r, "Equity Peak"),
+                "equityLow": rc(r, "Equity Low"),
             })
 
     data = {
