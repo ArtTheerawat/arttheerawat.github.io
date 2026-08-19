@@ -3,7 +3,7 @@
 import { Fragment } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Layers, ListTodo, CalendarDays, CalendarRange, CandlestickChart, Headphones, BookOpen, Activity, Bot, BarChart3, type LucideIcon } from "lucide-react";
+import { Layers, ListTodo, CalendarDays, CalendarRange, CandlestickChart, Headphones, BookOpen, Activity, Bot, BarChart3, Moon, type LucideIcon } from "lucide-react";
 import AuthStatus from "./AuthStatus";
 import NotificationCenter from "./NotificationCenter";
 import GlobalSearch from "./GlobalSearch";
@@ -29,7 +29,8 @@ const SECONDARY_LINKS: NavLink[] = [
   { href: "/dictation", label: "ฝึกฟัง", Icon: Headphones },
   { href: "/system", label: "สถานะ", Icon: Activity },
   { href: "/analytics", label: "สถิติ", Icon: BarChart3 },
-];
+    { href: "/review", label: "สรุป", Icon: Moon },
+  ];
 
 function NavLinkItem({ l }: { l: NavLink }) {
   const pathname = usePathname();
