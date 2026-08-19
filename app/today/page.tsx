@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import Link from "next/link";
-import { classifyAssignment, dataUrl, dueLabel, fmtDate, nowBKK, todayIdxBKK, todayLabelBKK, todayStr, type Bucket } from "@/lib/data";
+import { classifyAssignment, dataUrl, dueLabel, fmt24, fmtDate, nowBKK, todayIdxBKK, todayLabelBKK, todayStr, type Bucket } from "@/lib/data";
 import { COURSES, MAKEUP, SCHEDULE } from "@/lib/schedule-data";
 import { filterVisibleBriefItems, useHiddenTasks } from "@/lib/hidden-tasks";
 import { useLinkOverrides } from "@/lib/link-overrides";
@@ -85,12 +85,6 @@ function fmtSync(iso?: string): string {
    same course → same accent color + a study emoji; makeup sessions get a
    distinct lookup cue. This turns a wall of deadline buckets into a real
    "เวลา → กิจกรรม" view. */
-function fmtH(h: number): string {
-  const hh = String(Math.floor(h)).padStart(2, "0");
-  const mm = h % 1 ? "30" : "00";
-  return `${hh}:${mm}`;
-}
-
 function buildTimeline(dayIdx: number, isoToday: string): TimelineRow[] {
   const rows: TimelineRow[] = [];
 
@@ -630,8 +624,8 @@ export default function TodayPage() {
                                                 style={{ "--tl-c": r.color } as CSSProperties}
                                               >
                                                 <div className="tl-time">
-                                                  <div className="tl-h">{fmtH(r.time)}</div>
-                                                  <div className="tl-end">–{fmtH(r.end)}</div>
+                                                  <div className="tl-h">{fmt24(r.time)}</div>
+                                                  <div className="tl-end">–{fmt24(r.end)}</div>
                                                 </div>
                                                 <div className="tl-axis">
                                                   <span className="tl-dot" />
