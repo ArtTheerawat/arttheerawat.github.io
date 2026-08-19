@@ -20,7 +20,7 @@
 // invents deadlines, classes, or status.
 // ───────────────────────────────────────────────────────────────────────────
 
-import { dueDiffDays, todayStr, todayIdxBKK, parseIsoDateLocal } from "@/lib/data";
+import { dueDiffDays, todayStr, todayIdxBKK, parseIsoDateLocal, fmt24 } from "@/lib/data";
 import { SCHEDULE, MAKEUP, COURSES } from "@/lib/schedule-data";
 
 /* ── Input shapes (subset of the real JSON on disk) ── */
@@ -241,7 +241,7 @@ export function buildContext(intent: Intent, term: string | undefined, data: Ass
       sections.push(
         "ชั้นเรียนวันนี้: " +
           classes
-            .map((c) => ` ${c.name} (${String(Math.floor(c.start)).padStart(2, "0")}:${c.start % 1 ? "30" : "00"})`)
+            .map((c) => ` ${c.name} (${fmt24(c.start)})`)
             .join(" | ")
       );
     } else {

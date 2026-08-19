@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ListTodo, CalendarDays, CandlestickChart, Headphones, Zap, type LucideIcon } from "lucide-react";
-import { classifyAssignment, dataUrl, dueDiffDays, fmtMoney, nowBKKHour, todayIdxBKK, todayLabelBKK, todayStr, type Bucket } from "@/lib/data";
+import { classifyAssignment, dataUrl, dueDiffDays, fmt24, fmtMoney, nowBKKHour, todayIdxBKK, todayLabelBKK, todayStr, type Bucket } from "@/lib/data";
 import { SCHEDULE, COURSES, MAKEUP } from "@/lib/schedule-data";
 import { filterVisibleBriefItems, useHiddenTasks } from "@/lib/hidden-tasks";
 import { useLinkOverrides } from "@/lib/link-overrides";
@@ -526,7 +526,7 @@ export default function HomePage() {
               .map((c, i) => (
                 <div className="cls" key={i} style={{ borderLeftColor: c.color }}>
                   <div className="cls-time">
-                    {String(Math.floor(c.start)).padStart(2, "0")}:{c.start % 1 ? "30" : "00"}–{String(Math.floor(c.end)).padStart(2, "0")}:{c.end % 1 ? "30" : "00"}
+                    {fmt24(c.start)}–{fmt24(c.end)}
                   </div>
                   <div className="cls-info">
                     <div className="cls-name">{c.name}</div>

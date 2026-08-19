@@ -149,12 +149,14 @@ export function todayLabelBKK(): string {
   return DAYS[(nowBKK().getDay() + 6) % 7];
 }
 
-/** Format a schedule hour (e.g. ``10.5`` = 10:30) as 24h ``"10:30"``.
- *  Single consistent time format across the site (matches Home's schedule),
- *  replaces the AM/PM ``fmt12`` used by the Schedule page. */
+/** Format a schedule hour as 24h ``"HH:MM"`` from a float hour (e.g.
+ *  10.5 → "10:30", 11.84 → "11:50"). Rounding to the nearest minute (not half)
+ *  keeps class boundaries like ``.84`` (= :50) exact instead of snapping every
+ *  non-whole hour to :30. Matches lib/plan.fmtHour — single consistent clock. */
 export function fmt24(h: number): string {
-  const hh = String(Math.floor(h)).padStart(2, "0");
-  const mm = h % 1 ? "30" : "00";
+  const totalMin = Math.round(h * 60);
+  const hh = String(Math.floor(totalMin / 60)).padStart(2, "0");
+  const mm = String(totalMin % 60).padStart(2, "0");
   return `${hh}:${mm}`;
 }
 
