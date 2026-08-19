@@ -11,7 +11,7 @@ import {
 } from "@/lib/data";
 import type { Coursework, Announcement } from "@/lib/db/types";
 import { loadClassroom } from "@/lib/services/classroom-service";
-import { useHiddenTasks, type Hiddenable } from "@/lib/hidden-tasks";
+import { useHiddenTasks, taskKey, type Hiddenable } from "@/lib/hidden-tasks";
 import { HideButton } from "@/components/HiddenTasks";
 
 interface Course {
@@ -113,7 +113,7 @@ export default function ClassroomPage() {
     () =>
       all.filter((a) => {
         if (a.state === "DRAFT") return false;
-        const key = (a.course || "") + "|" + (a.title || "") + "|" + (a.due || "");
+        const key = taskKey(a);
         if (hiddenList.some((h) => h.key === key)) return false;
         return !a.submitted; // hide already-turned-in work from pending buckets
       }),
