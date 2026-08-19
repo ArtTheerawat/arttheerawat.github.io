@@ -1,13 +1,16 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   classifyAssignment,
   dueLabel,
   fmtDate,
   todayLabelBKK,
   todayStr,
+  dataStatusBadge,
+  fmtUpdatedAt,
   type Bucket,
+  type DataStatus,
 } from "@/lib/data";
 import type { Coursework, Announcement } from "@/lib/db/types";
 import { loadClassroom } from "@/lib/services/classroom-service";
@@ -30,22 +33,13 @@ interface FlatTask extends Coursework {
   daysAway?: number;
 }
 
-function fmtSync(iso?: string): string {
-  if (!iso) return "";
-  const d = new Date(iso);
-  return d.toLocaleString("th-TH", {
-    day: "2-digit",
-    month: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
 export default function ClassroomPage() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [synced, setSynced] = useState("");
+  const [status, setStatus] = useState<DataStatus>("error");
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
+  const inFlight = useRef(false);
   const [showLater, setShowLater] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [msgErr, setMsgErr] = useState(false);
@@ -135,28 +129,51 @@ export default function ClassroomPage() {
   };
 
   const load = useCallback(async () => {
+    if (inFlight.current) return; // no overlap / duplicate while a request is pending
+    inFlight.current = true;
     setLoading(true);
     setErr(null);
     try {
       const result = await loadClassroom();
       setCourses((result.courses as Course[]) || []);
       setSynced(result.synced);
+      setStatus(result.status);
       setErr(result.error);
     } catch (e) {
       // loadClassroom already catches its own errors, but guard anyway.
       setCourses([]);
       setSynced("");
+      setStatus("error");
       setErr("โหลดข้อมูลล้มเหลว: " + (e instanceof Error ? e.message : String(e)));
     } finally {
+      inFlight.current = false;
       setLoading(false);
     }
   }, []);
 
-  useEffect(() => {
-    load();
-    const t = setInterval(load, 60000); // refresh every min
-    return () => clearInterval(t);
+  const pollRef = useRef<number | null>(null);
+  const schedulePoll = useCallback(() => {
+    if (pollRef.current) window.clearTimeout(pollRef.current);
+    pollRef.current = window.setTimeout(async () => {
+      await load();
+      schedulePoll();
+    }, 60000);
   }, [load]);
+  useEffect(() => {
+    void load();
+    schedulePoll();
+    const onVisible = () => {
+      // Tab became visible again → one immediate refresh to combat stale data.
+      void load();
+      schedulePoll();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      if (pollRef.current) window.clearTimeout(pollRef.current);
+      pollRef.current = null;
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [load, schedulePoll]);
 
   // Flatten all coursework into assignments, attach course name + classify.
   const all = useMemo(() => {
@@ -247,7 +264,13 @@ export default function ClassroomPage() {
             งานมอบหมาย + ประกาศ จาก Google Classroom · {dayLabel} {now}
           </div>
         </div>
-        {synced && <div style={{ fontSize: 12, color: "var(--muted)" }}>ซิงก์ {fmtSync(synced)}</div>}
+        <div className="header-status">
+          <span className={"badge " + dataStatusBadge(status).cls}>{dataStatusBadge(status).txt}</span>
+          {status === "live" && <span className="src-label">Supabase (auto sync)</span>}
+          {status === "fallback" && <span className="src-label">Google Classroom (fallback)</span>}
+          {status === "error" && <span className="src-label">เชื่อมต่อไม่ได้</span>}
+          {synced && <span className="updated">อัปเดตล่าสุด {fmtUpdatedAt(synced)}</span>}
+        </div>
       </header>
 
       {msg && (
@@ -256,7 +279,19 @@ export default function ClassroomPage() {
         </div>
       )}
 
-      {err && <div className="err">⚠ {err}</div>}
+      {err && (
+        <div role="alert" className="err">
+          ⚠ {err}{" "}
+          <button
+            type="button"
+            className="retry-btn"
+            onClick={() => void load()}
+            disabled={loading}
+          >
+            {loading ? "กำลังลองใหม่…" : "ลองใหม่"}
+          </button>
+        </div>
+      )}
       {loading && !err && (
         <div className="src" role="status" aria-live="polite">
           กำลังโหลดข้อมูลคลาสรูม…

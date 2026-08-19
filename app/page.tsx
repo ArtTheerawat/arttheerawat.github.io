@@ -331,15 +331,36 @@ export default function HomePage() {
     }, []);
 
   useEffect(() => {
-        load();
-        loadAssign();
-        loadAiBrief();
-        // Usage is secondary data — poll every 5 min instead of every 60s to cut
-        // needless OpenRouter calls from the dashboard (primary info is schedule/
-        // assignments, which load on page open).
-        const t = setInterval(load, 5 * 60 * 1000);
-        return () => clearInterval(t);
-      }, [load, loadAssign, loadAiBrief]);
+      load();
+      loadAssign();
+      loadAiBrief();
+      const loadRef = { active: false };
+      // Usage is secondary data — poll every 5 min instead of every 60s to cut
+      // needless OpenRouter calls from the dashboard (primary info is schedule/
+      // assignments, which load on page open). Recursive timeout guards against
+      // overlapping requests (a slow /api/usage never stacking a second call).
+      let t: number | null = null;
+      const tick = async () => {
+        if (!loadRef.active) {
+          loadRef.active = true;
+          try {
+            await load();
+          } finally {
+            loadRef.active = false;
+          }
+        }
+        t = window.setTimeout(tick, 5 * 60 * 1000);
+      };
+      tick();
+      const onVisible = () => {
+        if (document.visibilityState === "visible") void load();
+      };
+      document.addEventListener("visibilitychange", onVisible);
+      return () => {
+        if (t !== null) window.clearTimeout(t);
+        document.removeEventListener("visibilitychange", onVisible);
+      };
+    }, [load, loadAssign, loadAiBrief]);
 
   /* Deadline stats from today's perspective (classify writes bucket back so
          the "what's next" card colours/flag correctly). */

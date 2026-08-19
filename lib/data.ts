@@ -312,3 +312,55 @@ export function dataUrl(path: string, opts: { cache?: boolean } = {}): string {
   if (opts.cache) return path;
   return `${path}?t=${Date.now()}`;
 }
+
+/** Data source freshness shown to the user so they never have to guess whether
+ *  what they're looking at is current, partial, a fallback, empty, or broken.
+ *  Reuse this everywhere a page shows data that may come from Supabase /
+ *  a static fallback / a partial fetch. (QoL pass — single source of truth.) */
+export type DataStatus =
+  | "live"
+  | "partial"
+  | "fallback"
+  | "empty"
+  | "error";
+
+export interface DataStatusBadge {
+  /** CSS class appended to the badge (kept minimal; none = default). */
+  cls: string;
+  /** Human-readable Thai label. */
+  txt: string;
+}
+
+/** Mapping for a DataStatus → badge text. Pure, no side effects. */
+export function dataStatusBadge(s: DataStatus): DataStatusBadge {
+  switch (s) {
+    case "live":
+      return { cls: "ds-live", txt: "● Live" };
+    case "partial":
+      return { cls: "ds-partial", txt: "⚠ Partial" };
+    case "fallback":
+      return { cls: "ds-fallback", txt: "○ Fallback" };
+    case "empty":
+      return { cls: "ds-empty", txt: "ไม่มีข้อมูล" };
+    case "error":
+      return { cls: "ds-error", txt: "⚠ โหลดข้อมูลไม่ได้" };
+  }
+}
+
+/** Human readable "อัปเดตล่าสุด …" from an ISO/epoch source timestamp.
+ *  Uses the SOURCE's timestamp only (never `now` unless the caller passes a
+ *  genuinely-successful request time). Blank/invalid → "" (show nothing). */
+export function fmtUpdatedAt(isoOrEpoch: string | number | null | undefined): string {
+  if (isoOrEpoch === null || isoOrEpoch === undefined || isoOrEpoch === "") return "";
+  const t =
+    typeof isoOrEpoch === "number"
+      ? isoOrEpoch * 1000
+      : new Date(isoOrEpoch).getTime();
+  if (!Number.isFinite(t)) return "";
+  return new Date(t).toLocaleString("th-TH", {
+    day: "2-digit",
+    month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}

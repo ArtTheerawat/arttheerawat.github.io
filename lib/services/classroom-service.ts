@@ -3,11 +3,15 @@
 // page) and calls the DatabaseAdapter via getDb(). Pages never touch Supabase.
 
 import { getDb } from "../db";
+import type { DataStatus } from "../data";
 import type { CourseGroup } from "../db/types";
 
 export interface ClassroomResult {
   courses: CourseGroup[];
   synced: string; // generated_at from static JSON; "" when from backend
+  /** Data-source freshness: live / fallback / empty / error (partial not used
+   *  here — classroom loads from one primary source). */
+  status: DataStatus;
   loading: boolean;
   error: string | null;
 }
@@ -55,13 +59,35 @@ export async function loadClassroom(): Promise<ClassroomResult> {
       (c) => (c.coursework?.length || 0) > 0 || (c.announcements?.length || 0) > 0
     )
   ) {
-    return { courses: primary.courses, synced: "", loading: false, error: null };
+    return {
+      courses: primary.courses,
+      synced: "",
+      status: "live",
+      loading: false,
+      error: null,
+    };
+  }
+  // Backend healthy but tables empty → honest "ไม่มีข้อมูล", not a silent blank.
+  if (primary.ok && primary.courses && primary.courses.length === 0) {
+    return {
+      courses: [],
+      synced: "",
+      status: "empty",
+      loading: false,
+      error: null,
+    };
   }
   // Backend unavailable or errored → static JSON fallback.
   const fallback = await fetchStatic();
+  const status: DataStatus = fallback.error
+    ? "error"
+    : fallback.courses.length > 0
+    ? "fallback"
+    : "empty";
   return {
     courses: fallback.courses,
     synced: fallback.synced,
+    status,
     loading: false,
     error: fallback.error ?? primary.error ?? null,
   };

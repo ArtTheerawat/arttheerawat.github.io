@@ -83,33 +83,43 @@ export default function PlanPage() {
 
   const today = planTodayStr();
 
-  // ── Load tasks + quizzes (same as /today) ──
-  useEffect(() => {
-    (async () => {
-      setLoading(true);
-      try {
-        const r = await fetch(dataUrl("/data/assignments.json"), { cache: "no-store" });
-        if (!r.ok) throw new Error("HTTP " + r.status);
-        const j: { todo?: Assignment[]; updated?: string } = await r.json();
-        const todo = (j.todo || []).map((a) => ({ ...a }));
-        todo.forEach(classifyAssignment);
-        setAll(todo);
-      } catch (e) {
-        setErr("โหลดข้อมูลงานไม่ได้: " + (e instanceof Error ? e.message : String(e)));
-      } finally {
-        setLoading(false);
+  const inFlight = useRef(false);
+
+  // ── Load tasks + quizzes (same as /today) — extracted as a callback so the
+  //    error "ลองใหม่" button can retry JUST this module without reloading the
+  //    whole page. The inFlight guard prevents double-clicks stacking requests.
+  const load = useCallback(async () => {
+    if (inFlight.current) return; // no overlap while a request is pending
+    inFlight.current = true;
+    setLoading(true);
+    setErr(null);
+    try {
+      const r = await fetch(dataUrl("/data/assignments.json"), { cache: "no-store" });
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      const j: { todo?: Assignment[]; updated?: string } = await r.json();
+      const todo = (j.todo || []).map((a) => ({ ...a }));
+      todo.forEach(classifyAssignment);
+      setAll(todo);
+    } catch (e) {
+      setErr("โหลดข้อมูลงานไม่ได้: " + (e instanceof Error ? e.message : String(e)));
+    } finally {
+      inFlight.current = false;
+      setLoading(false);
+    }
+    try {
+      const q = await fetch(dataUrl("/data/schedule.json"), { cache: "no-store" });
+      if (q.ok) {
+        const qj: { quizzes?: { date?: string; summary?: string }[] } = await q.json();
+        setQuizzes(qj.quizzes || []);
       }
-      try {
-        const q = await fetch(dataUrl("/data/schedule.json"), { cache: "no-store" });
-        if (q.ok) {
-          const qj: { quizzes?: { date?: string; summary?: string }[] } = await q.json();
-          setQuizzes(qj.quizzes || []);
-        }
-      } catch {
-        /* quizzes optional */
-      }
-    })();
+    } catch {
+      /* quizzes optional */
+    }
   }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
 
   const showToast = useCallback((msg: string, isError = false) => {
     setToast(msg);
@@ -252,7 +262,19 @@ export default function PlanPage() {
           กำลังโหลดแผน…
         </div>
       )}
-      {err && <div className="err">{err} <button className="retry-btn" onClick={() => window.location.reload()}>ลองใหม่</button></div>}
+      {err && (
+  <div className="err">
+    {err}{" "}
+    <button
+      type="button"
+      className="retry-btn"
+      onClick={() => void load()}
+      disabled={loading}
+    >
+      {loading ? "กำลังลองใหม่…" : "ลองใหม่"}
+    </button>
+  </div>
+)}
 
       {!loading && !err && (
         <>

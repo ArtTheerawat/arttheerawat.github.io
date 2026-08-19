@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BarChart3, Activity, ShoppingCart, Radio } from "lucide-react";
-import { fmtMoney, fmtTimestamp, num } from "@/lib/data";
+import { fmtMoney, fmtTimestamp, num, dataStatusBadge, fmtUpdatedAt, type DataStatus } from "@/lib/data";
 import { loadTrading, EMPTY_TRADING, EMPTY_TRADING_MSG } from "@/lib/services/trading-service";
 import type { Trade, Signal, PerfDay } from "@/lib/db/types";
 
@@ -29,32 +29,61 @@ export default function TradingPage() {
     ok: false,
     label: "กำลังโหลด…",
   });
+  const [status, setStatus] = useState<DataStatus>("error");
+  const [updatedAt, setUpdatedAt] = useState("");
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
+  const inFlight = useRef(false);
 
   const load = useCallback(async () => {
-          setLoading(true);
-          setErr(null);
-          try {
-            const result = await loadTrading();
-            setData(result.data);
-            setSource(result.source);
-            setErr(result.error);
-          } catch (e) {
-            // loadTrading already catches its own errors, but guard anyway.
-            setData(EMPTY);
-            setErr("โหลดข้อมูลล้มเหลว: " + (e instanceof Error ? e.message : String(e)));
-            setSource({ ok: false, label: "error" });
-          } finally {
-            setLoading(false);
-          }
-        }, []);
+    if (inFlight.current) return; // no overlap / duplicate while a request is pending
+    inFlight.current = true;
+    setLoading(true);
+    setErr(null);
+    try {
+      const result = await loadTrading();
+      setData(result.data);
+      setSource(result.source);
+      setStatus(result.status);
+      setUpdatedAt(result.updatedAt);
+      setErr(result.error);
+    } catch (e) {
+          // loadTrading already catches its own errors and returns fallback/error
+          // data, so this is defensive only. Keep whatever data is already shown
+          // rather than wiping to a blank screen on a transient failure.
+          setErr("โหลดข้อมูลล้มเหลว: " + (e instanceof Error ? e.message : String(e)));
+          setSource({ ok: false, label: "error" });
+          setStatus("error");
+          setUpdatedAt("");
+        } finally {
+          inFlight.current = false;
+          setLoading(false);
+        }
+      }, []);
 
-  useEffect(() => {
-    load();
-    const t = setInterval(load, 60000); // refresh every min
-    return () => clearInterval(t);
+  const pollRef = useRef<number | null>(null);
+  const schedulePoll = useCallback(() => {
+    if (pollRef.current) window.clearTimeout(pollRef.current);
+    pollRef.current = window.setTimeout(async () => {
+      await load();
+      schedulePoll();
+    }, 60000);
   }, [load]);
+  useEffect(() => {
+    void load();
+    schedulePoll();
+    const onVisible = () => {
+      // Tab became visible again → one immediate refresh to combat stale data.
+      void load();
+      schedulePoll();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      if (pollRef.current) window.clearTimeout(pollRef.current);
+      pollRef.current = null;
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [load, schedulePoll]);
 
   const kpis = useMemo(() => {
     const trades = data.trades;
@@ -103,25 +132,33 @@ export default function TradingPage() {
           </h1>
           <div className="sub">XAUUSD (Gold) · BTCUSD · Multi-Timeframe Trend Following</div>
         </div>
-        <div className={"live" + (source.ok ? " ok" : "")}>
-          <span className="pd" />
-          <span>{source.ok ? "● live · " + source.label : "● " + source.label}</span>
-        </div>
-      </header>
+        <div className="header-status">
+                  <span className={"badge " + dataStatusBadge(status).cls}>{dataStatusBadge(status).txt}</span>
+                  <span className="src-label">{source.label}</span>
+                  {updatedAt && (
+                    <span className="updated">อัปเดตล่าสุด {fmtUpdatedAt(updatedAt)}</span>
+                  )}
+                </div>
+              </header>
 
-      <div className="src">
-              แหล่งข้อมูล: Google Sheets (Trading Bot Log) · auto-sync (data.json){" "}
-              {loading ? "· กำลังโหลด…" : ""}
-            </div>
+              <div className="src">
+                      แหล่งข้อมูล: Google Sheets (Trading Bot Log) · auto-sync (data.json){" "}
+                      {loading ? "· กำลังโหลด…" : ""}
+                    </div>
 
-            {err && (
-              <div role="alert" className="err">
-                ⚠ {err}{" "}
-                <button type="button" className="retry-btn" onClick={load}>
-                  ลองใหม่
-                </button>
-              </div>
-            )}
+                    {err && (
+                      <div role="alert" className="err">
+                        ⚠ {err}{" "}
+                        <button
+                          type="button"
+                          className="retry-btn"
+                          onClick={() => void load()}
+                          disabled={loading}
+                        >
+                          {loading ? "กำลังลองใหม่…" : "ลองใหม่"}
+                        </button>
+                      </div>
+                    )}
 
       <section className="kpis">
         {kpis.map((k) => (
