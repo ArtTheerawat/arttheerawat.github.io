@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-19T19:57:33",
+  "generated_at": "2026-08-19T20:03:36",
   "trades": [
     {
       "timestamp": 46253.82947916666,
@@ -7127,6 +7127,38 @@
       "tp": "",
       "status": "ANALYZED",
       "notes": "RSI=89 out"
+    },
+    {
+      "timestamp": 46253.83373842593,
+      "symbol": "XAUUSDm",
+      "signal": "NONE",
+      "direction": "DOWN",
+      "confidence": "",
+      "d1Trend": "DOWN",
+      "h1Trend": "DOWN",
+      "rsi": 89.6,
+      "atr": 88,
+      "entryZone": "",
+      "sl": "",
+      "tp": "",
+      "status": "ANALYZED",
+      "notes": "RSI=90 out"
+    },
+    {
+      "timestamp": 46253.835231481484,
+      "symbol": "XAUUSDm",
+      "signal": "NONE",
+      "direction": "DOWN",
+      "confidence": "",
+      "d1Trend": "DOWN",
+      "h1Trend": "DOWN",
+      "rsi": 86,
+      "atr": 88,
+      "entryZone": "",
+      "sl": "",
+      "tp": "",
+      "status": "ANALYZED",
+      "notes": "RSI=86 out"
     }
   ],
   "perf": [],
@@ -7156,6 +7188,6 @@
       },
       "updated_at": "2026-08-19T13:22:22"
     },
-    "updated_at": "2026-08-19T19:57:34"
+    "updated_at": "2026-08-19T20:03:36"
   }
 }
