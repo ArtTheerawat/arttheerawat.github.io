@@ -174,7 +174,16 @@ export function dayWindow(fixed: PlannedEvent[]): { start: number; end: number }
   if (!fixed.length) return { start: DEFAULT_DAY_START, end: DEFAULT_DAY_END };
   const starts = fixed.map((f) => f.start);
   const ends = fixed.map((f) => f.end);
-  return { start: Math.min(...starts), end: Math.max(...ends) };
+  // The working window spans the day the REAL fixed events occupy, but is never
+  // truncated to the last class's end: the neutral default day-end (21:00) also
+  // applies to a school day, so the evening AFTER the final class genuinely
+  // counts as available free time (same NEUTRAL_DAY reschedule.ts re-uses). A
+  // "gap" after the last class is only ever surfaced when no fixed event is
+  // actually occupying it — never invented.
+  return {
+    start: Math.min(...starts),
+    end: Math.max(DEFAULT_DAY_END, ...ends),
+  };
 }
 
 /** Free windows = complement of fixed events within the working day, dropping
