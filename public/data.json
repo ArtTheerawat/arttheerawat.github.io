@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-20T05:46:22",
+  "generated_at": "2026-08-20T06:01:52",
   "trades": [
     {
       "timestamp": 46253.82947916666,
@@ -9052,6 +9052,54 @@
       "tp": "",
       "status": "ANALYZED",
       "notes": "Outside active trading session"
+    },
+    {
+      "timestamp": 46254.243310185186,
+      "symbol": "XAUUSDm",
+      "signal": "NONE",
+      "direction": "?",
+      "confidence": "",
+      "d1Trend": "?",
+      "h1Trend": "?",
+      "rsi": 50,
+      "atr": 0,
+      "entryZone": "",
+      "sl": "",
+      "tp": "",
+      "status": "ANALYZED",
+      "notes": "Outside active trading session"
+    },
+    {
+      "timestamp": 46254.246782407405,
+      "symbol": "XAUUSDm",
+      "signal": "NONE",
+      "direction": "?",
+      "confidence": "",
+      "d1Trend": "?",
+      "h1Trend": "?",
+      "rsi": 50,
+      "atr": 0,
+      "entryZone": "",
+      "sl": "",
+      "tp": "",
+      "status": "ANALYZED",
+      "notes": "Outside active trading session"
+    },
+    {
+      "timestamp": 46254.25025462963,
+      "symbol": "XAUUSDm",
+      "signal": "NONE",
+      "direction": "?",
+      "confidence": "",
+      "d1Trend": "?",
+      "h1Trend": "?",
+      "rsi": 50,
+      "atr": 0,
+      "entryZone": "",
+      "sl": "",
+      "tp": "",
+      "status": "ANALYZED",
+      "notes": "Outside active trading session"
     }
   ],
   "perf": [
@@ -9072,10 +9120,10 @@
   "usage": {
     "9arm": {
       "status": "ok",
-      "tokens_in": 4235,
-      "tokens_out": 2403,
-      "tokens_total": 6638,
-      "calls": 8,
+      "tokens_in": 5047,
+      "tokens_out": 2807,
+      "tokens_total": 7854,
+      "calls": 9,
       "last_model": "deepseek-v4-flash-0731",
       "by_model": {
         "qwen3.8-27b-fp8": {
@@ -9086,15 +9134,15 @@
           "last_used": "2026-08-17T17:10:48"
         },
         "deepseek-v4-flash-0731": {
-          "tokens_in": 4110,
-          "tokens_out": 1984,
-          "tokens_total": 6094,
-          "calls": 6,
-          "last_used": "2026-08-19T13:22:22"
+          "tokens_in": 4922,
+          "tokens_out": 2388,
+          "tokens_total": 7310,
+          "calls": 7,
+          "last_used": "2026-08-20T06:00:24"
         }
       },
-      "updated_at": "2026-08-19T13:22:22"
+      "updated_at": "2026-08-20T06:00:24"
     },
-    "updated_at": "2026-08-20T05:46:22"
+    "updated_at": "2026-08-20T06:01:52"
   }
 }
