@@ -104,10 +104,16 @@ export function detectIntent(q: string): { intent: Intent; term?: string } {
   const s = q.toLowerCase();
   const has = (...ks: string[]) => ks.some((k) => s.includes(k));
 
-  if (has("ทำก่อน", "ก่อน", "อันไหน", "งานไหน", "เริ่ม", "เรื่องไหน", "ก่อนเลย")) {
-    if (has("ทำก่อน", "ก่อน", "เริ่ม", "ก่อนเลย", "อันไหน", "งานไหน", "เรื่องไหน")) {
-      return { intent: "what_first" };
-    }
+  // what_first must be WORK-anchored. A bare "ก่อน" (e.g. "เกิดก่อนกัน") is NOT
+  // a priority question — only treat it as "which task first" when paired with
+  // a task/priority word (งาน/ทำ/อันไหน/เรื่องไหน/ควร/เริ่ม/ก่อนดี/งานไหน).
+  const workAnchors = ["งานไหน", "ทำก่อน", "ต้องทำก่อน", "ทำอะไรก่อน", "อันไหน", "เรื่องไหน", "ควรทำ", "เริ่ม", "ก่อนดี", "งานก่อน", "ทำอันดับแรก", "สอบก่อน", "ส่งก่อน"];
+  const hasBefore = has("ก่อน");
+  const anchoredBefore =
+    has("ทำงาน") || has("งาน") || has("ทำ") || has("อันไหน") || has("เรื่องไหน") ||
+    has("ควร") || has("เริ่ม") || workAnchors.some((w) => s.includes(w));
+  if (hasBefore && anchoredBefore) {
+    return { intent: "what_first" };
   }
   if (has("วางแผน", "แพลน", "ช่วยจัด", "จัดวัน", "กำหนดการ", "วางตาราง")) {
     return { intent: "plan_day" };
