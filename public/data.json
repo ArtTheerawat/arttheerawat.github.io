@@ -1,6 +1,28 @@
 {
-  "generated_at": "2026-08-19T19:47:51",
-  "trades": [],
+  "generated_at": "2026-08-19T19:57:33",
+  "trades": [
+    {
+      "timestamp": 46253.82947916666,
+      "type": "CLOSE",
+      "symbol": "XAUUSDm",
+      "direction": "SELL",
+      "volume": 0.01,
+      "entry": 4369.65,
+      "sl": 4494.73,
+      "tp": 4119.22,
+      "exit": 4419.98,
+      "profit": -50.33,
+      "swap": 0,
+      "commission": 0,
+      "netPnl": -50.33,
+      "status": "CLOSED",
+      "signalReason": "PROOF close (manual)",
+      "strategy": "Multi-TF Trend Following",
+      "risk": "",
+      "balance": "",
+      "notes": ""
+    }
+  ],
   "signals": [
     {
       "timestamp": 46249.06553240741,
@@ -7073,6 +7095,38 @@
       "tp": "",
       "status": "ANALYZED",
       "notes": "RSI=69 out"
+    },
+    {
+      "timestamp": 46253.82679398148,
+      "symbol": "XAUUSDm",
+      "signal": "NONE",
+      "direction": "DOWN",
+      "confidence": "",
+      "d1Trend": "DOWN",
+      "h1Trend": "DOWN",
+      "rsi": 83.7,
+      "atr": 86.58,
+      "entryZone": "",
+      "sl": "",
+      "tp": "",
+      "status": "ANALYZED",
+      "notes": "RSI=84 out"
+    },
+    {
+      "timestamp": 46253.8302662037,
+      "symbol": "XAUUSDm",
+      "signal": "NONE",
+      "direction": "DOWN",
+      "confidence": "",
+      "d1Trend": "DOWN",
+      "h1Trend": "DOWN",
+      "rsi": 88.9,
+      "atr": 87.21,
+      "entryZone": "",
+      "sl": "",
+      "tp": "",
+      "status": "ANALYZED",
+      "notes": "RSI=89 out"
     }
   ],
   "perf": [],
@@ -7102,6 +7156,6 @@
       },
       "updated_at": "2026-08-19T13:22:22"
     },
-    "updated_at": "2026-08-19T19:47:51"
+    "updated_at": "2026-08-19T19:57:34"
   }
 }
