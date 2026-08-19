@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import Link from "next/link";
 import { classifyAssignment, dataUrl, dueLabel, fmtDate, nowBKK, todayIdxBKK, todayLabelBKK, todayStr, type Bucket } from "@/lib/data";
 import { COURSES, MAKEUP, SCHEDULE } from "@/lib/schedule-data";
 import { filterVisibleBriefItems, useHiddenTasks } from "@/lib/hidden-tasks";
@@ -14,6 +15,7 @@ import NextActionCard from "@/components/NextActionCard";
 import MorningBriefCard from "@/components/MorningBriefCard";
 import type { MorningBrief } from "@/lib/brief";
 import { computeNextAction, type PriorityTask } from "@/lib/priority";
+import { fmtHour, loadPlan, planTodayStr, type PlannedBlock } from "@/lib/plan";
 
 interface Assignment {
   title?: string;
@@ -139,6 +141,17 @@ export default function TodayPage() {
     const [showHidden, setShowHidden] = useState(false);
     const [confirmClear, setConfirmClear] = useState(false);
     const [detailTask, setDetailTask] = useState<PriorityTask | null>(null);
+    // Accepted daily-plan work blocks for today (SYSTEM 10). Read from the same
+    // localStorage the /plan page persists, so "Today can recognize the plan".
+    // Cross-tab sync: the /plan page and /today are separate routes (each
+    // remounts on navigation → fresh read); the storage listener also catches
+    // edits made in another tab/device.
+    const [planBlocks, setPlanBlocks] = useState<PlannedBlock[]>(() => loadPlan(planTodayStr()));
+    useEffect(() => {
+      const onPlan = () => setPlanBlocks(loadPlan(planTodayStr()));
+      window.addEventListener("storage", onPlan);
+      return () => window.removeEventListener("storage", onPlan);
+    }, []);
     const detailModalRef = useRef<HTMLDivElement | null>(null);
     const [courseMap, setCourseMap] = useState<Record<string, string>>({});
     // courseName+title key -> {courseId, workId} so we can deep-link straight to
@@ -365,6 +378,18 @@ export default function TodayPage() {
           [aiBrief, hiddenList]
         );
 
+  /* Planned work blocks that are still active: drop any whose task was
+     hidden/completed so a finished task isn't kept in the plan (reuses the
+     hidden-tasks source of truth — same set /plan uses). */
+  const activePlanBlocks = useMemo(
+    () =>
+      planBlocks.filter(
+        (b) =>
+          !hiddenList.some((h) => h.key === b.key)
+      ),
+    [planBlocks, hiddenList]
+  );
+
   const handleHide = (a: Assignment, reason: string, custom?: string) => {
         hide(a, reason, custom).then((res) => {
           if (res.ok) showToast(`ซ่อน "${a.title}" แล้ว 🙈`);
@@ -531,8 +556,66 @@ export default function TodayPage() {
                                       )}
                                     </section>
 
-                        {/* Counts only make sense once data arrived — during load they
-                                       would show a misleading 0 for everything (false affordance). */}
+                                    {/* ── DAILY PLAN (SYSTEM 10) ──
+                                        Today's accepted work blocks from /plan (same
+                                        localStorage source, so /today recognizes the plan).
+                                        Completed/hidden tasks are filtered out so a done
+                                        task is not kept in the plan. Opens /plan for more. */}
+                                    <section className="today-plan">
+                                      <h2 className="sec-title">
+                                        ⚡ แผนงานวันนี้
+                                        <span className="cnt">
+                                          {activePlanBlocks.length ? `${activePlanBlocks.length} บล็อก` : "ยังไม่เริ่ม"}
+                                        </span>
+                                        <Link href="/plan" className="plan-skip-link">วางแผน ➜</Link>
+                                      </h2>
+                                      {activePlanBlocks.length === 0 ? (
+                                        <div className="tl-empty">
+                                          ยังไม่ได้วางแผนวันนี้ — กด "วางแผน ➜" แล้วเลือกช่วงว่าง 25/50/90 นาที
+                                        </div>
+                                      ) : (
+                                        <div className="tl-list">
+                                          {activePlanBlocks.map((b, i) => {
+                                            const st = tlState({
+                                              time: b.start,
+                                              end: b.end,
+                                              label: b.title,
+                                              code: b.course,
+                                              color: b.color,
+                                              kind: "class",
+                                              icon: "⚡",
+                                            });
+                                            return (
+                                              <div
+                                                className={"tl-row " + st + " planned"}
+                                                key={i}
+                                                data-state={st}
+                                                style={{ "--tl-c": b.color } as CSSProperties}
+                                              >
+                                                <div className="tl-time">
+                                                  <div className="tl-h">{fmtHour(b.start)}</div>
+                                                  <div className="tl-end">–{fmtHour(b.end)}</div>
+                                                </div>
+                                                <div className="tl-axis"><span className="tl-dot" /></div>
+                                                <div className="tl-body">
+                                                  <div className="tl-act">
+                                                    <span className="tl-emoji">⚡</span>
+                                                    <span className="tl-name">{b.title}</span>
+                                                    <span className="tl-tag plan-dur">{b.dur} นาที</span>
+                                                    {st === "now" && <span className="tl-badge-now">กำลังโฟกัส</span>}
+                                                  </div>
+                                                  <div className="tl-meta">
+                                                    <span className="tl-code">{b.course}</span>
+                                                    {b.courseName && <span className="tl-room">{b.courseName}</span>}
+                                                    <Link href={`/focus?key=${encodeURIComponent(b.key)}`} className="plan-focus-link">โฟกัส ➜</Link>
+                                                  </div>
+                                                </div>
+                                              </div>
+                                            );
+                                          })}
+                                        </div>
+                                      )}
+                                    </section>
                         {!loading && (
                         <div className="counts">
                           <div className="c">

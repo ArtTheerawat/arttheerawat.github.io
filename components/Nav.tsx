@@ -3,7 +3,7 @@
 import { Fragment } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Layers, ListTodo, CalendarDays, CandlestickChart, Headphones, BookOpen, Activity, Bot, BarChart3, type LucideIcon } from "lucide-react";
+import { Layers, ListTodo, CalendarDays, CalendarRange, CandlestickChart, Headphones, BookOpen, Activity, Bot, BarChart3, type LucideIcon } from "lucide-react";
 import AuthStatus from "./AuthStatus";
 import NotificationCenter from "./NotificationCenter";
 import GlobalSearch from "./GlobalSearch";
@@ -20,7 +20,8 @@ const PRIMARY_LINKS: NavLink[] = [
   { href: "/classroom", label: "คลาสรูม", Icon: BookOpen },
   { href: "/assistant", label: "ผู้ช่วย", Icon: Bot },
   { href: "/schedule", label: "ตาราง", Icon: CalendarDays },
-];
+    { href: "/plan", label: "วางแผน", Icon: CalendarRange },
+  ];
 
 /* Secondary: personal / support tools, visually separated. */
 const SECONDARY_LINKS: NavLink[] = [
