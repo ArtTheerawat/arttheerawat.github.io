@@ -131,7 +131,7 @@ export async function getSystemHealth(): Promise<{
 }> {
   const [school, hub, brief, classroom] = await Promise.all([
     fetchJson<HealthData>("/data/assignments.json"),
-    fetchJson<{ generated_at?: string; usage?: { updated_at?: string } }>("/data/data.json"),
+    fetchJson<{ generated_at?: string; usage?: { updated_at?: string } }>("/data.json"),
     fetchJson<HealthData>("/data/next_action.json"),
     fetchJson<HealthData>("/data/classroom.json"),
   ]);
@@ -228,21 +228,18 @@ export async function getSystemHealth(): Promise<{
     });
   }
 
-  // Classroom deep-sync (classroom_sync.py, run manually — not on a cron now).
-  // Real evidence exists but there is no expected cadence → UNKNOWN unless a
-  // timestamp exists, in which case we report its age honestly.
+  // Classroom deep-sync (classroom_sync.py → classroom.json, cron 2feab1ac8796 every 30m).
+  // Freshness from classroom.json.generated_at — same cadence/thresholds as school/trade.
   {
     const last = parseTs(classroom?.generated_at);
-    const age = last !== null ? ageLabel(Date.now() - last) : null;
+    const c = classifyAge(last, SCHOOL_H, SCHOOL_S);
+    const age = c.ageMin !== null ? ageLabel(c.ageMin * 60_000) : null;
     services.push({
       id: "classroom_sync",
       name: "Classroom Sync",
       icon: "🔍",
-      status: last === null ? "unknown" : "unknown",
-      detail:
-        last === null
-          ? "ยังไม่เคยทำงาน (รัน classroom_sync.py ด้วยตนเอง)"
-          : "วิเคราะห์ด้วยตนเอง — ขาดรอบอัตโนมัติ",
+      status: c.status,
+      detail: c.detail,
       lastSuccess: fmtTs(classroom?.generated_at) ?? undefined,
       lastAttempt: fmtTs(classroom?.generated_at) ?? undefined,
       dataAge: age ?? undefined,
