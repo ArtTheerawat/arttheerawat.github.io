@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-19T20:27:42",
+  "generated_at": "2026-08-19T20:35:23",
   "trades": [
     {
       "timestamp": 46253.82947916666,
@@ -7260,6 +7260,22 @@
       "tp": "",
       "status": "ANALYZED",
       "notes": "RSI=91 out"
+    },
+    {
+      "timestamp": 46253.85729166667,
+      "symbol": "XAUUSDm",
+      "signal": "NONE",
+      "direction": "DOWN",
+      "confidence": "",
+      "d1Trend": "DOWN",
+      "h1Trend": "DOWN",
+      "rsi": 91,
+      "atr": 89.6,
+      "entryZone": "",
+      "sl": "",
+      "tp": "",
+      "status": "ANALYZED",
+      "notes": "RSI=91 out"
     }
   ],
   "perf": [],
@@ -7289,6 +7305,6 @@
       },
       "updated_at": "2026-08-19T13:22:22"
     },
-    "updated_at": "2026-08-19T20:27:42"
+    "updated_at": "2026-08-19T20:35:23"
   }
 }
