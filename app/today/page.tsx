@@ -15,7 +15,13 @@ import NextActionCard from "@/components/NextActionCard";
 import MorningBriefCard from "@/components/MorningBriefCard";
 import type { MorningBrief } from "@/lib/brief";
 import { computeNextAction, type PriorityTask } from "@/lib/priority";
-import { fmtHour, loadPlan, planTodayStr, type PlannedBlock } from "@/lib/plan";
+import { fmtHour, loadPlan, mergeDayEvents, planTodayStr, savePlan, upsertPlanBlock, type PlannedBlock } from "@/lib/plan";
+import {
+  computeRescheduleOffer,
+  findMissedBlocks,
+  tomorrowMeta,
+  type RescheduleOffer,
+} from "@/lib/reschedule";
 
 interface Assignment {
   title?: string;
@@ -390,6 +396,99 @@ export default function TodayPage() {
     [planBlocks, hiddenList]
   );
 
+  const hiddenKeySet = useMemo(
+    () => new Set(hiddenList.map((h) => h.key)),
+    [hiddenList]
+  );
+
+  /* ── SMART RESCHEDULE (SYSTEM 12) ──
+     Deterministic, ZERO AI. Detects today's accepted plan blocks that have
+     ALREADY PASSED (end ≤ now) yet whose task is still active, then offers a
+     conflict-free new time built from the same free-window engine /plan uses.
+     MISSED BLOCK ≠ OVERDUE TASK: a lapsed block is `missed`, but only becomes
+     `overdue` when its real assignment deadline bucket is `over` — both are
+     labelled separately. The user must explicitly pick an action; nothing is
+     ever moved silently. */
+  // Map a planned block's task key → its assignment deadline bucket (from the
+  // very data /today already loaded+classified), so we can distinguish missed
+  // vs overdue and read the real deadline for the "may not fit" warning.
+  const bucketOf = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const a of all) {
+      if (!a.course && !a.title) continue;
+      const k = `${(a.course || "").trim()}|${(a.title || "").trim()}|${(a.due || "").trim()}`;
+      if (a.bucket) m.set(k, a.bucket);
+    }
+    return m;
+  }, [all]);
+
+  // Blocks the user chose "ไม่ต้องจัดใหม่" for this viewing — never persisted,
+  // so the honest warning naturally returns on the next load if still missed.
+  const [dismissedMissed, setDismissedMissed] = useState<Set<string>>(new Set());
+
+  const dueOf = (b: PlannedBlock): string | undefined => {
+    // deadline (course|title|due) → the `due` segment, if the partition is intact
+    const parts = b.key.split("|");
+    return parts.length === 3 ? parts[2] || undefined : undefined;
+  };
+
+  const todayRemoveBlock = (key: string) => {
+    const next = loadPlan(planTodayStr()).filter((b) => b.key !== key);
+    savePlan(planTodayStr(), next);
+    setPlanBlocks(next);
+  };
+
+  const missedBlocksState = useMemo(() => {
+    // Successor of the day (BKK) for the honest "ลองจัดไว้พรุ่งนี้" fallback.
+    const tm = tomorrowMeta();
+    const raw = findMissedBlocks(activePlanBlocks, hiddenKeySet, nowHour, (k) =>
+      (bucketOf.get(k) as "over" | "today" | "soon" | "later" | "no_due" | undefined)
+    );
+    const fixedToday = mergeDayEvents(todayIdxBKK(), today);
+    const missed = raw.filter((m) => !dismissedMissed.has(m.block.key));
+    const offers: RescheduleOffer[] = missed.map((m) =>
+      computeRescheduleOffer(m, fixedToday, nowHour, tm.dayIdx, tm.iso, dueOf(m.block))
+    );
+    return { offers, fixedToday };
+    // depend on clock too so a slot that becomes available later is offered
+  }, [activePlanBlocks, hiddenKeySet, bucketOf, nowHour, dismissedMissed, todayIdxBKK, today, mergeDayEvents]);
+
+  // Accept a suggested new time → update the EXISTING block's source of truth
+  // (td_plan_blocks for today via /plan's upsertPlanBlock). Never a 2nd entry.
+  const acceptReschedule = (offer: RescheduleOffer) => {
+    const cand = offer.suggestion;
+    if (!cand.hasSuggestion) {
+      showToast("ยังไม่มีช่วงเวลาที่ปลอดภัยให้ย้ายไป — เลือกวิธีอื่นก่อน", true);
+      return;
+    }
+    upsertPlanBlock(today, { ...offer.missed.block, start: cand.start, end: cand.end });
+    setPlanBlocks(loadPlan(planTodayStr()));
+    setDismissedMissed((s) => new Set(s).add(offer.missed.block.key));
+    showToast(`ย้ายเวลาแล้ว: ${fmtHour(cand.start)}–${fmtHour(cand.end)}`);
+  };
+
+  // Move to tomorrow's first conflict-free slot (uses tomorrow's real schedule).
+  const moveToTomorrow = (offer: RescheduleOffer) => {
+    if (offer.tomorrowStart === undefined || offer.tomorrowEnd === undefined) {
+      showToast("พรุ่งนี้ยังไม่มีช่วงว่างที่พอดี — ลองจัดด้วยตัวเองในหน้าแผน", true);
+      return;
+    }
+    const tm = tomorrowMeta();
+    upsertPlanBlock(tm.iso, {
+      ...offer.missed.block,
+      start: offer.tomorrowStart,
+      end: offer.tomorrowEnd,
+    });
+    // Remove today's lapsed block from the plan (it now lives tomorrow).
+    todayRemoveBlock(offer.missed.block.key);
+    setDismissedMissed((s) => new Set(s).add(offer.missed.block.key));
+    showToast(`จัดไว้พรุ่งนี้แล้ว: ${fmtHour(offer.tomorrowStart)}–${fmtHour(offer.tomorrowEnd)}`);
+  };
+
+  const dismissMissed = (key: string) => {
+    setDismissedMissed((s) => new Set(s).add(key));
+  };
+
   const handleHide = (a: Assignment, reason: string, custom?: string) => {
         hide(a, reason, custom).then((res) => {
           if (res.ok) showToast(`ซ่อน "${a.title}" แล้ว 🙈`);
@@ -616,6 +715,96 @@ export default function TodayPage() {
                                         </div>
                                       )}
                                     </section>
+
+                                    {/* ── SMART RESCHEDULE (SYSTEM 12) ──
+                                        Compact, non-modal. Shows accepted plan blocks whose
+                                        time ALREADY PASSED but whose task is STILL ACTIVE
+                                        ("พลาดช่วงเวลาที่วางไว้"), with a conflict-free suggested
+                                        new time and EXPLICIT actions. Never moves anything on
+                                        its own; "ไม่ต้องจัดใหม่" only dimisses for this viewing.
+                                        Missed ≠ overdue — each is labelled separately. */}
+                                    {missedBlocksState.offers.length > 0 && (
+                                      <section className="today-resched" aria-label="จัดเวลาใหม่ (พลาดช่วงเวลา)">
+                                        <h2 className="sec-title">
+                                          ⚠️ จัดเวลาใหม่
+                                          <span className="cnt">{missedBlocksState.offers.length}</span>
+                                        </h2>
+                                        <div className="resched-list">
+                                          {missedBlocksState.offers.slice(0, 4).map((offer) => {
+                                            const b = offer.missed.block;
+                                            const s = offer.suggestion;
+                                            const overdue = offer.missed.kind === "overdue";
+                                            return (
+                                              <div className="resched-card" key={b.key}>
+                                                <div className="resched-head">
+                                                  <span className="resched-emoji">⚠️</span>
+                                                  <div className="resched-title">
+                                                    <b>{b.title}</b>
+                                                    <span className={overdue ? "resched-badge overdue" : "resched-badge"}>
+                                                      {overdue ? "เลยกำหนดแล้ว" : "พลาดช่วงเวลาที่วางไว้"}
+                                                    </span>
+                                                  </div>
+                                                </div>
+                                                <div className="resched-meta">
+                                                  <span className="tl-tag plan-dur">เดิม {fmtHour(b.start)}–{fmtHour(b.end)}</span>
+                                                  <span className="tl-tag plan-dur">{b.dur} นาที</span>
+                                                  {b.courseName && <span className="tl-room">{b.courseName}</span>}
+                                                </div>
+                                                {!s.hasSuggestion ? (
+                                                  s.noDuration ? (
+                                                    <div className="resched-empty">ยังไม่มีการประมาณเวลา — จัดเองในหน้าแผนเพื่อเลื่อนเวลานี้</div>
+                                                  ) : (
+                                                    <div className="resched-empty">วันนี้ไม่เหลือช่วงเวลาที่เหมาะสมสำหรับงานนี้</div>
+                                                  )
+                                                ) : (
+                                                  <div className="resched-slot">
+                                                    <span className="resched-slot-label">แนะนำเวลาใหม่:</span>
+                                                    <span className="resched-slot-time">{fmtHour(s.start)}–{fmtHour(s.end)}</span>
+                                                  </div>
+                                                )}
+                                                {s.deadlineWarning && (
+                                                  <div className="resched-warn">⚠️ เวลาที่เหลืออาจไม่พอสำหรับงานนี้ (กำหนดส่งใกล้)</div>
+                                                )}
+                                                {!overdue && b.dur > 0 && s.hasSuggestion && offer.tomorrowStart !== undefined && (
+                                                  <div className="resched-warn faint">ทางเลือก: พรุ่งนี้ {fmtHour(offer.tomorrowStart)}–{fmtHour(offer.tomorrowEnd!)}</div>
+                                                )}
+                                                <div className="resched-actions">
+                                                  <button
+                                                    className="resched-btn primary"
+                                                    onClick={() => acceptReschedule(offer)}
+                                                    disabled={!s.hasSuggestion}
+                                                  >
+                                                    ย้ายเวลา
+                                                  </button>
+                                                  <Link
+                                                    className="resched-btn"
+                                                    href={`/focus?key=${encodeURIComponent(b.key)}`}
+                                                  >
+                                                    ทำตอนนี้
+                                                  </Link>
+                                                  {offer.tomorrowStart !== undefined ? (
+                                                    <button
+                                                      className="resched-btn"
+                                                      onClick={() => moveToTomorrow(offer)}
+                                                    >
+                                                      พรุ่งนี้
+                                                    </button>
+                                                  ) : (
+                                                    <span className="resched-btn disabled" title="พรุ่งนี้ยังไม่มีช่วงว่างพอดี">พรุ่งนี้</span>
+                                                  )}
+                                                  <button
+                                                    className="resched-btn ghost"
+                                                    onClick={() => dismissMissed(b.key)}
+                                                  >
+                                                    ไม่ต้องจัดใหม่
+                                                  </button>
+                                                </div>
+                                              </div>
+                                            );
+                                          })}
+                                        </div>
+                                      </section>
+                                    )}
                         {!loading && (
                         <div className="counts">
                           <div className="c">

@@ -16,9 +16,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, Moon, CheckCircle2, Clock, ListTodo, Sparkles } from "lucide-react";
-import { classifyAssignment, dataUrl, fmtDate, todayStr, type Bucket } from "@/lib/data";
+import { classifyAssignment, dataUrl, fmtDate, nowBKKHour, todayStr, type Bucket } from "@/lib/data";
 import { useHiddenTasks } from "@/lib/hidden-tasks";
+import { loadPlan } from "@/lib/plan";
 import { computeReview, type ReviewAssignment, type ReviewFact } from "@/lib/review";
+import { findMissedBlocks } from "@/lib/reschedule";
 
 interface Assignment {
   title?: string;
@@ -78,6 +80,15 @@ export default function ReviewPage() {
     return computeReview(hiddenList, assign, quizzes, [], today);
   }, [assign, hiddenList, quizzes, today]);
 
+  // Smart Reschedule (SYSTEM 12): how many of today's accepted plan blocks have
+  // ALREADY PASSED but whose task is still active. Missed ≠ overdue here too —
+  // this is only the plan-vs-actual note, and it never labels a lapsed or
+  // rescheduled block as "failed" (see lib/review.ts plan logic).
+  const missedToday = useMemo(() => {
+    const hiddenKeys = new Set(hiddenList.map((h) => h.key));
+    return findMissedBlocks(loadPlan(today), hiddenKeys, nowBKKHour()).length;
+  }, [hiddenList, today]);
+
   const loadingReview = loading || hiddenStatus === "loading";
 
   return (
@@ -129,6 +140,14 @@ export default function ReviewPage() {
                 <p className="review-note">
                   มีช่วงเวลาที่วางแผนไว้ {fact.plan.planned} ช่วง · ทำเสร็จแล้ว {fact.plan.completed} ช่วง ·
                   ยังค้าง {fact.plan.remaining} ช่วง
+                </p>
+              )}
+              {missedToday > 0 && (
+                <p className="review-note warn">
+                  มีช่วงเวลาที่พลาดไป {missedToday} ช่วง —{" "}
+                  <Link href="/today" className="rn-link" style={{ display: "inline", marginTop: 0 }}>
+                    จัดเวลาใหม่ใน /today
+                  </Link>
                 </p>
               )}
             </section>
