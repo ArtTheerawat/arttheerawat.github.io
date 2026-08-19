@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-19T20:51:10",
+  "generated_at": "2026-08-19T21:07:12",
   "trades": [
     {
       "timestamp": 46253.82947916666,
@@ -7340,9 +7340,71 @@
       "tp": "",
       "status": "ANALYZED",
       "notes": "RSI=83 out"
+    },
+    {
+      "timestamp": 46253.87165509259,
+      "symbol": "XAUUSDm",
+      "signal": "NONE",
+      "direction": "DOWN",
+      "confidence": "",
+      "d1Trend": "DOWN",
+      "h1Trend": "DOWN",
+      "rsi": 84.9,
+      "atr": 89.6,
+      "entryZone": "",
+      "sl": "",
+      "tp": "",
+      "status": "ANALYZED",
+      "notes": "RSI=85 out"
+    },
+    {
+      "timestamp": 46253.875127314815,
+      "symbol": "XAUUSDm",
+      "signal": "NONE",
+      "direction": "?",
+      "confidence": "",
+      "d1Trend": "DOWN",
+      "h1Trend": "UP",
+      "rsi": 90.1,
+      "atr": 89.6,
+      "entryZone": "",
+      "sl": "",
+      "tp": "",
+      "status": "ANALYZED",
+      "notes": "Trends misaligned (D1=DOWN, H1=UP)"
+    },
+    {
+      "timestamp": 46253.878599537034,
+      "symbol": "XAUUSDm",
+      "signal": "NONE",
+      "direction": "?",
+      "confidence": "",
+      "d1Trend": "DOWN",
+      "h1Trend": "UP",
+      "rsi": 90.3,
+      "atr": 89.6,
+      "entryZone": "",
+      "sl": "",
+      "tp": "",
+      "status": "ANALYZED",
+      "notes": "Trends misaligned (D1=DOWN, H1=UP)"
     }
   ],
-  "perf": [],
+  "perf": [
+    {
+      "date": 46253,
+      "totalTrades": 2,
+      "wins": 0,
+      "losses": 2,
+      "winrate": 0,
+      "netPnl": -78.73,
+      "maxDrawdown": "",
+      "avgRr": "",
+      "balance": "",
+      "equityPeak": "",
+      "equityLow": ""
+    }
+  ],
   "usage": {
     "9arm": {
       "status": "ok",
@@ -7369,6 +7431,6 @@
       },
       "updated_at": "2026-08-19T13:22:22"
     },
-    "updated_at": "2026-08-19T20:51:10"
+    "updated_at": "2026-08-19T21:07:12"
   }
 }
