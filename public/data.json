@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-19T17:59:28",
+  "generated_at": "2026-08-19T19:47:51",
   "trades": [],
   "signals": [
     {
@@ -6977,6 +6977,102 @@
       "tp": "",
       "status": "ANALYZED",
       "notes": "Outside active trading session"
+    },
+    {
+      "timestamp": 46253.79537037037,
+      "symbol": "XAUUSDm",
+      "signal": "NONE",
+      "direction": "?",
+      "confidence": "",
+      "d1Trend": "?",
+      "h1Trend": "?",
+      "rsi": 50,
+      "atr": 0,
+      "entryZone": "",
+      "sl": "",
+      "tp": "",
+      "status": "ANALYZED",
+      "notes": "Outside active trading session"
+    },
+    {
+      "timestamp": 46253.79550925926,
+      "symbol": "XAUUSDm",
+      "signal": "NONE",
+      "direction": "?",
+      "confidence": "",
+      "d1Trend": "?",
+      "h1Trend": "?",
+      "rsi": 50,
+      "atr": 0,
+      "entryZone": "",
+      "sl": "",
+      "tp": "",
+      "status": "ANALYZED",
+      "notes": "Outside active trading session"
+    },
+    {
+      "timestamp": 46253.80002314815,
+      "symbol": "XAUUSDm",
+      "signal": "SELL",
+      "direction": "SELL",
+      "confidence": "MEDIUM",
+      "d1Trend": "DOWN",
+      "h1Trend": "DOWN",
+      "rsi": 58.6,
+      "atr": 83.45,
+      "entryZone": 4369.56,
+      "sl": 4494.73,
+      "tp": 4119.22,
+      "status": "ANALYZED",
+      "notes": "D1/H1 downtrend, bounce at EMA50, RSI falling"
+    },
+    {
+      "timestamp": 46253.802465277775,
+      "symbol": "XAUUSDm",
+      "signal": "NONE",
+      "direction": "DOWN",
+      "confidence": "",
+      "d1Trend": "DOWN",
+      "h1Trend": "DOWN",
+      "rsi": 69.5,
+      "atr": 83.45,
+      "entryZone": "",
+      "sl": "",
+      "tp": "",
+      "status": "ANALYZED",
+      "notes": "RSI=69 out"
+    },
+    {
+      "timestamp": 46253.80202546297,
+      "symbol": "XAUUSDm",
+      "signal": "SELL",
+      "direction": "SELL",
+      "confidence": "MEDIUM",
+      "d1Trend": "DOWN",
+      "h1Trend": "DOWN",
+      "rsi": 57.5,
+      "atr": 83.45,
+      "entryZone": 4368.46,
+      "sl": 4493.63,
+      "tp": 4118.12,
+      "status": "ANALYZED",
+      "notes": "D1/H1 downtrend, bounce at EMA50, RSI falling"
+    },
+    {
+      "timestamp": 46253.802824074075,
+      "symbol": "XAUUSDm",
+      "signal": "NONE",
+      "direction": "DOWN",
+      "confidence": "",
+      "d1Trend": "DOWN",
+      "h1Trend": "DOWN",
+      "rsi": 68.7,
+      "atr": 83.45,
+      "entryZone": "",
+      "sl": "",
+      "tp": "",
+      "status": "ANALYZED",
+      "notes": "RSI=69 out"
     }
   ],
   "perf": [],
@@ -7006,6 +7102,6 @@
       },
       "updated_at": "2026-08-19T13:22:22"
     },
-    "updated_at": "2026-08-19T17:59:28"
+    "updated_at": "2026-08-19T19:47:51"
   }
 }
