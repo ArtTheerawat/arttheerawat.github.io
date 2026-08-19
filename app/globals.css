@@ -287,6 +287,13 @@ table.sched td.cl.overlay .cl-btn{font-style:italic}
 .hide-btn.compact{width:32px; height:30px; padding:0; display:inline-flex; align-items:center; justify-content:center}
 .hide-btn:focus-visible{outline:2px solid var(--accent); outline-offset:1px}
 .hide-item-actions{display:flex; align-items:center; gap:8px}
+.hide-ann-course{background:none; border:1px solid var(--border); color:var(--muted); font-size:10px; font-weight:600; padding:3px 8px; border-radius:999px; cursor:pointer; transition:.12s; white-space:nowrap; margin-left:8px; vertical-align:middle}
+.hide-ann-course:hover{border-color:var(--down); color:#fca5a5; background:rgba(239,68,68,.08)}
+.hide-ann-item{background:none; border:none; color:var(--muted); font-size:11px; cursor:pointer; margin-left:auto; display:block; padding:2px 4px; opacity:.7}
+.hide-ann-item:hover{color:#fca5a5; opacity:1}
+.restore-banner{display:flex; align-items:center; justify-content:space-between; gap:10px; border:1px solid var(--accent2); background:rgba(167,139,250,.06); color:var(--accent2); font-size:12px; padding:8px 12px; border-radius:10px; margin-bottom:10px}
+.restore-banner button{background:none; border:1px solid var(--border); color:var(--txt); font-size:12px; font-weight:600; padding:5px 12px; border-radius:999px; cursor:pointer; transition:.12s}
+.restore-banner button:hover{border-color:var(--accent); color:var(--accent)}
 .hide-assign{border:1px solid var(--border); border-radius:10px; padding:10px 12px; margin:12px 0 14px}
 .hide-assign .hide-ttl{font-size:14px; font-weight:600}
 .hide-assign .hide-course{font-size:12px; color:var(--accent2); margin-top:2px}
