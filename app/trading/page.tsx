@@ -86,28 +86,28 @@ export default function TradingPage() {
   }, [load, schedulePoll]);
 
   const kpis = useMemo(() => {
-    const trades = data.trades;
-    const perf = data.perf;
-    const signals = data.signals;
-    const total = trades.length;
-    const wins = trades.filter((t) => num(t.netPnl) > 0).length;
-    const losses = trades.filter((t) => num(t.netPnl) < 0).length;
-    const winRate = total ? ((wins / total) * 100).toFixed(1) : "0.0";
-    const netPnL = trades.reduce((s, t) => s + num(t.netPnl), 0);
-    const bal = perf.length ? num(perf[perf.length - 1].balance) : 0;
-    const openSignals = signals.filter((s) => String(s.status).toUpperCase() === "OPEN").length;
-    return [
-      { lbl: "Total Trades", val: String(total), note: "ปิดแล้วทั้งหมด" },
-      { lbl: "Win Rate", val: winRate + "%", note: `${wins}W / ${losses}L`, pct: true },
-      { lbl: "Net P&L", val: (netPnL >= 0 ? "+" : "") + fmtMoney(netPnL), note: "กำไร-ขาดทุนสะสม", up: netPnL >= 0 },
-      { lbl: "Balance", val: bal ? fmtMoney(bal) : "—", note: "ล่าสุด" },
-      {
-        lbl: "Open Positions",
-        val: String(trades.filter((t) => String(t.status).toUpperCase() === "OPEN").length + openSignals),
-        note: "open positions",
-      },
-    ];
-  }, [data]);
+      const trades = data.trades.filter((t) => (t.symbol || "").toUpperCase().includes("XAU"));
+      const perf = data.perf;
+      const signals = data.signals.filter((s) => (s.symbol || "").toUpperCase().includes("XAU"));
+      const total = trades.length;
+      const wins = trades.filter((t) => num(t.netPnl) > 0).length;
+      const losses = trades.filter((t) => num(t.netPnl) < 0).length;
+      const winRate = total ? ((wins / total) * 100).toFixed(1) : "0.0";
+      const netPnL = trades.reduce((s, t) => s + num(t.netPnl), 0);
+      const bal = perf.length ? num(perf[perf.length - 1].balance) : 0;
+      const openSignals = signals.filter((s) => String(s.status).toUpperCase() === "OPEN").length;
+      return [
+        { lbl: "Total Trades", val: String(total), note: "ปิดแล้วทั้งหมด" },
+        { lbl: "Win Rate", val: winRate + "%", note: `${wins}W / ${losses}L`, pct: true },
+        { lbl: "Net P&L", val: (netPnL >= 0 ? "+" : "") + fmtMoney(netPnL), note: "กำไร-ขาดทุนสะสม", up: netPnL >= 0 },
+        { lbl: "Balance", val: bal ? fmtMoney(bal) : "—", note: "ล่าสุด" },
+        {
+          lbl: "Open Positions",
+          val: String(trades.filter((t) => String(t.status).toUpperCase() === "OPEN").length + openSignals),
+          note: "open positions",
+        },
+      ];
+    }, [data]);
 
   const perfRows = useMemo(() => data.perf.slice().reverse().slice(0, 20), [data.perf]);
   const pnlBars = useMemo(() => {
@@ -120,8 +120,8 @@ export default function TradingPage() {
     });
   }, [data.perf]);
 
-  const tradeRows = useMemo(() => data.trades.slice().reverse().slice(0, 30), [data.trades]);
-  const signalRows = useMemo(() => data.signals.slice().reverse().slice(0, 25), [data.signals]);
+  const tradeRows = useMemo(() => data.trades.filter((t) => (t.symbol || "").toUpperCase().includes("XAU")).slice().reverse().slice(0, 30), [data.trades]);
+  const signalRows = useMemo(() => data.signals.filter((s) => (s.symbol || "").toUpperCase().includes("XAU")).slice().reverse().slice(0, 25), [data.signals]);
 
   return (
     <div className="wrap" id="main">
@@ -130,7 +130,7 @@ export default function TradingPage() {
           <h1>
             Trading Bot <span className="dot">Dashboard</span>
           </h1>
-          <div className="sub">XAUUSD (Gold) · BTCUSD · Multi-Timeframe Trend Following</div>
+          <div className="sub">XAUUSD (Gold) · Multi-Timeframe Trend Following</div>
         </div>
         <div className="header-status">
                   <span className={"badge " + dataStatusBadge(status).cls}>{dataStatusBadge(status).txt}</span>
