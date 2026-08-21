@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-21T14:06:46",
+  "generated_at": "2026-08-21T14:17:16",
   "trades": [
     {
       "timestamp": 46253.82947916666,
@@ -15212,6 +15212,38 @@
       "tp": "",
       "status": "ANALYZED",
       "notes": "Trends misaligned (D1=DOWN, H1=UP)"
+    },
+    {
+      "timestamp": 46255.59038194444,
+      "symbol": "XAUUSDm",
+      "signal": "NONE",
+      "direction": "?",
+      "confidence": "",
+      "d1Trend": "DOWN",
+      "h1Trend": "UP",
+      "rsi": 69.5,
+      "atr": 95.38,
+      "entryZone": "",
+      "sl": "",
+      "tp": "",
+      "status": "ANALYZED",
+      "notes": "Trends misaligned (D1=DOWN, H1=UP)"
+    },
+    {
+      "timestamp": 46255.59386574074,
+      "symbol": "XAUUSDm",
+      "signal": "NONE",
+      "direction": "?",
+      "confidence": "",
+      "d1Trend": "DOWN",
+      "h1Trend": "UP",
+      "rsi": 68.8,
+      "atr": 95.38,
+      "entryZone": "",
+      "sl": "",
+      "tp": "",
+      "status": "ANALYZED",
+      "notes": "Trends misaligned (D1=DOWN, H1=UP)"
     }
   ],
   "perf": [
@@ -15255,6 +15287,6 @@
       },
       "updated_at": "2026-08-21T06:00:47"
     },
-    "updated_at": "2026-08-21T14:06:46"
+    "updated_at": "2026-08-21T14:17:16"
   }
 }
