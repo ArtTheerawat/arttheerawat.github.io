@@ -56,15 +56,9 @@ _ENV = _dotenv()
 API_KEY = _ENV.get("9ARM_API_KEY")
 BASE_URL = _ENV.get("9ARM_BASE_URL") or "https://gateway.9arm.co/v1"
 MODEL = _ENV.get("9ARM_MODEL") or "qwen3.8-27b-fp8"
-# Cheap, short single-task call — flash is plenty for "pick the top task".
-MODEL_FLASH = "deepseek-v4-flash-0731"
-MODEL_FALLBACK = _ENV.get("9ARM_MODEL") or "qwen3.8-27b-fp8"
-# Chain order for resilience: preferred first, fallback second (both on 9arm —
-# never OpenRouter, per house rule). If DeepSeek Flash is unavailable/revoked,
-# we still produce a brief instead of failing — mirrors GPT's fallback advice.
-MODEL_CHAIN = [MODEL_FLASH, MODEL_FALLBACK]
-# De-dupe in case they resolve to the same value.
-MODEL_CHAIN = list(dict.fromkeys(MODEL_CHAIN))
+# Single model chain — qwen3.8-27b-fp8 is the default everywhere (deepseek
+# removed per house rule). Keep 1-model chain to avoid redundant calls.
+MODEL_CHAIN = [MODEL]
 
 
 def _load_assignments():
@@ -182,7 +176,7 @@ def _call_llm(rows, q, model):
             {"role": "user", "content": json.dumps(payload, ensure_ascii=False)},
         ],
         "temperature": 0.4,
-        "max_tokens": 700,
+        "max_tokens": 1200,
         "extra_body": {"enable_thinking": False},
     }
     bf = os.environ.get("TEMP", "/tmp") + "/next_action_body.json"
@@ -199,21 +193,26 @@ def _call_llm(rows, q, model):
         print(f"next_action: [{model}] API non-JSON:", (proc.stdout or proc.stderr)[:200])
         return None
     if data.get("error"):
-        print(f"next_action: [{model}] API ERROR:", data["error"][:200])
+        err = data["error"]
+        print(f"next_action: [{model}] API ERROR:", str(err)[:400])
         return None
     ch = data.get("choices", [{}])[0].get("message", {})
-    content = (ch.get("content") or "").strip()
+    # Qwen3.8 may return reasoning_content + null content when thinking is on
+    content = (ch.get("content") or ch.get("reasoning_content") or "").strip()
     # model sometimes wraps JSON in fences — strip them
     content = content.strip("`")
     if content.startswith("json"):
         content = content[4:].strip()
+    # model may emit <think>...</think> prefix even with enable_thinking False
+    if "<think>" in content:
+        content = content.split("</think>")[-1].strip()
     # accumulate usage so the Home usage card reflects this call
     u = data.get("usage", {})
     _accumulate_usage(model, u)
     try:
         parsed = json.loads(content)
     except Exception:
-        print(f"next_action: [{model}] model returned non-JSON:", content[:200])
+        print(f"next_action: [{model}] model returned non-JSON:", content[:500])
         return None
     if not isinstance(parsed, dict) or not isinstance(parsed.get("items"), list):
         print(f"next_action: [{model}] bad shape:", content[:200])
@@ -293,8 +292,84 @@ def main():
         print(f"next_action: [{m}] failed, trying fallback" if m != MODEL_CHAIN[-1]
               else f"next_action: all {len(MODEL_CHAIN)} models failed")
     if not parsed:
-        print("next_action: LLM failed — keep old brief, page falls back to heuristic")
-        return 1
+        print("next_action: LLM failed — generating heuristic fallback brief")
+        # Heuristic fallback: deterministic, no LLM needed — picks nearest-due
+        # tasks and builds Thai labels from actual due dates (relative to today).
+        today_d = datetime.date.today()
+        th_months = ["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."]
+        day_label = f"ประจำวัน {today_d.day} {th_months[today_d.month-1]}"
+        wd = ["จันทร์","อังคาร","พุธ","พฤหัส","ศุกร์","เสาร์","อาทิตย์"][today_d.weekday()]
+        # Build Thai dueLabel relative to today
+        def due_label(due_str):
+            try:
+                d = datetime.date.fromisoformat(due_str)
+                diff = (d - today_d).days
+                if diff < 0:
+                    return f"เลยกำหนด {abs(diff)} วัน"
+                if diff == 0:
+                    return "ส่งวันนี้"
+                if diff == 1:
+                    return "ส่งพรุ่งนี้"
+                return f"ส่งใน {diff} วัน"
+            except Exception:
+                return ""
+        # Sort rows by urgency: soonest due first (overdue already sorted, but re-sort)
+        sorted_rows = sorted(rows, key=lambda x: x.get("due") or "")
+        # Pick 3 most urgent for items (nearest due + high points bias)
+        # Heuristic: due-soon (0-2 days) first, then overdue high-points — so
+        # actionable tasks (พรุ่งนี้) appear before very old overdue that may no
+        # longer be submittable.
+        def urgency_score(r):
+            due = r.get("due") or "9999-12-31"
+            pts = r.get("points") or 0
+            try:
+                diff = (datetime.date.fromisoformat(due) - today_d).days
+            except Exception:
+                diff = 999
+            is_overdue = 1 if diff < 0 else 0
+            # soon: sort by diff ascending then high points first
+            # overdue: sort by high points first then least overdue first
+            if is_overdue:
+                return (1, -pts, diff)
+            return (0, diff, -pts)
+        sorted_rows = sorted(rows, key=urgency_score)
+        items = []
+        for r in sorted_rows[:3]:
+            due = r.get("due") or ""
+            title = r.get("title") or ""
+            course = r.get("course") or ""
+            pts = r.get("points")
+            dl = due_label(due)
+            # effort estimate
+            if pts and pts >= 100:
+                eff = "~2 ชม."
+            elif pts and pts >= 10:
+                eff = "~1 ชม."
+            else:
+                eff = "~30 นาที"
+            # why
+            try:
+                diff = (datetime.date.fromisoformat(due) - today_d).days
+            except Exception:
+                diff = 0
+            if diff < 0:
+                why = "เลยกำหนดมานาน ควรเคลียร์ไม่ให้สะสม"
+            elif diff <= 1:
+                why = "กำหนดส่งใกล้สุดและคะแนนสูง" if pts and pts >= 50 else "กำหนดส่งใกล้ที่สุด"
+            else:
+                why = "กำหนดส่งใกล้และควรเริ่มก่อน"
+            items.append({"title": title, "course": course, "dueLabel": dl, "effort_hr": eff, "why": why})
+        # Warnings
+        overdue_cnt = sum(1 for r in rows if (datetime.date.fromisoformat(r.get("due")) - today_d).days < 0) if rows else 0
+        soon_cnt = sum(1 for r in rows if 0 <= (datetime.date.fromisoformat(r.get("due")) - today_d).days <= 2) if rows else 0
+        warnings = []
+        if overdue_cnt >= 2:
+            warnings.append({"text": f"มีงานเลยกำหนด {overdue_cnt} รายการ ควรเคลียร์ก่อน", "level": "danger"})
+        if soon_cnt >= 2:
+            warnings.append({"text": f"มีงานต้องส่งพรุ่งนี้ {soon_cnt} รายการ กำหนดซ้อนกัน", "level": "warn"})
+        brief = f"วันนี้{wd} มีงานเลยกำหนด {overdue_cnt} รายการและงานต้องส่งพรุ่งนี้ {soon_cnt} รายการ ควรเริ่มจากงานพรุ่งนี้ก่อนแล้วเคลียร์งานค้าง"
+        parsed = {"brief": brief, "warnings": warnings, "items": items}
+        used_model = "heuristic"
 
     # Daily morning-brief feel: which day this brief is "for".
     today_d = datetime.date.today()

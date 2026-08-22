@@ -45,7 +45,7 @@ export default function AssistantPage() {
       setMsgs((m) => [...m, { role: "user", text: q }]);
       setBusy(true);
       try {
-        const res = await fetch("/api/assistant", {
+        const res = await fetch("/api/assistant/", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ q }),

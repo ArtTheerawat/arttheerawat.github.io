@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ListTodo, CalendarDays, CandlestickChart, Headphones, Zap, type LucideIcon } from "lucide-react";
+import { ListTodo, CalendarDays, CandlestickChart, Headphones, Zap, FlaskConical, type LucideIcon } from "lucide-react";
 import { classifyAssignment, dataUrl, dueDiffDays, fmt24, fmtMoney, nowBKKHour, todayIdxBKK, todayLabelBKK, todayStr, type Bucket } from "@/lib/data";
 import { SCHEDULE, COURSES, MAKEUP } from "@/lib/schedule-data";
 import { filterVisibleBriefItems, useHiddenTasks } from "@/lib/hidden-tasks";
@@ -24,6 +24,7 @@ const PRIMARY_TILES: Tile[] = [
 ];
 const SECONDARY_TILES: Tile[] = [
   { href: "/trading", Icon: CandlestickChart, t: "Trading Dashboard", d: "XAUUSD / BTC · Performance · P&L" },
+  { href: "/trading/lab", Icon: FlaskConical, t: "Backtest Lab", d: "XAUUSD M15 · 3 กลยุทธ์ · Monte Carlo" },
   { href: "/dictation", Icon: Headphones, t: "Dictation Trainer", d: "ฝึกฟัง + ตรวจเสียง -s/-ed" },
 ];
 
@@ -261,7 +262,7 @@ export default function HomePage() {
       setUsageLoading(true);
       try {
         const [orRes, hubRes] = await Promise.all([
-          fetch("/api/usage", { cache: "no-store" }),
+          fetch("/api/usage/", { cache: "no-store" }),
           fetch(dataUrl("/data.json"), { cache: "no-store" }),
         ]);
         let orJson: OpenRouterUsage | null = null;
