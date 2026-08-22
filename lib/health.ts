@@ -93,9 +93,9 @@ function classifyAge(
 //    (the 36h stale bound matches the existing freshness rule used in
 //    /today and Home for next_action.json).
 
-const SCHOOL_H = 2 * 3600_000; // healthy if last sync < 2h old
+const SCHOOL_H = 5 * 3600_000; // healthy if last sync < 5h old (squash every 4h + buffer)
 const SCHOOL_S = 24 * 3600_000; // stale if < 24h, else error
-const TRADE_H = 2 * 3600_000;
+const TRADE_H = 5 * 3600_000;
 const TRADE_S = 24 * 3600_000;
 const BRIEF_H = 24 * 3600_000;
 const BRIEF_S = 36 * 3600_000;
