@@ -32,7 +32,13 @@ invented (empty [] when no data supports it), and source_version is a stable
 hash of the assignments/schedule inputs so the page can flag stale briefs.
 """
 import datetime, hashlib, json, os, subprocess, sys
+from datetime import timezone
+from zoneinfo import ZoneInfo
 from pathlib import Path
+
+BKK = ZoneInfo("Asia/Bangkok")
+def _today_bkk():
+    return datetime.datetime.now(timezone.utc).astimezone(BKK).date()
 
 BASE = Path(__file__).resolve().parent
 OUT  = BASE / "public" / "data" / "next_action.json"
@@ -103,7 +109,7 @@ def _relevant(assignments, quiz_events):
     any overdue, due today, due within 7 days, or a quiz/exam <=7 days out.
     Sorted by urgency (due ascending, overdue already sorted by school_sync)."""
     from datetime import date
-    today = date.today()
+    today = _today_bkk()
     def days_out(due):
         try:
             return (date.fromisoformat(due) - today).days
@@ -145,7 +151,7 @@ def _relevant(assignments, quiz_events):
 
 def _call_llm(rows, q, model):
     """One call to a specific model -> (JSON dict, model) or (None, model) on failure."""
-    today_d = datetime.date.today()
+    today_d = _today_bkk()
     # Thai-ish weekday label so the model can say "พรุ่งนี้/สัปดาห์หน้า" correctly.
     wd = ["จันทร์","อังคาร","พุธ","พฤหัส","ศุกร์","เสาร์","อาทิตย์"][today_d.weekday()]
     payload = {
@@ -162,7 +168,7 @@ def _call_llm(rows, q, model):
         "ห้ามเดา/สร้าง deadline, วันสอบ, วิชา, หรือสถานะงานที่ไม่อยู่ในข้อมูล; ถ้าข้อมูลอะไรไม่มี ให้บอกว่า 'ไม่มีข้อมูล' แทนการมโน. "
         "ตอบเป็น JSON เท่านั้น ห้ามมีข้อความนอก JSON. โครงสร้าง: "
         '{\"brief\":\"1-2 บรรทัดสรุปภาพรวม+สิ่งที่สำคัญที่สุด (กระชับ ภาษาไทยธรรมชาติ ไม่เว่อร์)\",'
-        '\"warnings\":[{\"text\":\"คำเตือนสั้นๆ เช่น มีงานเลยกำหนด 2 รายการ อาจใช้เวลารีบเคลียร์\",\"level\":\"danger|warn|info\"}],'
+        '\"warnings\":[{\"text\":\"คำเตือนสั้นๆ เช่น มีงานเลยกำหนด 2 รายการ อาจใช้เวลารีบเคลียร์\",\"level\":\"danger|warn|info\",\"kind\":\"overdue_count|due_tomorrow|overdue_detail|exam_near\"}],'
         '\"items\":[{\"title\":...,\"course\":...,\"dueLabel\":\"เช่น ส่งพรุ่งนี้ 23:59\",\"effort_hr\":\"เช่น ~2 ชม.\",\"why\":\"ทำไมต้องทำตอนนี้ สั้น 1-2 วลี\"}]}'
         "warnings ห้ามมโน — ใส่เฉพาะเมื่อข้อมูลจริงรองรับ (มีงาน overdue เยอะ, สอบใกล้, กำหนดส่งซ้อนกัน); ถ้าไม่มีคำเตือน ให้ [] ว่าง. "
         "items = งานสำคัญ 1-3 รายการ เรียงตามความเร่งด่วนจริงที่เห็นในข้อมูล. items[0] = งานที่ควรทำก่อนที่สุด. "
@@ -295,7 +301,7 @@ def main():
         print("next_action: LLM failed — generating heuristic fallback brief")
         # Heuristic fallback: deterministic, no LLM needed — picks nearest-due
         # tasks and builds Thai labels from actual due dates (relative to today).
-        today_d = datetime.date.today()
+        today_d = _today_bkk()
         th_months = ["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."]
         day_label = f"ประจำวัน {today_d.day} {th_months[today_d.month-1]}"
         wd = ["จันทร์","อังคาร","พุธ","พฤหัส","ศุกร์","เสาร์","อาทิตย์"][today_d.weekday()]
@@ -364,15 +370,15 @@ def main():
         soon_cnt = sum(1 for r in rows if 0 <= (datetime.date.fromisoformat(r.get("due")) - today_d).days <= 2) if rows else 0
         warnings = []
         if overdue_cnt >= 2:
-            warnings.append({"text": f"มีงานเลยกำหนด {overdue_cnt} รายการ ควรเคลียร์ก่อน", "level": "danger"})
+            warnings.append({"text": f"มีงานเลยกำหนด {overdue_cnt} รายการ ควรเคลียร์ก่อน", "level": "danger", "kind": "overdue_count"})
         if soon_cnt >= 2:
-            warnings.append({"text": f"มีงานต้องส่งพรุ่งนี้ {soon_cnt} รายการ กำหนดซ้อนกัน", "level": "warn"})
+            warnings.append({"text": f"มีงานต้องส่งพรุ่งนี้ {soon_cnt} รายการ กำหนดซ้อนกัน", "level": "warn", "kind": "due_tomorrow"})
         brief = f"วันนี้{wd} มีงานเลยกำหนด {overdue_cnt} รายการและงานต้องส่งพรุ่งนี้ {soon_cnt} รายการ ควรเริ่มจากงานพรุ่งนี้ก่อนแล้วเคลียร์งานค้าง"
         parsed = {"brief": brief, "warnings": warnings, "items": items}
         used_model = "heuristic"
 
     # Daily morning-brief feel: which day this brief is "for".
-    today_d = datetime.date.today()
+    today_d = _today_bkk()
     th_months = ["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."]
     day_label = f"ประจำวัน {today_d.day} {th_months[today_d.month-1]}"
 
@@ -397,7 +403,11 @@ def main():
         lvl = str(w.get("level", "")).strip().lower()
         if lvl not in ("danger", "warn", "info"):
             lvl = "warn"
-        return {"text": text, "level": lvl}
+        kind = str(w.get("kind", "")).strip()[:32] or None
+        out = {"text": text, "level": lvl}
+        if kind:
+            out["kind"] = kind
+        return out
     warnings = [cw for cw in (clean_warn(w) for w in (parsed.get("warnings") or [])) if cw][:3]
 
     data = {

@@ -162,7 +162,10 @@ export function filterVisibleBriefItems(items: BriefItem[] | null | undefined, h
  *  title; if ANY hidden title appears in the text, the whole warning is dropped.
  *  Generic count warnings without titles (e.g. \"มีงานเลยกำหนด 3 รายการ\") are kept
  *  — they will be naturally suppressed when all overdue items are hidden because
- *  the caller falls back to the deterministic card (aiVisibleItems.length === 0). */
+ *  the caller falls back to the deterministic card (aiVisibleItems.length === 0).
+ *  When warning has `kind` (overdue_count / overdue_detail / due_tomorrow etc.)
+ *  filter by kind instead of text.includes("เลยกำหนด") substring; fallback to
+ *  includes for backward compat when kind is absent. */
 export function filterVisibleWarnings(
   warnings: BriefWarning[] | null | undefined,
   hiddenList: HiddenTask[]
@@ -174,7 +177,17 @@ export function filterVisibleWarnings(
   return warnings.filter((w) => {
     const txt = norm(w.text);
     if (!txt) return false;
-    // If any hidden title appears as substring in the warning, drop it
+    // kind-based: if warning has kind, use it to decide if it's overdue-related
+    // (instead of text.includes("เลยกำหนด")). For title-specific warnings
+    // (overdue_detail) drop when hidden title matches; generic counts kept here
+    // and handled by caller via stats.over check.
+    if ((w as unknown as { kind?: string }).kind) {
+      for (const ht of hiddenTitles) {
+        if (ht && txt.includes(ht)) return false;
+      }
+      return true;
+    }
+    // backward compat: no kind -> fallback to substring match
     for (const ht of hiddenTitles) {
       if (ht && txt.includes(ht)) return false;
     }

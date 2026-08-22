@@ -309,10 +309,14 @@ export function thDayIdx(d: Date): number {
  *
  * For files that DON'T change (static assets), pass `{ cache: true }` so the
  * browser/CDN can actually cache them.
+ *
+ * trailingSlash: next.config has trailingSlash:true, so data URLs must include
+ * a trailing slash before ?t= to avoid 308 redirect on edge (path/?t=).
  */
 export function dataUrl(path: string, opts: { cache?: boolean } = {}): string {
   if (opts.cache) return path;
-  return `${path}?t=${Date.now()}`;
+  const sep = path.endsWith("/") ? "?" : "/?";
+  return `${path}${sep}t=${Date.now()}`;
 }
 
 /** Data source freshness shown to the user so they never have to guess whether

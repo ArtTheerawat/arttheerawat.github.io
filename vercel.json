@@ -1,0 +1,20 @@
+{
+  "headers": [
+    {
+      "source": "/data/:file(.*).json",
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=60, s-maxage=60, stale-while-revalidate=30" }]
+    },
+    {
+      "source": "/data/:file(.*).json/",
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=60, s-maxage=60, stale-while-revalidate=30" }]
+    },
+    {
+      "source": "/data/next_action.json",
+      "headers": [{ "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }]
+    },
+    {
+      "source": "/data/next_action.json/",
+      "headers": [{ "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }]
+    }
+  ]
+}

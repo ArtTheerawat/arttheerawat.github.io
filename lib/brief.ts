@@ -34,6 +34,8 @@ export interface BriefWarning {
   text: string;
   /** severity hint: "warn" | "danger" | "info" */
   level?: "warn" | "danger" | "info";
+  /** canonical kind for filtering: overdue_count|due_tomorrow|overdue_detail|exam_near */
+  kind?: string;
 }
 
 /**
