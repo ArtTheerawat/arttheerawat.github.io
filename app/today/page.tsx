@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react"
 import Link from "next/link";
 import { classifyAssignment, dataUrl, dueLabel, fmt24, fmtDate, nowBKK, todayIdxBKK, todayLabelBKK, todayStr, type Bucket } from "@/lib/data";
 import { COURSES, MAKEUP, SCHEDULE } from "@/lib/schedule-data";
-import { filterVisibleBriefItems, useHiddenTasks } from "@/lib/hidden-tasks";
+import { filterVisibleBriefItems, filterVisibleWarnings, useHiddenTasks } from "@/lib/hidden-tasks";
 import { useLinkOverrides } from "@/lib/link-overrides";
 import {
   ConfirmClear,
@@ -377,6 +377,18 @@ export default function TodayPage() {
           () => (aiBrief ? filterVisibleBriefItems(aiBrief.items, hiddenList) : []),
           [aiBrief, hiddenList]
         );
+        const aiVisibleWarnings = useMemo(() => {
+          const base = aiBrief ? filterVisibleWarnings(aiBrief.warnings, hiddenList) : [];
+          if (over.length === 0) {
+            return base.filter((w) => !w.text.includes("เลยกำหนด"));
+          }
+          return base;
+        }, [aiBrief, hiddenList, over.length]);
+        const aiVisibleBrief = useMemo(() => {
+          if (!aiBrief) return null;
+          if (aiVisibleItems.length === 0 && aiVisibleWarnings.length === 0) return null;
+          return { ...aiBrief, items: aiVisibleItems, warnings: aiVisibleWarnings } as typeof aiBrief;
+        }, [aiBrief, aiVisibleItems, aiVisibleWarnings]);
 
   /* Planned work blocks that are still active: drop any whose task was
      hidden/completed so a finished task isn't kept in the plan (reuses the
@@ -585,9 +597,9 @@ export default function TodayPage() {
                                           AI brief exists we show the merged MorningBriefCard (AI
                                           summary + deterministic next + generated time); otherwise we
                                           fall back to the plain deterministic NextActionCard. */}
-                                    {aiBrief && aiVisibleItems.length > 0 ? (
+                                    {aiVisibleBrief ? (
                                       <MorningBriefCard
-                                        brief={aiBrief}
+                                        brief={aiVisibleBrief}
                                         engine={engine}
                                         onDetail={() => engine.next && setDetailTask(engine.next)}
                                         focusHref={engine.next ? `/focus?key=${encodeURIComponent(engine.next.key)}` : undefined}

@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ListTodo, CalendarDays, CandlestickChart, Headphones, Zap, FlaskConical, type LucideIcon } from "lucide-react";
 import { classifyAssignment, dataUrl, dueDiffDays, fmt24, fmtMoney, nowBKKHour, todayIdxBKK, todayLabelBKK, todayStr, type Bucket } from "@/lib/data";
 import { SCHEDULE, COURSES, MAKEUP } from "@/lib/schedule-data";
-import { filterVisibleBriefItems, useHiddenTasks } from "@/lib/hidden-tasks";
+import { filterVisibleBriefItems, filterVisibleWarnings, useHiddenTasks } from "@/lib/hidden-tasks";
 import { useLinkOverrides } from "@/lib/link-overrides";
 import { HideButton } from "@/components/HiddenTasks";
 import NextActionCard from "@/components/NextActionCard";
@@ -405,13 +405,30 @@ export default function HomePage() {
 
           /* Filter hidden tasks out of the AI next-brief. The brief (next_action.json)
              is written by a morning cron that has no knowledge of the hidden_tasks set,
-             so we must cross-check its items against hiddenList here. Match by title
-             (the brief has no raw due; its course is "code + name" while the hidden
-             key's course is the bare code), cross-checked that the course agrees. */
+             so we must cross-check its items AND warnings against hiddenList here.
+             Match by title (the brief has no raw due; its course is "code + name"
+             while the hidden key's course is the bare code), cross-checked that
+             the course agrees. */
         const aiVisibleItems = useMemo(
             () => (aiBrief ? filterVisibleBriefItems(aiBrief.items, hiddenList) : []),
             [aiBrief, hiddenList]
           );
+        const aiVisibleWarnings = useMemo(() => {
+            const base = aiBrief ? filterVisibleWarnings(aiBrief.warnings, hiddenList) : [];
+            // ถ้าซ่อนงานเลยกำหนดหมดแล้ว (stats.over === 0) ให้ซ่อน warning แบบนับจำนวนด้วย
+            // เช่น \"มีงานเลยกำหนด 3 รายการ\" ที่ไม่มีชื่อเจาะจงแต่ก็มาจาก hidden ล้วน
+            if (stats.over.length === 0) {
+              return base.filter((w) => !w.text.includes("เลยกำหนด"));
+            }
+            return base;
+          }, [aiBrief, hiddenList, stats.over.length]);
+        const aiVisibleBrief = useMemo(() => {
+          if (!aiBrief) return null;
+          if (aiVisibleItems.length === 0 && aiVisibleWarnings.length === 0) return null;
+          // Keep brief text but replace items/warnings with filtered versions
+          // so hidden titles never surface in \"⛔ มีงานเลยกำหนด... (ยืนยัน...)\" 
+          return { ...aiBrief, items: aiVisibleItems, warnings: aiVisibleWarnings } as typeof aiBrief;
+        }, [aiBrief, aiVisibleItems, aiVisibleWarnings]);
 
   const or = usage?.openrouter;
   const n9 = usage?.["9arm"];
@@ -467,9 +484,9 @@ export default function HomePage() {
                       the merged MorningBriefCard (AI summary + deterministic next
                       action + generated time); otherwise we fall back to the plain
                       deterministic NextActionCard so the page still works with no AI. */}
-                  {aiBrief && aiVisibleItems.length > 0 ? (
+                  {aiVisibleBrief ? (
                                       <MorningBriefCard
-                                        brief={aiBrief}
+                                        brief={aiVisibleBrief}
                                         engine={engine}
                                         onDetail={() => engine.next && setDetailTask(engine.next)}
                                         focusHref={engine.next ? `/focus?key=${encodeURIComponent(engine.next.key)}` : undefined}

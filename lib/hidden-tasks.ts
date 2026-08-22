@@ -13,6 +13,7 @@
 // as a "new" task (guard against genuinely missing a real deadline).
 
 import { useEffect, useState, useCallback } from "react";
+import type { BriefWarning } from "@/lib/brief";
 import {
   loadHiddenTasks as serviceLoadHiddenTasks,
   hideTask as serviceHideTask,
@@ -152,6 +153,32 @@ export function filterVisibleBriefItems(items: BriefItem[] | null | undefined, h
       return true;
     });
     return !hidden;
+  });
+}
+
+/** Filter AI warnings that mention a hidden task — so a hidden overdue task
+ *  never re-appears as \"⛔ มีงานเลยกำหนด... (ยืนยัน..., วิดีโอ Week5...)\".
+ *  Match is substring (case-insensitive) on the warning text vs each hidden
+ *  title; if ANY hidden title appears in the text, the whole warning is dropped.
+ *  Generic count warnings without titles (e.g. \"มีงานเลยกำหนด 3 รายการ\") are kept
+ *  — they will be naturally suppressed when all overdue items are hidden because
+ *  the caller falls back to the deterministic card (aiVisibleItems.length === 0). */
+export function filterVisibleWarnings(
+  warnings: BriefWarning[] | null | undefined,
+  hiddenList: HiddenTask[]
+): BriefWarning[] {
+  if (!warnings || warnings.length === 0) return [];
+  if (hiddenList.length === 0) return warnings;
+  const norm = (s?: string) => (s || "").trim().toLowerCase();
+  const hiddenTitles = hiddenList.map((h) => norm(h.title)).filter(Boolean);
+  return warnings.filter((w) => {
+    const txt = norm(w.text);
+    if (!txt) return false;
+    // If any hidden title appears as substring in the warning, drop it
+    for (const ht of hiddenTitles) {
+      if (ht && txt.includes(ht)) return false;
+    }
+    return true;
   });
 }
 
