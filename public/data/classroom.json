@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-22T17:14:17",
+  "generated_at": "2026-08-22T20:20:29",
   "courses": [
     {
       "id": "868669476199",
@@ -56,6 +56,11 @@
       ],
       "announcements": [
         {
+          "text": "สไลด์สอน Week7:\nhttps://drive.google.com/file/d/1Zq4Fpgl7bXrNpLNbWhgdNVQ9lDIzBUFP/view?usp=sharing",
+          "time": "2026-08-22 20:19",
+          "id": "856062674239"
+        },
+        {
           "text": "แจ้งนิสิต ข้อให้นิสิตทุกกลุ่มตรวจสอบชื่อ-สกุล รหัส และกลุ่ม ของตนเอง\nหากไม่ถูกต้องรีบแจ้งอาจารย์ในกลุ่มไลน์ด่วนภายในวันที่ 25-08-2569 เนื่องจากจะได้จัดตารางสอบ\n \nLink รายชื่อ : https://docs.google.com/spreadsheets/d/1UYTZ-9vgegkzv-D9R0Srmv5slDbT0Sri/edit?usp=sharing&ouid=104696120934446322456&rtpof=true&sd=true",
           "time": "2026-08-22 16:51",
           "id": "856061959085"
@@ -99,11 +104,6 @@
           "text": "สไลด์สอน Week3:\nhttps://drive.google.com/file/d/1F_6I0ZWg4ZK1VweDfQRxToGF-p0l_xfj/view?usp=sharing",
           "time": "2026-07-18 17:41",
           "id": "798471796463"
-        },
-        {
-          "text": "สไลด์สอน Week2:https://drive.google.com/file/d/1eX2tZFVllLRN2jOIWPjxHeiQfKPcQHuA/view?usp=sharing\n\nEx1. https://drive.google.com/file/d/1EG-fKQIh3whO3MmmEFCrzFdjS3EZnMCF/view?usp=sharing\n\nEx2. https://drive.google.com/file/d/1suZEBViNhC3RvQ6DcC6S4W3hClbhS72L/view?usp=drive_link",
-          "time": "2026-07-11 21:23",
-          "id": "870546408100"
         }
       ]
     },
