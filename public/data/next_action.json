@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-23T04:33:12",
+  "generated_at": "2026-08-23T04:33:43",
   "date": "2026-08-23",
   "day_label": "ประจำวัน 23 ส.ค.",
   "model": "heuristic",
@@ -17,24 +17,24 @@
   ],
   "items": [
     {
-      "title": "ยืนยันการเข้าเรียน",
-      "course": "88622065 Data Structures and Algorithms",
-      "dueLabel": "เลยกำหนด 16 วัน",
-      "effort_hr": "~30 นาที",
-      "why": "เลยกำหนดมานาน ควรเคลียร์ไม่ให้สะสม"
+      "title": "Week 6: File",
+      "course": "Softdev2026 G2",
+      "dueLabel": "ส่งพรุ่งนี้",
+      "effort_hr": "~2 ชม.",
+      "why": "กำหนดส่งใกล้สุดและคะแนนสูง"
+    },
+    {
+      "title": "ใบงานที่ 6",
+      "course": "G2 User Interface Design and Development",
+      "dueLabel": "ส่งพรุ่งนี้",
+      "effort_hr": "~1 ชม.",
+      "why": "กำหนดส่งใกล้ที่สุด"
     },
     {
       "title": "[vdo เก่าเอาไว้ดูประกอบหากไม่เข้าใจ] Week5: GUI+Class Diagram",
       "course": "Softdev2026 G2",
       "dueLabel": "เลยกำหนด 11 วัน",
       "effort_hr": "~2 ชม.",
-      "why": "เลยกำหนดมานาน ควรเคลียร์ไม่ให้สะสม"
-    },
-    {
-      "title": "Vector Stack Queue",
-      "course": "88622065 Data Structures and Algorithms",
-      "dueLabel": "เลยกำหนด 9 วัน",
-      "effort_hr": "~30 นาที",
       "why": "เลยกำหนดมานาน ควรเคลียร์ไม่ให้สะสม"
     }
   ]
