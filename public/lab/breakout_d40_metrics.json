@@ -1,0 +1,17 @@
+{
+  "trades": 16,
+  "winrate": 0.8125,
+  "profit_factor": 6.634228881123005,
+  "max_dd": 0.03761589245159974,
+  "expectancy": 2.8611472815408314,
+  "expectancy_pct": 2.8611472815408314,
+  "total_return": 0.5607416487434063,
+  "final_equity": 1560.7416487434064,
+  "avg_win": 0,
+  "avg_loss": 0,
+  "hypo": "breakout_d40",
+  "name": "Breakout D40 + ATR (จูน 95.3)",
+  "balance": 1000,
+  "score": 95.3,
+  "sharpe": 2.867641358825468
+}

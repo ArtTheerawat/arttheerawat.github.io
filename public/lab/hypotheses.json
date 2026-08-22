@@ -1,36 +1,67 @@
 {
-  "breakout_asia": {
-    "name": "Breakout Asia + RSI filter",
-    "strategy": "breakout_asia",
+  "breakout_d40": {
+    "name": "Breakout D40 + ATR (จูน 95.3)",
+    "strategy": "breakout_d40",
     "params": {
-      "range_bars": 12,
-      "entry_start": "09:00",
-      "entry_end": "14:00",
-      "rsi_period": 14,
-      "rsi_max_long": 65,
-      "rsi_min_short": 35
+      "window": 40,
+      "atr_filter": 0.7,
+      "sl_atr": 1.5,
+      "rr": 2.0
     },
-    "sl_atr": 1.5,
-    "tp_atr": 3.0,
-    "atr_period": 14,
-    "note": "range 12 แท่ง M15 = 3 ชม. ก่อน window; breakout + RSI ไม่สุดขั้ว — ปรับให้เข้ากับ mock"
+    "score": 95.3,
+    "note": "Score 95.3 | WR 81.2% PF 6.63 DD 3.8%"
   },
-  "ema_cross": {
-    "name": "EMA 20/50 cross (M15)",
-    "strategy": "ema_cross",
-    "params": { "fast": 20, "slow": 50 },
-    "sl_atr": 1.5,
-    "tp_atr": 3.0,
-    "atr_period": 14,
-    "note": "trend-following ช่วงสั้น; เทรดทั้ง long/short"
+  "macd_rsi": {
+    "name": "MACD 8/21 + RSI 35/70 (จูน 88.9)",
+    "strategy": "macd_rsi",
+    "params": {
+      "ema_fast": 8,
+      "ema_slow": 21,
+      "signal": 7,
+      "rsi_low": 35,
+      "rsi_high": 70,
+      "rr": 2.0
+    },
+    "score": 88.9,
+    "note": "Score 88.9 | WR 61.5% PF 3.17 DD 4.5%"
   },
-  "rsi_meanrev": {
-    "name": "RSI mean-revert (M15)",
-    "strategy": "rsi_meanrev",
-    "params": { "rsi_period": 14, "oversold": 30, "overbought": 70 },
-    "sl_atr": 1.5,
-    "tp_atr": 2.5,
-    "atr_period": 14,
-    "note": "สวนเทรนด์ช่วงสั้น: RSI ต่ำเข้า long / สูงเข้า short, TP 2.5 ATR"
+  "trend_ema": {
+    "name": "EMA 20/100 + ADX20 (จูน 74.6)",
+    "strategy": "trend_ema",
+    "params": {
+      "ema_fast": 20,
+      "ema_slow": 100,
+      "adx_threshold": 20,
+      "sl_atr": 1.5,
+      "rr": 4.0
+    },
+    "score": 74.6,
+    "note": "Score 74.6 | WR 46.2% PF 2.33 DD 12.9%"
+  },
+  "rsi_bb": {
+    "name": "RSI-BB MeanRev (จูน 70.5)",
+    "strategy": "rsi_bb",
+    "params": {
+      "rsi_period": 14,
+      "rsi_buy": 28,
+      "rsi_sell": 72,
+      "bb_period": 15,
+      "bb_std": 2.0,
+      "rr": 2.0
+    },
+    "score": 70.5,
+    "note": "Score 70.5 | WR 36.4% PF 1.94 DD 8.4%"
+  },
+  "long_trend": {
+    "name": "Long Trend EMA 50/250 (3 เทรด)",
+    "strategy": "long_trend",
+    "params": {
+      "ema_fast": 50,
+      "ema_slow": 250,
+      "sl_atr": 2.0,
+      "rr": 4.0
+    },
+    "score": 88.1,
+    "note": "Score 88.1 | WR 66.7% PF 5.03 DD 3.4%"
   }
 }

@@ -1,0 +1,17 @@
+{
+  "trades": 13,
+  "winrate": 0.6153846153846154,
+  "profit_factor": 3.165554425825429,
+  "max_dd": 0.045478678507258,
+  "expectancy": 2.072035533324085,
+  "expectancy_pct": 2.072035533324085,
+  "total_return": 0.2936292737223398,
+  "final_equity": 1293.6292737223398,
+  "avg_win": 0,
+  "avg_loss": 0,
+  "hypo": "macd_rsi",
+  "name": "MACD 8/21 + RSI 35/70 (จูน 88.9)",
+  "balance": 1000,
+  "score": 88.9,
+  "sharpe": 1.3873107452568159
+}

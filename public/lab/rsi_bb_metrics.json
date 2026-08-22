@@ -1,0 +1,17 @@
+{
+  "trades": 11,
+  "winrate": 0.36363636363636365,
+  "profit_factor": 1.9448760045965843,
+  "max_dd": 0.08449942705714565,
+  "expectancy": 1.1355170330155375,
+  "expectancy_pct": 1.1355170330155375,
+  "total_return": 0.12122441556593722,
+  "final_equity": 1121.2244155659373,
+  "avg_win": 0,
+  "avg_loss": 0,
+  "hypo": "rsi_bb",
+  "name": "RSI-BB MeanRev (จูน 70.5)",
+  "balance": 1000,
+  "score": 70.5,
+  "sharpe": 0.6167977129416806
+}

@@ -1,0 +1,17 @@
+{
+  "trades": 13,
+  "winrate": 0.4615,
+  "profit_factor": 2.3288,
+  "max_dd": 0.1291,
+  "expectancy": 2.33,
+  "expectancy_pct": 2.33,
+  "total_return": 0.3164,
+  "final_equity": 1316.4,
+  "avg_win": 0,
+  "avg_loss": 0,
+  "hypo": "trend_ema",
+  "name": "EMA 20/100 + ADX20 (จูน 74.6)",
+  "balance": 1000,
+  "score": 74.6,
+  "sharpe": 0.9419
+}
