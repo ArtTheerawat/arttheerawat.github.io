@@ -1,18 +1,20 @@
 {
-  "generated_at": "2026-08-23T04:33:43",
+  "generated_at": "2026-08-23T06:00:55",
   "date": "2026-08-23",
   "day_label": "ประจำวัน 23 ส.ค.",
   "model": "heuristic",
-  "source_version": "02042d8b956d",
+  "source_version": "ef1608d148d0",
   "brief": "วันนี้อาทิตย์ มีงานเลยกำหนด 3 รายการและงานต้องส่งพรุ่งนี้ 2 รายการ ควรเริ่มจากงานพรุ่งนี้ก่อนแล้วเคลียร์งานค้าง",
   "warnings": [
     {
       "text": "มีงานเลยกำหนด 3 รายการ ควรเคลียร์ก่อน",
-      "level": "danger"
+      "level": "danger",
+      "kind": "overdue_count"
     },
     {
       "text": "มีงานต้องส่งพรุ่งนี้ 2 รายการ กำหนดซ้อนกัน",
-      "level": "warn"
+      "level": "warn",
+      "kind": "due_tomorrow"
     }
   ],
   "items": [
