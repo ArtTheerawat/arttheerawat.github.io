@@ -315,8 +315,7 @@ export function thDayIdx(d: Date): number {
  */
 export function dataUrl(path: string, opts: { cache?: boolean } = {}): string {
   if (opts.cache) return path;
-  const sep = path.endsWith("/") ? "?" : "/?";
-  return `${path}${sep}t=${Date.now()}`;
+  return `${path}?t=${Date.now()}`;
 }
 
 /** Data source freshness shown to the user so they never have to guess whether
