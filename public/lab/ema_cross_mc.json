@@ -1,0 +1,17 @@
+{
+  "n_sims": 1000,
+  "trades": 71,
+  "balance": 1000,
+  "final_mean": 1600.66,
+  "final_median": 1600.66,
+  "final_p05": 1600.66,
+  "final_p25": 1600.66,
+  "final_p75": 1600.66,
+  "final_p95": 1600.66,
+  "prob_negative": 0.0,
+  "prob_loss": 0.0,
+  "ruin_prob": 0.0,
+  "ruin_threshold": "-50%",
+  "worst_min": 864.78,
+  "p05_min": 948.33
+}

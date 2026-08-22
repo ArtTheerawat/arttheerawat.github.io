@@ -1,0 +1,18 @@
+{
+  "trades": 71,
+  "winrate": 0.6479,
+  "profit_factor": 2.473,
+  "max_dd": 0.0547,
+  "expectancy": 8.46,
+  "expectancy_pct": 0.846,
+  "total_return": 0.6007,
+  "final_equity": 1600.65,
+  "avg_win": 21.93,
+  "avg_loss": -16.32,
+  "avg_bars": 25.5,
+  "long_trades": 37,
+  "short_trades": 34,
+  "hypo": "ema_cross",
+  "name": "EMA 20/50 cross (M15)",
+  "balance": 1000
+}

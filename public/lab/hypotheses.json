@@ -1,0 +1,36 @@
+{
+  "breakout_asia": {
+    "name": "Breakout Asia + RSI filter",
+    "strategy": "breakout_asia",
+    "params": {
+      "range_bars": 12,
+      "entry_start": "09:00",
+      "entry_end": "14:00",
+      "rsi_period": 14,
+      "rsi_max_long": 65,
+      "rsi_min_short": 35
+    },
+    "sl_atr": 1.5,
+    "tp_atr": 3.0,
+    "atr_period": 14,
+    "note": "range 12 แท่ง M15 = 3 ชม. ก่อน window; breakout + RSI ไม่สุดขั้ว — ปรับให้เข้ากับ mock"
+  },
+  "ema_cross": {
+    "name": "EMA 20/50 cross (M15)",
+    "strategy": "ema_cross",
+    "params": { "fast": 20, "slow": 50 },
+    "sl_atr": 1.5,
+    "tp_atr": 3.0,
+    "atr_period": 14,
+    "note": "trend-following ช่วงสั้น; เทรดทั้ง long/short"
+  },
+  "rsi_meanrev": {
+    "name": "RSI mean-revert (M15)",
+    "strategy": "rsi_meanrev",
+    "params": { "rsi_period": 14, "oversold": 30, "overbought": 70 },
+    "sl_atr": 1.5,
+    "tp_atr": 2.5,
+    "atr_period": 14,
+    "note": "สวนเทรนด์ช่วงสั้น: RSI ต่ำเข้า long / สูงเข้า short, TP 2.5 ATR"
+  }
+}

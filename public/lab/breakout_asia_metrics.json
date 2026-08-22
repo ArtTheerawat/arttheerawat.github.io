@@ -1,0 +1,18 @@
+{
+  "trades": 16,
+  "winrate": 0.8125,
+  "profit_factor": 5.699,
+  "max_dd": 0.0123,
+  "expectancy": 11.94,
+  "expectancy_pct": 1.194,
+  "total_return": 0.191,
+  "final_equity": 1191.04,
+  "avg_win": 17.82,
+  "avg_loss": -13.55,
+  "avg_bars": 28.8,
+  "long_trades": 7,
+  "short_trades": 9,
+  "hypo": "breakout_asia",
+  "name": "Breakout Asia + RSI filter",
+  "balance": 1000
+}

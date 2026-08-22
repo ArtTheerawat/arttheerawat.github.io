@@ -1,0 +1,18 @@
+{
+  "trades": 88,
+  "winrate": 0.1932,
+  "profit_factor": 0.273,
+  "max_dd": 0.4652,
+  "expectancy": -5.36,
+  "expectancy_pct": -0.536,
+  "total_return": -0.4717,
+  "final_equity": 528.27,
+  "avg_win": 10.41,
+  "avg_loss": -9.14,
+  "avg_bars": 29.9,
+  "long_trades": 44,
+  "short_trades": 44,
+  "hypo": "rsi_meanrev",
+  "name": "RSI mean-revert (M15)",
+  "balance": 1000
+}
