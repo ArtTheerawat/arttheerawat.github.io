@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { classifyAssignment, dataUrl, dueLabel, fmt24, nowBKK, thDate, thDayIdx, type Bucket } from "@/lib/data";
+import { classifyAssignment, dataUrl, dueLabel, fmt24, fmtDate, nowBKK, thDate, thDayIdx, type Bucket } from "@/lib/data";
 import { MAKEUP, SCHEDULE, courseDef } from "@/lib/schedule-data";
 import { taskKey, useHiddenTasks } from "@/lib/hidden-tasks";
 import { HideButton, useModalFocusTrap } from "@/components/HiddenTasks";
@@ -60,13 +60,58 @@ interface AssignInfo {
   daysAway?: number;
 }
 
+// Calendar overlay items (from /data/schedule.json, written by school_sync).
+interface CalEvent {
+  date: string;
+  summary?: string;
+  start?: number;
+  end?: number;
+}
+
+// A Calendar event/quizzes entry that falls inside the viewed week.
+interface WeekEvent {
+  key: string;
+  date: string;
+  dayIdx: number; // 1=Mon..7=Sun
+  label: string;
+  time?: string;
+  kind: "quiz" | "event";
+  startH?: number;
+  endH?: number;
+}
+
+// Calendar events may cross midnight (end > 24). Split into per-day segments so
+// the time label stays human ("23:58–00:58" instead of "23:58–24:58").
+function eventSegments(ev: CalEvent): Array<{ date: string; startH: number; endH: number }> {
+  const s = Math.max(0, ev.start ?? 0);
+  const rawEnd = ev.end ?? s + 1;
+  if (rawEnd <= 24) return [{ date: ev.date, startH: s, endH: rawEnd }];
+  const firstEnd = Math.min(rawEnd, 24);
+  const segs = [{ date: ev.date, startH: s, endH: firstEnd }];
+  if (rawEnd > 24) segs.push({ date: nextIsoDay(ev.date), startH: 0, endH: rawEnd - 24 });
+  return segs;
+}
+
+function nextIsoDay(iso: string): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+  if (!m) return iso;
+  const d = new Date(+m[1], +m[2] - 1, +m[3]);
+  d.setDate(d.getDate() + 1);
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+}
+
 export default function SchedulePage() {
   const [weekStart, setWeekStart] = useState<Date>(() => mondayOf(nowBKK()));
   const [assignByCourse, setAssignByCourse] = useState<Record<string, AssignInfo[]>>({});
   const [detail, setDetail] = useState<{ code: string; name: string } | null>(null);
   const [synced, setSynced] = useState("");
+  const [calEvents, setCalEvents] = useState<CalEvent[]>([]);
+  const [quizzes, setQuizzes] = useState<Array<{ date: string; summary?: string }>>([]);
   const [err, setErr] = useState<string | null>(null);
   const [mobileDay, setMobileDay] = useState<number>(() => thDayIdx(nowBKK()));
+  const mobDaysRef = useRef<HTMLDivElement | null>(null);
+  const [mobDaysMore, setMobDaysMore] = useState(false);
   const lastFocusedRef = useRef<HTMLElement | null>(null);
     const closeBtnRef = useRef<HTMLButtonElement | null>(null);
     const detailModalRef = useRef<HTMLDivElement | null>(null);
@@ -118,6 +163,8 @@ export default function SchedulePage() {
               })
             );
           }
+          setCalEvents(Array.isArray(d.events) ? d.events : []);
+          setQuizzes(Array.isArray(d.quizzes) ? d.quizzes : []);
         }
       } catch (e) {
         setErr("overlay Calendar ใช้ไม่ได้: " + (e instanceof Error ? e.message : String(e)));
@@ -140,6 +187,18 @@ export default function SchedulePage() {
   );
   const weekNow = useCallback(() => setWeekStart(mondayOf(nowBKK())), []);
 
+  // Mobile day-chips: show a right-edge fade only while the row overflows.
+  const measureMobDays = useCallback(() => {
+    const el = mobDaysRef.current;
+    if (!el) return;
+    setMobDaysMore(el.scrollWidth > el.clientWidth + 4);
+  }, []);
+  useEffect(() => {
+    measureMobDays();
+    window.addEventListener("resize", measureMobDays);
+    return () => window.removeEventListener("resize", measureMobDays);
+  }, [measureMobDays]);
+
   const isThisWeek = useMemo(() => {
       const m = mondayOf(nowBKK());
       const mStart = m.getTime();
@@ -150,6 +209,37 @@ export default function SchedulePage() {
 
     const jd = thDayIdx(nowBKK()); // 1=Mon..7=Sun
   const showNow = isThisWeek;
+
+  // Calendar items (events + quizzes) that fall inside the viewed week —
+  // deterministic filter, no AI. Cross-midnight events are split per day.
+  const weekEvents = useMemo<WeekEvent[]>(() => {
+    const wStart = mondayOf(weekStart).getTime();
+    const wEnd = wStart + 7 * 86400000;
+    const out: WeekEvent[] = [];
+    const pushSeg = (date: string, label: string, kind: WeekEvent["kind"], startH?: number, endH?: number) => {
+      const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
+      if (!m) return;
+      const dn = new Date(+m[1], +m[2] - 1, +m[3]).getTime();
+      if (dn < wStart || dn >= wEnd) return;
+      const dayIdx = (new Date(dn).getDay() + 6) % 7 + 1;
+      out.push({
+        key: `${kind}|${date}|${label}|${startH ?? ""}`,
+        date,
+        dayIdx,
+        label,
+        time: startH !== undefined && endH !== undefined ? `${fmt24(startH)}–${fmt24(endH)}` : undefined,
+        kind,
+        startH,
+        endH,
+      });
+    };
+    quizzes.forEach((q) => pushSeg(q.date, q.summary || "สอบ", "quiz"));
+    calEvents.forEach((ev) =>
+      eventSegments(ev).forEach((seg) => pushSeg(seg.date, ev.summary || "กิจกรรม", "event", seg.startH, seg.endH))
+    );
+    return out.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : (a.startH ?? 0) - (b.startH ?? 0)));
+  }, [weekStart, calEvents, quizzes]);
+  const hasWeekEvents = weekEvents.length > 0;
 
   const rows = useMemo(() => {
     const totalHalf = HH1 - HH0; // 11
@@ -230,7 +320,7 @@ export default function SchedulePage() {
             })()}
           </div>
         </div>
-        {synced && <div className="live" style={{ fontSize: 12, color: "var(--muted)" }}>ซิงก์ {synced}</div>}
+        {synced && <div className="live" style={{ fontSize: 12, color: "var(--muted)" }}>ข้อมูลล่าสุด {synced}</div>}
       </header>
 
       {err && <div className="err">⚠ {err}</div>}
@@ -242,7 +332,7 @@ export default function SchedulePage() {
         </span>
         <span>
           <span className="sw" style={{ background: "#d946ef" }} />
-          วิชาชดเชย / สอบ (จาก Calendar)
+          คาบชดเชย (ตาราง MAKEUP) · สอบ/กิจกรรม (จาก Calendar)
         </span>
       </div>
 
@@ -253,9 +343,25 @@ export default function SchedulePage() {
         <button className="wbtn wnow" onClick={weekNow}>สัปดาห์นี้</button>
       </div>
 
+      {hasWeekEvents && (
+        <div className="calev-card" role="list" aria-label="สอบและกิจกรรมของสัปดาห์นี้">
+          <div className="calev-head">🗓 สอบ/กิจกรรมของสัปดาห์นี้ (จาก Calendar)</div>
+          {weekEvents.map((ev) => (
+            <div className="calev-item" key={ev.key} role="listitem">
+              <span className={"calev-badge" + (ev.kind === "quiz" ? " calev-quiz" : "")}>
+                {ev.kind === "quiz" ? "สอบ" : ev.label.startsWith("Assignment") ? "งานส่ง" : "กิจกรรม"}
+              </span>
+              <span className="calev-date">{fmtDate(ev.date)}</span>
+              {ev.time && <span className="calev-time">{ev.time}</span>}
+              <span className="calev-label">{ev.label}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* ── Mobile: pick a day, show that day's periods as stacked cards ── */}
       <div className="mob-container">
-        <div className="mob-days" role="tablist" aria-label="เลือกวัน">
+        <div className={"mob-days" + (mobDaysMore ? " has-more" : "")} ref={mobDaysRef} role="tablist" aria-label="เลือกวัน">
           {rows.map((r) => {
             const has = r.segs.some((s) => s.type !== "gap");
             return (
@@ -279,7 +385,7 @@ export default function SchedulePage() {
             const row = rows.find((r) => r.day === mobileDay) || rows[0];
             const items = row.segs.filter((s) => s.type !== "gap");
             if (!items.length) {
-              return <div className="empty">วันนี้ไม่มีคาบเรียน 🎉</div>;
+              return <div className="empty">{mobileDay === jd ? "วันนี้" : DAYS[mobileDay - 1]}ไม่มีคาบเรียน 🎉</div>;
             }
             return items.map((seg, i2) => {
               const s = (seg.it?.s || {}) as SessionLike;
@@ -403,7 +509,7 @@ export default function SchedulePage() {
                     <div className="assign" key={i}>
                       <div className="ttl">{a.title}</div>
                       <div className="meta">
-                                              ครบ <b>{a.due ? a.due : "—"}</b> · <span className={"badge " + b.cls}>{b.txt}</span>
+                                              ครบ <b>{a.due ? fmtDate(a.due) : "—"}</b> · <span className={"badge " + b.cls}>{b.txt}</span>
                                             </div>
                       <div style={{ marginTop: 8 }}>
                         <HideButton
