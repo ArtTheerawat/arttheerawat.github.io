@@ -1,42 +1,37 @@
 {
-  "generated_at": "2026-08-24T06:00:50",
-  "date": "2026-08-24",
-  "day_label": "ประจำวัน 24 ส.ค.",
+  "generated_at": "2026-08-25T06:01:17",
+  "date": "2026-08-25",
+  "day_label": "ประจำวัน 25 ส.ค.",
   "model": "heuristic",
-  "source_version": "38f680e092e0",
-  "brief": "วันนี้จันทร์ มีงานเลยกำหนด 3 รายการและงานต้องส่งพรุ่งนี้ 2 รายการ ควรเริ่มจากงานพรุ่งนี้ก่อนแล้วเคลียร์งานค้าง",
+  "source_version": "68c4a1ebb750",
+  "brief": "วันนี้อังคาร มีงานเลยกำหนด 3 รายการและงานต้องส่งพรุ่งนี้ 0 รายการ ควรเริ่มจากงานพรุ่งนี้ก่อนแล้วเคลียร์งานค้าง",
   "warnings": [
     {
       "text": "มีงานเลยกำหนด 3 รายการ ควรเคลียร์ก่อน",
       "level": "danger",
       "kind": "overdue_count"
-    },
-    {
-      "text": "มีงานต้องส่งพรุ่งนี้ 2 รายการ กำหนดซ้อนกัน",
-      "level": "warn",
-      "kind": "due_tomorrow"
     }
   ],
   "items": [
     {
-      "title": "Week 6: File",
-      "course": "Softdev2026 G2",
-      "dueLabel": "ส่งวันนี้",
-      "effort_hr": "~2 ชม.",
-      "why": "กำหนดส่งใกล้สุดและคะแนนสูง"
-    },
-    {
-      "title": "ใบงานที่ 6",
-      "course": "G2 User Interface Design and Development",
-      "dueLabel": "ส่งวันนี้",
-      "effort_hr": "~1 ชม.",
-      "why": "กำหนดส่งใกล้ที่สุด"
-    },
-    {
       "title": "[vdo เก่าเอาไว้ดูประกอบหากไม่เข้าใจ] Week5: GUI+Class Diagram",
       "course": "Softdev2026 G2",
-      "dueLabel": "เลยกำหนด 12 วัน",
+      "dueLabel": "เลยกำหนด 13 วัน",
       "effort_hr": "~2 ชม.",
+      "why": "เลยกำหนดมานาน ควรเคลียร์ไม่ให้สะสม"
+    },
+    {
+      "title": "ยืนยันการเข้าเรียน",
+      "course": "88622065 Data Structures and Algorithms",
+      "dueLabel": "เลยกำหนด 18 วัน",
+      "effort_hr": "~30 นาที",
+      "why": "เลยกำหนดมานาน ควรเคลียร์ไม่ให้สะสม"
+    },
+    {
+      "title": "Vector Stack Queue",
+      "course": "88622065 Data Structures and Algorithms",
+      "dueLabel": "เลยกำหนด 11 วัน",
+      "effort_hr": "~30 นาที",
       "why": "เลยกำหนดมานาน ควรเคลียร์ไม่ให้สะสม"
     }
   ]
