@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-24T08:05:49",
+  "generated_at": "2026-08-24T12:13:59",
   "trades": [
     {
       "timestamp": 46253.82947916666,
@@ -41,6 +41,90 @@
       "strategy": "Multi-TF Trend Following",
       "risk": 2,
       "balance": 2864.59,
+      "notes": "auto-close detected (SL/TP/broker)"
+    },
+    {
+      "timestamp": 46258.38574074074,
+      "type": "OPEN",
+      "symbol": "XAUUSDm",
+      "direction": "BUY",
+      "volume": 0.01,
+      "entry": 4650.191000000001,
+      "sl": 4616.24,
+      "tp": 4717.41,
+      "exit": "",
+      "profit": "",
+      "swap": "",
+      "commission": "",
+      "netPnl": "",
+      "status": "OPENED",
+      "signalReason": "MACD(8/21/7) bull cross + RSI 67 in [50,70]",
+      "strategy": "Tuned_MACD_RSI",
+      "risk": 1,
+      "balance": 2788.46,
+      "notes": ""
+    },
+    {
+      "timestamp": 46258.38581018519,
+      "type": "CLOSE",
+      "symbol": "XAUUSDm",
+      "direction": "BUY",
+      "volume": 0.01,
+      "entry": 4650.191000000001,
+      "sl": 4616.24,
+      "tp": 4717.41,
+      "exit": "",
+      "profit": "",
+      "swap": "",
+      "commission": "",
+      "netPnl": "",
+      "status": "CLOSED",
+      "signalReason": "",
+      "strategy": "Multi-TF Trend Following",
+      "risk": 1,
+      "balance": 2788.46,
+      "notes": "auto-close detected (SL/TP/broker)"
+    },
+    {
+      "timestamp": 46258.38921296296,
+      "type": "OPEN",
+      "symbol": "XAUUSDm",
+      "direction": "BUY",
+      "volume": 0.01,
+      "entry": 4652.219,
+      "sl": 4616.11,
+      "tp": 4718.15,
+      "exit": "",
+      "profit": "",
+      "swap": "",
+      "commission": "",
+      "netPnl": "",
+      "status": "OPENED",
+      "signalReason": "MACD(8/21/7) bull cross + RSI 67 in [50,70]",
+      "strategy": "Tuned_MACD_RSI",
+      "risk": 1,
+      "balance": 2788.46,
+      "notes": ""
+    },
+    {
+      "timestamp": 46258.38928240741,
+      "type": "CLOSE",
+      "symbol": "XAUUSDm",
+      "direction": "BUY",
+      "volume": 0.01,
+      "entry": 4652.219,
+      "sl": 4616.11,
+      "tp": 4718.15,
+      "exit": "",
+      "profit": "",
+      "swap": "",
+      "commission": "",
+      "netPnl": "",
+      "status": "CLOSED",
+      "signalReason": "",
+      "strategy": "Multi-TF Trend Following",
+      "risk": 1,
+      "balance": 2788.46,
       "notes": "auto-close detected (SL/TP/broker)"
     }
   ],
@@ -16167,6 +16251,6 @@
       },
       "updated_at": "2026-08-24T06:00:50"
     },
-    "updated_at": "2026-08-24T08:05:50"
+    "updated_at": "2026-08-24T12:13:59"
   }
 }
