@@ -1,10 +1,18 @@
 {
-  "generated_at": "2026-08-25T11:26:44",
+  "generated_at": "2026-08-25T13:30:55",
   "courses": [
     {
       "id": "868669476199",
       "name": "G2  User Interface Design and Development",
       "coursework": [
+        {
+          "title": "ใบงานที่ 7",
+          "due": "2026-08-30",
+          "dueTime": "16:59",
+          "state": "PUBLISHED",
+          "id": "875627415895",
+          "submitted": false
+        },
         {
           "title": "ใบงานที่ 6",
           "due": "2026-08-24",
