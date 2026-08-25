@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-25T07:49:30",
+  "generated_at": "2026-08-25T11:57:46",
   "courses": [
     {
       "id": "868669476199",
@@ -111,6 +111,14 @@
       "id": "855445031194",
       "name": "Softdev2026 G2",
       "coursework": [
+        {
+          "title": "Week7",
+          "due": "2026-09-05",
+          "dueTime": "16:59",
+          "state": "PUBLISHED",
+          "id": "856120104907",
+          "submitted": false
+        },
         {
           "title": "Week5",
           "due": "2026-08-17",
