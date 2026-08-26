@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-26T20:05:53",
+  "generated_at": "2026-08-27T00:15:10",
   "trades": [
     {
       "timestamp": 46253.82947916666,
@@ -125,6 +125,48 @@
       "strategy": "Multi-TF Trend Following",
       "risk": 1,
       "balance": 2788.46,
+      "notes": "auto-close detected (SL/TP/broker)"
+    },
+    {
+      "timestamp": 46260.91375,
+      "type": "OPEN",
+      "symbol": "XAUUSDm",
+      "direction": "SELL",
+      "volume": 0.02,
+      "entry": 4611.659,
+      "sl": 4628.17,
+      "tp": 4574.32,
+      "exit": "",
+      "profit": "",
+      "swap": "",
+      "commission": "",
+      "netPnl": "",
+      "status": "OPENED",
+      "signalReason": "Breakout DOWN: close 4610.22 < 40-bar low 4624.58 + ATR filter OK",
+      "strategy": "Tuned_BREAKOUT",
+      "risk": 1,
+      "balance": 2713.77,
+      "notes": ""
+    },
+    {
+      "timestamp": 46260.913819444446,
+      "type": "CLOSE",
+      "symbol": "XAUUSDm",
+      "direction": "SELL",
+      "volume": 0.02,
+      "entry": 4611.659,
+      "sl": 4628.17,
+      "tp": 4574.32,
+      "exit": "",
+      "profit": "",
+      "swap": "",
+      "commission": "",
+      "netPnl": "",
+      "status": "CLOSED",
+      "signalReason": "",
+      "strategy": "Multi-TF Trend Following",
+      "risk": 1,
+      "balance": 2713.77,
       "notes": "auto-close detected (SL/TP/broker)"
     }
   ],
@@ -16251,6 +16293,6 @@
       },
       "updated_at": "2026-08-26T06:00:23"
     },
-    "updated_at": "2026-08-26T20:05:53"
+    "updated_at": "2026-08-27T00:15:10"
   }
 }
