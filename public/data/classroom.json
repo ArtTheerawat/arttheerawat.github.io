@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-28T08:03:12",
+  "generated_at": "2026-08-28T10:37:19",
   "courses": [
     {
       "id": "868669476199",
@@ -191,6 +191,38 @@
       "name": "88622065\tData Structures and Algorithms",
       "coursework": [
         {
+          "title": "ส่งใบ Certificate (Generative Al)",
+          "due": "2026-09-30",
+          "dueTime": "16:59",
+          "state": "PUBLISHED",
+          "id": "876258478836",
+          "submitted": false
+        },
+        {
+          "title": "ส่งใบ Certificate (Canva AI)",
+          "due": "2026-09-30",
+          "dueTime": "16:59",
+          "state": "PUBLISHED",
+          "id": "869293681932",
+          "submitted": false
+        },
+        {
+          "title": "ส่งใบ Certificate (NotebookLM)",
+          "due": "2026-09-30",
+          "dueTime": "16:59",
+          "state": "PUBLISHED",
+          "id": "869294061829",
+          "submitted": false
+        },
+        {
+          "title": "Sets_and_Maps (ส่งครบทุกข้อ)",
+          "due": "2026-08-28",
+          "dueTime": "05:10",
+          "state": "PUBLISHED",
+          "id": "876255421047",
+          "submitted": false
+        },
+        {
           "title": "Sets_and_Maps",
           "due": "2026-08-21",
           "dueTime": "05:10",
@@ -256,6 +288,11 @@
         }
       ],
       "announcements": [
+        {
+          "text": "https://mooc.buu.ac.th/courses/course-v1:BUU+ICT007+2026/about\nhttps://mooc.buu.ac.th/courses/course-v1:BUU+ICT008+2026/about\nhttps://mooc.buu.ac.th/courses/course-v1:BUU+ICT006+2026/about",
+          "time": "2026-08-28 10:28",
+          "id": "876257921777"
+        },
         {
           "text": "Text Book",
           "time": "2026-07-09 11:48",
