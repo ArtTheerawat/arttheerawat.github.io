@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-28T11:08:21",
+  "generated_at": "2026-08-28T12:41:09",
   "courses": [
     {
       "id": "868669476199",
@@ -220,7 +220,7 @@
           "dueTime": "05:10",
           "state": "PUBLISHED",
           "id": "876255421047",
-          "submitted": false
+          "submitted": true
         },
         {
           "title": "Sets_and_Maps",
