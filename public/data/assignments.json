@@ -1,5 +1,5 @@
 {
-  "updated": "2026-08-28T07:54:06+07:00",
+  "updated": "2026-08-28T12:00:46+07:00",
   "todo": [
     {
       "title": "ยืนยันการเข้าเรียน",
@@ -45,6 +45,33 @@
       "overdue": 0,
       "workType": "ASSIGNMENT",
       "points": 100
+    },
+    {
+      "title": "ส่งใบ Certificate (Generative Al)",
+      "course": "88622065",
+      "courseName": "88622065 Data Structures and Algorithms",
+      "due": "2026-09-30",
+      "overdue": 0,
+      "workType": "ASSIGNMENT",
+      "points": 1
+    },
+    {
+      "title": "ส่งใบ Certificate (Canva AI)",
+      "course": "88622065",
+      "courseName": "88622065 Data Structures and Algorithms",
+      "due": "2026-09-30",
+      "overdue": 0,
+      "workType": "ASSIGNMENT",
+      "points": 1
+    },
+    {
+      "title": "ส่งใบ Certificate (NotebookLM)",
+      "course": "88622065",
+      "courseName": "88622065 Data Structures and Algorithms",
+      "due": "2026-09-30",
+      "overdue": 0,
+      "workType": "ASSIGNMENT",
+      "points": 1
     }
   ],
   "byCourse": {
@@ -80,6 +107,33 @@
       }
     ],
     "88622065": [
+      {
+        "title": "ส่งใบ Certificate (Generative Al)",
+        "course": "88622065",
+        "courseName": "88622065 Data Structures and Algorithms",
+        "due": "2026-09-30",
+        "overdue": 0,
+        "workType": "ASSIGNMENT",
+        "points": 1
+      },
+      {
+        "title": "ส่งใบ Certificate (Canva AI)",
+        "course": "88622065",
+        "courseName": "88622065 Data Structures and Algorithms",
+        "due": "2026-09-30",
+        "overdue": 0,
+        "workType": "ASSIGNMENT",
+        "points": 1
+      },
+      {
+        "title": "ส่งใบ Certificate (NotebookLM)",
+        "course": "88622065",
+        "courseName": "88622065 Data Structures and Algorithms",
+        "due": "2026-09-30",
+        "overdue": 0,
+        "workType": "ASSIGNMENT",
+        "points": 1
+      },
       {
         "title": "Vector Stack Queue",
         "course": "88622065",
