@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-29T04:19:50",
+  "generated_at": "2026-08-29T08:13:54",
   "trades": [
     {
       "timestamp": 46253.82947916666,
@@ -16312,18 +16312,18 @@
   "usage": {
     "9arm": {
       "status": "ok",
-      "tokens_in": 16860,
-      "tokens_out": 15213,
-      "tokens_total": 32073,
-      "calls": 23,
+      "tokens_in": 17900,
+      "tokens_out": 16413,
+      "tokens_total": 34313,
+      "calls": 24,
       "last_model": "qwen3.8-27b-fp8",
       "by_model": {
         "qwen3.8-27b-fp8": {
-          "tokens_in": 10251,
-          "tokens_out": 11995,
-          "tokens_total": 22246,
-          "calls": 13,
-          "last_used": "2026-08-28T06:00:32"
+          "tokens_in": 11291,
+          "tokens_out": 13195,
+          "tokens_total": 24486,
+          "calls": 14,
+          "last_used": "2026-08-29T06:00:30"
         },
         "deepseek-v4-flash-0731": {
           "tokens_in": 6546,
@@ -16333,8 +16333,8 @@
           "last_used": "2026-08-22T06:00:31"
         }
       },
-      "updated_at": "2026-08-28T06:00:32"
+      "updated_at": "2026-08-29T06:00:30"
     },
-    "updated_at": "2026-08-29T04:19:51"
+    "updated_at": "2026-08-29T08:13:54"
   }
 }
