@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-29T19:59:36",
+  "generated_at": "2026-08-29T20:30:22",
   "courses": [
     {
       "id": "868669476199",
@@ -64,6 +64,16 @@
       ],
       "announcements": [
         {
+          "text": "รายละเอียดการนำเสนอ\nhttps://docs.google.com/spreadsheets/d/1wO0ikC4XvfZ2OGUPIiUZHaA5g1JozJkj/edit?usp=sharing&ouid=104696120934446322456&rtpof=true&sd=true",
+          "time": "2026-08-29 20:29",
+          "id": "876434983539"
+        },
+        {
+          "text": "ตารางสอบโครงงาน \nนำเสนอกลุ่มละ  20 นาที + ถาม-ตอบ 5 นาที",
+          "time": "2026-08-29 20:12",
+          "id": "876433087163"
+        },
+        {
           "text": "Slide Wook7:\nhttps://drive.google.com/file/d/1gjq4dw2_vvruJuZBs7tSwIV0J5KDDTIx/view?usp=sharing",
           "time": "2026-08-24 22:21",
           "id": "875628202806"
@@ -102,16 +112,6 @@
           "text": "สไลด์สอน Week4:\nhttps://drive.google.com/file/d/1R1ujyWWTtTdWkp5OTQlCzdg5-Veqt5jA/view?usp=sharing",
           "time": "2026-07-28 15:11",
           "id": "871200910025"
-        },
-        {
-          "text": "เอกสารประกอบ \nลำดับ เอกสาร Link\nTOR https://acesse.one/zidhaw3 \nBA https://acesse.one/ww3b8w9",
-          "time": "2026-07-22 10:07",
-          "id": "855625623253"
-        },
-        {
-          "text": "สไลด์สอน Week3:\nhttps://drive.google.com/file/d/1F_6I0ZWg4ZK1VweDfQRxToGF-p0l_xfj/view?usp=sharing",
-          "time": "2026-07-18 17:41",
-          "id": "798471796463"
         }
       ]
     },
