@@ -1,15 +1,5 @@
 {
-  "updated": "2026-08-30T20:05:18+07:00",
-  "events": [
-    {
-      "day": 7,
-      "start": 23.966666666666665,
-      "end": 24.966666666666665,
-      "code": null,
-      "summary": "Assignment: ใบงานที่ 7",
-      "isRecurring": false,
-      "date": "2026-08-30"
-    }
-  ],
+  "updated": "2026-08-31T00:11:57+07:00",
+  "events": [],
   "quizzes": []
 }
