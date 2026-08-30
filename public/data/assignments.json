@@ -1,5 +1,5 @@
 {
-  "updated": "2026-08-31T00:11:57+07:00",
+  "updated": "2026-08-31T04:18:39+07:00",
   "todo": [
     {
       "title": "ยืนยันการเข้าเรียน",
@@ -27,15 +27,6 @@
       "overdue": 17,
       "workType": "ASSIGNMENT",
       "points": null
-    },
-    {
-      "title": "ใบงานที่ 7",
-      "course": "88624165",
-      "courseName": "G2 User Interface Design and Development",
-      "due": "2026-08-30",
-      "overdue": 1,
-      "workType": "ASSIGNMENT",
-      "points": 10
     },
     {
       "title": "Week7",
@@ -75,17 +66,6 @@
     }
   ],
   "byCourse": {
-    "88624165": [
-      {
-        "title": "ใบงานที่ 7",
-        "course": "88624165",
-        "courseName": "G2 User Interface Design and Development",
-        "due": "2026-08-30",
-        "overdue": 1,
-        "workType": "ASSIGNMENT",
-        "points": 10
-      }
-    ],
     "88634065": [
       {
         "title": "Week7",
