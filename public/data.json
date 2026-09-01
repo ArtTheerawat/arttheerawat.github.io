@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-01T13:42:31",
+  "generated_at": "2026-09-01T16:16:17",
   "trades": [
     {
       "timestamp": 46253.82947916666,
@@ -209,6 +209,48 @@
       "strategy": "Multi-TF Trend Following",
       "risk": 1,
       "balance": 2680.75,
+      "notes": "auto-close detected (SL/TP/broker)"
+    },
+    {
+      "timestamp": 46266.58699074074,
+      "type": "OPEN",
+      "symbol": "XAUUSDm",
+      "direction": "BUY",
+      "volume": 0.01,
+      "entry": 4433.483,
+      "sl": 4412.26,
+      "tp": 4477.76,
+      "exit": "",
+      "profit": "",
+      "swap": "",
+      "commission": "",
+      "netPnl": "",
+      "status": "OPENED",
+      "signalReason": "MACD(8/21/7) bull cross + RSI 51 in [50,70]",
+      "strategy": "Tuned_MACD_RSI",
+      "risk": 1,
+      "balance": 2720.09,
+      "notes": ""
+    },
+    {
+      "timestamp": 46266.58704861111,
+      "type": "CLOSE",
+      "symbol": "XAUUSDm",
+      "direction": "BUY",
+      "volume": 0.01,
+      "entry": 4433.483,
+      "sl": 4412.26,
+      "tp": 4477.76,
+      "exit": "",
+      "profit": "",
+      "swap": "",
+      "commission": "",
+      "netPnl": "",
+      "status": "CLOSED",
+      "signalReason": "",
+      "strategy": "Multi-TF Trend Following",
+      "risk": 1,
+      "balance": 2720.09,
       "notes": "auto-close detected (SL/TP/broker)"
     }
   ],
@@ -16312,18 +16354,18 @@
   "usage": {
     "9arm": {
       "status": "ok",
-      "tokens_in": 19923,
-      "tokens_out": 18813,
-      "tokens_total": 38736,
-      "calls": 26,
+      "tokens_in": 21883,
+      "tokens_out": 21213,
+      "tokens_total": 43096,
+      "calls": 28,
       "last_model": "qwen3.8-27b-fp8",
       "by_model": {
         "qwen3.8-27b-fp8": {
-          "tokens_in": 13314,
-          "tokens_out": 15595,
-          "tokens_total": 28909,
-          "calls": 16,
-          "last_used": "2026-08-31T06:00:44"
+          "tokens_in": 15274,
+          "tokens_out": 17995,
+          "tokens_total": 33269,
+          "calls": 18,
+          "last_used": "2026-09-01T13:54:01"
         },
         "deepseek-v4-flash-0731": {
           "tokens_in": 6546,
@@ -16333,8 +16375,8 @@
           "last_used": "2026-08-22T06:00:31"
         }
       },
-      "updated_at": "2026-08-31T06:00:44"
+      "updated_at": "2026-09-01T13:54:01"
     },
-    "updated_at": "2026-09-01T13:42:31"
+    "updated_at": "2026-09-01T16:16:17"
   }
 }
