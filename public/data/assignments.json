@@ -1,5 +1,5 @@
 {
-  "updated": "2026-09-02T16:06:33+07:00",
+  "updated": "2026-09-02T20:14:04+07:00",
   "todo": [
     {
       "title": "ยืนยันการเข้าเรียน",
@@ -27,15 +27,6 @@
       "overdue": 19,
       "workType": "ASSIGNMENT",
       "points": null
-    },
-    {
-      "title": "Week7",
-      "course": "88634065",
-      "courseName": "Softdev2026 G2",
-      "due": "2026-09-05",
-      "overdue": 0,
-      "workType": "ASSIGNMENT",
-      "points": 100
     },
     {
       "title": "ส่งใบ Certificate (Generative Al)",
@@ -67,15 +58,6 @@
   ],
   "byCourse": {
     "88634065": [
-      {
-        "title": "Week7",
-        "course": "88634065",
-        "courseName": "Softdev2026 G2",
-        "due": "2026-09-05",
-        "overdue": 0,
-        "workType": "ASSIGNMENT",
-        "points": 100
-      },
       {
         "title": "[vdo เก่าเอาไว้ดูประกอบหากไม่เข้าใจ] Week5: GUI+Class Diagram",
         "course": "88634065",
