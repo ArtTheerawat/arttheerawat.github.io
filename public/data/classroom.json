@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-02T15:42:56",
+  "generated_at": "2026-09-02T17:15:59",
   "courses": [
     {
       "id": "868669476199",
@@ -64,6 +64,11 @@
       ],
       "announcements": [
         {
+          "text": "แนวข้อสอบ Midterm 1/2569 \nhttps://drive.google.com/file/d/1ekc1u3gTtdO06BkvJYF1u2-A2MpJ6gRd/view?usp=sharing",
+          "time": "2026-09-02 17:13",
+          "id": "872597045615"
+        },
+        {
           "text": "ตารางรายการนำเสนอ\nhttps://docs.google.com/spreadsheets/d/1nHKHhrG0rP6VfK0EzKCDxVfqFp-cMgLftUkN6IzNM4o/edit?usp=sharing",
           "time": "2026-08-29 20:33",
           "id": "876434281886"
@@ -107,11 +112,6 @@
           "text": "แจ้งนิสิตเรื่อง : การสอนชดเชยวันเฉลิมพระชนมพรรษาสมเด็จพระนางเจ้าสิริกิติ์ 12 ส.ค.2569 \nวันที่สอนชดเชย : 13 ส.ค. 2569\nห้องเรียน : IF 301\nเวลา : 13.00 - 15.00 น.",
           "time": "2026-08-05 12:12",
           "id": "871717583278"
-        },
-        {
-          "text": "สไลด์สอน Week4:\nhttps://drive.google.com/file/d/1R1ujyWWTtTdWkp5OTQlCzdg5-Veqt5jA/view?usp=sharing",
-          "time": "2026-07-28 15:11",
-          "id": "871200910025"
         }
       ]
     },
