@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-02T17:15:59",
+  "generated_at": "2026-09-02T18:49:05",
   "courses": [
     {
       "id": "868669476199",
@@ -125,7 +125,7 @@
           "dueTime": "16:59",
           "state": "PUBLISHED",
           "id": "856120104907",
-          "submitted": false
+          "submitted": true
         },
         {
           "title": "Week5",
